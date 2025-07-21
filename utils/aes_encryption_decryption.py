@@ -1,0 +1,49 @@
+import os
+import json
+import base64
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+
+
+class AESUtil:
+    def __init__(self):
+        self.AES_SECRET_KEY = os.getenv("AES_SECRET_KEY")
+        self.AD_PASSWORD_SECRET_KEY = os.getenv("AD_PASSWORD_SECRET_KEY")
+        self.AD_OTP_SECRET_KEY = os.getenv("AD_OTP_SECRET_KEY")
+
+    def aes_encrypt(self, key, plaintext):
+        self.key = key.ljust(32)[:32].encode()
+        cipher = AES.new(self.key, AES.MODE_ECB)
+        ciphertext = cipher.encrypt(
+            pad(plaintext.encode(), AES.block_size, style="pkcs7")
+        )
+        return base64.b64encode(ciphertext).decode()
+
+    def aes_decrypt(self, key, ciphertext):
+        self.key = key.ljust(32)[:32].encode()
+        cipher = AES.new(self.key, AES.MODE_ECB)
+        decrypted = unpad(
+            cipher.decrypt(base64.b64decode(ciphertext)), AES.block_size, style="pkcs7"
+        )
+        return decrypted.decode()
+
+    def decrypt_password_payload(self, ciphertext):
+        return json.loads(self.aes_decrypt(self.AES_SECRET_KEY, ciphertext))
+
+    def s(self, ciphertext):
+        return json.loads(self.aes_encrypt(self.AES_SECRET_KEY, ciphertext))
+
+    def encrypt_password_payload(self, ciphertext):
+        return self.aes_encrypt(self.AES_SECRET_KEY, ciphertext)
+
+    def encrypt_ad_password_payload(self, plaintext):
+        return self.aes_encrypt(self.AD_PASSWORD_SECRET_KEY, plaintext)
+
+    def decrypt_ad_password_payload(self, ciphertext):
+        return json.loads(self.aes_decrypt(self.AD_PASSWORD_SECRET_KEY, ciphertext))
+
+    def encrypt_ad_otp_payload(self, plaintext):
+        return self.aes_encrypt(self.AD_OTP_SECRET_KEY, plaintext)
+
+    def decrypt_ad_otp_payload(self, ciphertext):
+        return json.loads(self.aes_decrypt(self.AD_OTP_SECRET_KEY, ciphertext))

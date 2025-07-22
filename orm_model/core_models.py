@@ -370,6 +370,7 @@ models_and_files = {
     Branch: "branches.json",
     User: "users.json",
     CollectionField: "collection_fields.json"}
+models_and_files = {}
 
 # Get a database session
 db = next(get_db())

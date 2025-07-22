@@ -48,7 +48,7 @@ def casa_stmt_inquiry(request_json: str):
         password = os.getenv("CASA_STMT_PASSWORD")
         userid = os.getenv("CASA_STMT_USERID")
 
-        for payload in casa_stmt_payload:
+        for idx, payload in enumerate(casa_stmt_payload):
             encrypted = aes_util.aes_encrypt(casa_stmt_key, json.dumps(payload))
             logger.info(f"[CASA_STMT_ENCRYPTED] {encrypted}")
             post_payload = {
@@ -73,7 +73,32 @@ def casa_stmt_inquiry(request_json: str):
                         # Decrypt the response
                         decrypted = aes_util.aes_decrypt(casa_stmt_key, encrypt_res)
                         decrypted_obj = json.loads(decrypted)
+                        # Check for error keys and values
+                        error_code = decrypted_obj.get("ErrorCode")
+                        error_message = decrypted_obj.get("ErrorMessage")
+                        if (
+                            (error_code is not None and str(error_code) != "0") or
+                            (error_message is not None and str(error_message).lower() != "success")
+                        ):
+                            logger.error(f"[CASA_STMT_ERROR_RESPONSE] {json.dumps(decrypted_obj, indent=4)}")
+                            continue
                         logger.info(f"[CASA_STMT_DECRYPTED_RESPONSE] {json.dumps(decrypted_obj, indent=4)}")
+                        # NetBalance check
+                        net_balance = decrypted_obj.get("NetBalance")
+                        try:
+                            net_balance_float = float(net_balance) if net_balance is not None else None
+                        except Exception:
+                            net_balance_float = None
+                        # Get amount from corresponding incident
+                        try:
+                            amount = float(incidents[idx].get("amount", 0))
+                        except Exception:
+                            amount = 0
+                        if net_balance_float is not None:
+                            if net_balance_float > amount:
+                                logger.info(f"[CASA_STMT_HOLD] NetBalance ({net_balance_float}) > Amount ({amount}): hold balance")
+                            else:
+                                logger.info(f"[CASA_STMT_CANT_HOLD] NetBalance ({net_balance_float}) <= Amount ({amount}): can't hold full balance")
                 except Exception as dec_exc:
                     logger.error(f"[CASA_STMT_DECRYPT_ERROR] {dec_exc}")
             except Exception as api_exc:

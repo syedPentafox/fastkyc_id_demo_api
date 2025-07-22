@@ -7,7 +7,8 @@ from routers import (
     masters,
     login,
     rbac,
-    reports
+    reports,
+    i4c_request
 )
 from fastapi.middleware.cors import CORSMiddleware
 from brotli_asgi import BrotliMiddleware
@@ -59,6 +60,7 @@ app.include_router(masters.router)
 app.include_router(login.router)
 app.include_router(rbac.router)
 app.include_router(reports.router)
+app.include_router(i4c_request.router)
 
 
 @app.on_event("startup")
@@ -211,3 +213,4 @@ def health_check():
 # Start the FastAPI application
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5000)
+    # uvicorn app:app --reload --host 127.0.0.1 --port 5000

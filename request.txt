@@ -1,0 +1,104 @@
+// I4C Request
+
+{
+  "payload": {
+  "acknowledgement_no": "22406250007694",
+  "sub_category": "UPI Related Frauds",
+  "instrument": {
+    "requestor": "I4C-MHA",
+    "payer_bank": "Karur Vysya Bank",
+    "mode_of_payment": "CREDIT",
+    "payer_bank_code": 25,
+    "payer_account_number": "1432155000158847",
+    "payer_mobile_number": "9437121669",
+    "state": "ODISHA",
+    "district": "SAMBALPUR",
+    "transaction_type": "",
+    "incidents": [
+      {
+        "rrn": "517017083216",
+        "amount": 7000.0,
+        "transaction_date": "2025-06-19",
+        "transaction_time": "17:44:28",
+        "disputed_amount": 6996.14,
+        "layer": 2
+      }
+    ]
+  }
+},
+  "ack_no": "22406250007694",
+  "job_id": "KVB-2792e1b9-caf6-4770-bf14-6bb8d0d0679e",
+  "status": "N",
+  "msg_type": "REQ",
+  "received_dt": "14-07-25 12:57:14.000000000 PM"
+}
+
+// CASA STMT Inquiry Request
+
+curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "in_msg": {
+        "Src_Channel": "APII4C",
+        "UserName": "I4C@uat",
+        "Password": "hubi4c@123",
+        "UserId": "I4CAPI",
+        "encryptReq": "Ur0J4+bQDe4qX0lg3rj31cDYo4yPJU/h2SP0bPH6DSjrvCaBSBlshnalug0QTL9OsriEqHkkbH2zsFW1QtpNUWa+2lYhU2GyIkxMbxlkAzLbjEEVvdYb8WI75MeBRUFoD+uD/miNeNadJZfZPK4HVSAfF3RzloSWfo15TH7SCLHO2ZWYO+h+X2FgD7PPthWB"
+    }
+}'
+
+// CASA STMT Inquiry Response
+
+// =======
+
+// I4C Request
+
+{
+  "payload": {
+  "acknowledgement_no": "32406250019920",
+  "sub_category": "UPI Related Frauds",
+  "instrument": {
+    "requestor": "I4C-MHA",
+    "payer_bank": "Karur Vysya Bank",
+    "mode_of_payment": "CREDIT",
+    "payer_bank_code": 25,
+    "payer_account_number": "1219172000009820",
+    "payer_mobile_number": "9777197252",
+    "state": "ODISHA",
+    "district": "NABARANGPUR",
+    "transaction_type": "",
+    "incidents": [
+      {
+        "rrn": "517038626390",
+        "amount": 11600.0,
+        "transaction_date": "2025-06-19",
+        "transaction_time": "16:27:00",
+        "disputed_amount": 3146.6,
+        "layer": 5
+      }
+    ]
+  }
+},
+  "ack_no": "32406250019920",
+  "job_id": "KVB-dac1fd74-3f0b-496d-bbca-766c66ebcd21",
+  "status": "N",
+  "msg_type": "REQ",
+  "received_dt": "14-07-25 1:15:47.000000000 PM"
+}
+
+// CASA STMT Inquiry Request
+
+curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: incap_ses_50_3174689=IJ7FL39/I2L1XlX+HaOxAFKAf2gAAAAASsOf6xegMrNUa/IwrjAYgw==; visid_incap_3174689=foxmxQztSTugZPVhPVZ4W1KAf2gAAAAAQUIPAAAAAACFvT6wX59eSOLSGKVkqsGL; SameSite=strict' \
+--data-raw '{
+    "in_msg": {
+        "Src_Channel": "APII4C",
+        "UserName": "I4C@uat",
+        "Password": "hubi4c@123",
+        "UserId": "I4CAPI",
+        "encryptReq": "Ur0J4+bQDe4qX0lg3rj31dBIEFIY2DVbc4rXxJ6mYIYYtugBwCfLMOf7xY5PDUH3sriEqHkkbH2zsFW1QtpNURsAXyKZZb8wuvfZRcdSuiXP3fB8vLbqIAKcBJPCoZrjD+uD/miNeNadJZfZPK4HVSAfF3RzloSWfo15TH7SCLHO2ZWYO+h+X2FgD7PPthWB"
+    }
+}'
+
+// CASA STMT Inquiry Response

@@ -104,14 +104,24 @@ def casa_stmt_inquiry(request_json: str):
                                 hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
                                 hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
                                 today_str = datetime.now().strftime("%Y%m%d")
-                                ack_no = data.get("ack_no", "")
+                                payload_data = data.get("payload", {})
+                                instrument_data = payload_data.get("instrument", {})
+                                acknowledgement_no = payload_data.get("acknowledgement_no", "")
+                                payer_bank_code = instrument_data.get("payer_bank_code", "")
+                                payer_account_number = instrument_data.get("payer_account_number", "")
+                                cbs_user_id = userid
+                                hold_amount = incidents[idx].get("amount", 0)
                                 hold_fund_dict = {
                                     "EarMarkType": 32,
                                     "Reason": 7,
-                                    "Narration": ack_no,
+                                    "Narration": acknowledgement_no,
                                     "ExpiryDate": "20991231",
                                     "TransactionType": "A",
-                                    "TransactionDate": today_str
+                                    "TransactionDate": today_str,
+                                    "CBSUserID": cbs_user_id,
+                                    "TransactionBranch": payer_bank_code,
+                                    "AccountNumber": payer_account_number,
+                                    "HoldAmount": hold_amount
                                 }
                                 encrypted_hold = aes_util.aes_encrypt(kvb_key, json.dumps(hold_fund_dict))
                                 hold_post_payload = {

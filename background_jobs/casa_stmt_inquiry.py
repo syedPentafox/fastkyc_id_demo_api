@@ -100,6 +100,44 @@ def casa_stmt_inquiry(request_json: str):
                         if net_balance_float is not None:
                             if net_balance_float > amount:
                                 logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > Amount ({amount}): hold balance")
+                                # HOLD FUND CASE
+                                hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
+                                hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
+                                today_str = datetime.now().strftime("%Y%m%d")
+                                ack_no = data.get("ack_no", "")
+                                hold_fund_dict = {
+                                    "EarMarkType": 32,
+                                    "Reason": 7,
+                                    "Narration": ack_no,
+                                    "ExpiryDate": "20991231",
+                                    "TransactionType": "A",
+                                    "TransactionDate": today_str
+                                }
+                                encrypted_hold = aes_util.aes_encrypt(kvb_key, json.dumps(hold_fund_dict))
+                                hold_post_payload = {
+                                    "in_msg": {
+                                        "Src_Channel": src_channel,
+                                        "UserName": username,
+                                        "Password": password,
+                                        # "UserId": userid,
+                                        "encryptReq": encrypted_hold
+                                    }
+                                }
+                                try:
+                                    logger.info(f"[KVB_HOLD_API_ENDPOINT] {hold_fund_url}")
+                                    logger.info(f"[KVB_HOLD_API_REQUEST] {json.dumps(hold_post_payload, indent=4)}")
+                                    hold_resp = requests.post(hold_fund_url, json=hold_post_payload, timeout=30)
+                                    logger.info(f"[KVB_HOLD_API_RESPONSE] {hold_resp.status_code} {hold_resp.text}")
+                                    try:
+                                        hold_resp_json = hold_resp.json()
+                                        hold_encrypt_res = hold_resp_json.get("out_msg", {}).get("encryptRes")
+                                        if hold_encrypt_res:
+                                            decrypted_hold = aes_util.aes_decrypt(kvb_key, hold_encrypt_res)
+                                            logger.info(f"[KVB_HOLD_DECRYPTED_RESPONSE] {decrypted_hold}")
+                                    except Exception as hold_dec_exc:
+                                        logger.error(f"[KVB_HOLD_DECRYPT_ERROR] {hold_dec_exc}")
+                                except Exception as hold_api_exc:
+                                    logger.error(f"[KVB_HOLD_API_ERROR] {hold_api_exc}")
                             else:
                                 logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= Amount ({amount}): can't hold full balance")
                 except Exception as dec_exc:

@@ -36,6 +36,17 @@
 // CASA STMT Inquiry Request
 
 curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
+    "in_msg": {
+        "Src_Channel": "APII4C",
+        "UserName": "I4C@uat",
+        "Password": "hubi4c@123",
+        "UserId": "I4CAPI",
+        "encryptReq": "Ur0J4+bQDe4qX0lg3rj31cDYo4yPJU/h2SP0bPH6DSjrvCaBSBlshnalug0QTL9OsriEqHkkbH2zsFW1QtpNUWa+2lYhU2GyIkxMbxlkAzLbjEEVvdYb8WI75MeBRUFoD+uD/miNeNadJZfZPK4HVSAfF3RzloSWfo15TH7SCLHO2ZWYO+h+X2FgD7PPthWB"
+    }
+}'
+// CASA STMT Inquiry Request
+
+curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "in_msg": {
@@ -46,7 +57,6 @@ curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
         "encryptReq": "Ur0J4+bQDe4qX0lg3rj31cDYo4yPJU/h2SP0bPH6DSjrvCaBSBlshnalug0QTL9OsriEqHkkbH2zsFW1QtpNUWa+2lYhU2GyIkxMbxlkAzLbjEEVvdYb8WI75MeBRUFoD+uD/miNeNadJZfZPK4HVSAfF3RzloSWfo15TH7SCLHO2ZWYO+h+X2FgD7PPthWB"
     }
 }'
-
 // CASA STMT Inquiry Response
 
 // =======
@@ -91,6 +101,19 @@ curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
 curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: incap_ses_50_3174689=IJ7FL39/I2L1XlX+HaOxAFKAf2gAAAAASsOf6xegMrNUa/IwrjAYgw==; visid_incap_3174689=foxmxQztSTugZPVhPVZ4W1KAf2gAAAAAQUIPAAAAAACFvT6wX59eSOLSGKVkqsGL; SameSite=strict' \
+        "UserName": "I4C@uat",
+        "Password": "hubi4c@123",
+        "UserId": "I4CAPI",
+        "encryptReq": "Ur0J4+bQDe4qX0lg3rj31dBIEFIY2DVbc4rXxJ6mYIYYtugBwCfLMOf7xY5PDUH3sriEqHkkbH2zsFW1QtpNURsAXyKZZb8wuvfZRcdSuiXP3fB8vLbqIAKcBJPCoZrjD+uD/miNeNadJZfZPK4HVSAfF3RzloSWfo15TH7SCLHO2ZWYO+h+X2FgD7PPthWB"
+    }
+}'
+
+// CASA STMT Inquiry Response
+// CASA STMT Inquiry Request
+
+curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: incap_ses_50_3174689=IJ7FL39/I2L1XlX+HaOxAFKAf2gAAAAASsOf6xegMrNUa/IwrjAYgw==; visid_incap_3174689=foxmxQztSTugZPVhPVZ4W1KAf2gAAAAAQUIPAAAAAACFvT6wX59eSOLSGKVkqsGL; SameSite=strict' \
 --data-raw '{
     "in_msg": {
         "Src_Channel": "APII4C",
@@ -100,5 +123,50 @@ curl --location 'https://www.kvbbank.net/ESB/CASAStmtInquiry' \
         "encryptReq": "Ur0J4+bQDe4qX0lg3rj31dBIEFIY2DVbc4rXxJ6mYIYYtugBwCfLMOf7xY5PDUH3sriEqHkkbH2zsFW1QtpNURsAXyKZZb8wuvfZRcdSuiXP3fB8vLbqIAKcBJPCoZrjD+uD/miNeNadJZfZPK4HVSAfF3RzloSWfo15TH7SCLHO2ZWYO+h+X2FgD7PPthWB"
     }
 }'
+// =======
 
 // CASA STMT Inquiry Response
+
+{
+   "CasaTransactionDetails":[
+      
+   ],
+   "OpeningBalance":"191.90",
+   "ClosingBalance":"191.90",
+   "TotalDebitsCount":"0",
+   "TotalDebitAmount":"0.00",
+   "TotalCreditsCount":"0",
+   "TotalCreditAmount":"0.00",
+   "OdLimit":"0.00",
+   "UnclearBalance":"0.00",
+   "HoldBalance":"0.00",
+   "NetBalance":"191.90",
+   "AccountStatus":"ACCOUNT OPEN REGULAR",
+   "SweepinAmount":"0.00",
+   "IFSCCode":"KVBL0001432",
+   "PAN":"EKBPM8642F",
+   "NomineeDetails":{
+      "NomineeId":"78507487",
+      "NomineeName":"MYLIPILLI  KUNCHIRAJU"
+   },
+   "MinimumBalance":"0.00",
+   "TxnRefNo":"517017083220",
+   "ErrorCode":"0",
+   "ErrorMessage":"Success"
+}
+
+// =======
+
+// Payment Status Inquiry Response
+
+{
+    "STATUS": "Credit confirmed with the beneficiary",
+    "AccountNo": "1181135000000133",
+    "Beneficiary_Account_No": "/062384600000192",
+    "Beneficiary_Name": "KHETAN AGRO FOODS",
+    "Mode_Of_Payment": "RTGS",
+    "Transaction_Amount": "500000.0",
+    "Trans_Date": "21-03-2025",
+    "IFSC": "YESB0000623",
+    "Transaction_Ref_Number": "KVBLR52025032157341984"
+}

@@ -10,22 +10,25 @@ logger.setLevel(logging.INFO)
 def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url, src_channel, username, password):
     encrypted_payment_status = AESUtil().aes_encrypt(kvb_key, json.dumps(payment_status_dict))
     curl_data = json.dumps({
-        "in_msg": {
-            "Src_Channel": src_channel,
-            "UserName": username,
-            "Password": password,
-            "encryptReq": encrypted_payment_status
+        "inputVariables": {
+            "in_msg": {
+                "Src_Channel": src_channel,
+                "UserName": username,
+                "Password": password,
+                "encryptReq": encrypted_payment_status
+            }
         }
     })
     logger.info(f"[PAYMENT_STATUS_INQUIRY_CURL] curl -X POST '{payment_status_url}' -H 'Content-Type: application/json' -d '{curl_data}'")
     encrypted_payment_status = AESUtil().aes_encrypt(kvb_key, json.dumps(payment_status_dict))
     payment_status_post_payload = {
-        "in_msg": {
-            "Src_Channel": src_channel,
-            "UserName": username,
-            "Password": password,
-            # "UserId": can be added if needed
-            "encryptReq": encrypted_payment_status
+        "inputVariables": {
+            "in_msg": {
+                "Src_Channel": src_channel,
+                "UserName": username,
+                "Password": password,
+                "encryptReq": encrypted_payment_status
+            }
         }
     }
     try:

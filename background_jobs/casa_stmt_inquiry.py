@@ -84,9 +84,54 @@ def casa_stmt_inquiry(request_json: str):
                             (error_message is not None and str(error_message).lower() != "success")
                         ):
                             logger.error(f"[KVB_ERROR_RESPONSE] {json.dumps(decrypted_obj, indent=4)}")
-                            continue
-                        logger.info(f"[KVB_DECRYPTED_RESPONSE] {json.dumps(decrypted_obj, indent=4)}")
-                        # NetBalance check
+                        else:
+                            logger.info(f"[KVB_DECRYPTED_RESPONSE] {json.dumps(decrypted_obj, indent=4)}")
+                        # Immediately call Payment Status Inquiry API
+                        payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
+                        payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+                        rrn = incidents[idx].get("rrn", "")
+                        mode_of_payment = instrument.get("mode_of_payment", "")
+                        payment_status_dict = {
+                            "Transaction_Ref_Number": rrn,
+                            "Mode_Of_Payment": mode_of_payment
+                        }
+                        encrypted_payment_status = aes_util.aes_encrypt(kvb_key, json.dumps(payment_status_dict))
+                        payment_status_post_payload = {
+                            "in_msg": {
+                                "Src_Channel": src_channel,
+                                "UserName": username,
+                                "Password": password,
+                                # "UserId": userid,
+                                "encryptReq": encrypted_payment_status
+                            }
+                        }
+                        try:
+                            logger.info(f"[KVB_PAYMENT_STATUS_API_ENDPOINT] {payment_status_url}")
+                            logger.info(f"[KVB_PAYMENT_STATUS_API_REQUEST] {json.dumps(payment_status_post_payload, indent=4)}")
+                            payment_status_resp = requests.post(payment_status_url, json=payment_status_post_payload, timeout=30)
+                            logger.info(f"[KVB_PAYMENT_STATUS_API_RESPONSE] {payment_status_resp.status_code} {payment_status_resp.text}")
+                            try:
+                                payment_status_resp_json = payment_status_resp.json()
+                                payment_status_encrypt_res = payment_status_resp_json.get("out_msg", {}).get("encryptRes")
+                                if payment_status_encrypt_res:
+                                    decrypted_payment_status = aes_util.aes_decrypt(kvb_key, payment_status_encrypt_res)
+                                    logger.info(f"[KVB_PAYMENT_STATUS_DECRYPTED_RESPONSE] {decrypted_payment_status}")
+                                    # Handle success/failure
+                                    try:
+                                        payment_status_decoded = json.loads(decrypted_payment_status)
+                                        payment_status_error_code = payment_status_decoded.get("ErrorCode")
+                                        payment_status_error_message = payment_status_decoded.get("ErrorMessage")
+                                        if (str(payment_status_error_code) != "0" or str(payment_status_error_message).lower() != "success"):
+                                            logger.error(f"[KVB_PAYMENT_STATUS_ERROR] {json.dumps(payment_status_decoded, indent=4)}")
+                                        else:
+                                            logger.info(f"[KVB_PAYMENT_STATUS_SUCCESS] {json.dumps(payment_status_decoded, indent=4)}")
+                                    except Exception as payment_status_json_exc:
+                                        logger.error(f"[KVB_PAYMENT_STATUS_DECODE_ERROR] {payment_status_json_exc}")
+                            except Exception as payment_status_dec_exc:
+                                logger.error(f"[KVB_PAYMENT_STATUS_DECRYPT_ERROR] {payment_status_dec_exc}")
+                        except Exception as payment_status_api_exc:
+                            logger.error(f"[KVB_PAYMENT_STATUS_API_ERROR] {payment_status_api_exc}")
+                        # ...existing hold funds logic below...
                         net_balance = decrypted_obj.get("NetBalance")
                         try:
                             net_balance_float = float(net_balance) if net_balance is not None else None

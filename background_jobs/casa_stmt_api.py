@@ -9,8 +9,17 @@ logger.setLevel(logging.INFO)
 
 def casa_stmt_api(payload, kvb_key, kvb_url, src_channel, username, password, userid):
     logger.info(f"[CASA_STMT_DICT] {json.dumps(payload, indent=4)}")
-    casa_stmt_curl = f"curl -X POST '{kvb_url}' -H 'Content-Type: application/json' -d '{json.dumps(payload)}'"
-    logger.info(f"[CASA_STMT_CURL] {casa_stmt_curl}")
+    encrypted_payload = AESUtil().aes_encrypt(kvb_key, json.dumps(payload))
+    curl_data = json.dumps({
+        "in_msg": {
+            "Src_Channel": src_channel,
+            "UserName": username,
+            "Password": password,
+            "UserId": userid,
+            "encryptReq": encrypted_payload
+        }
+    })
+    logger.info(f"[CASA_STMT_CURL] curl -X POST '{kvb_url}' -H 'Content-Type: application/json' -d '{curl_data}'")
     aes_util = AESUtil()
     encrypted = aes_util.aes_encrypt(kvb_key, json.dumps(payload))
     logger.info(f"[KVB_ENCRYPTED] {encrypted}")

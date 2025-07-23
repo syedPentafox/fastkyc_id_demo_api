@@ -106,22 +106,23 @@ def casa_stmt_inquiry(request_json: str):
                                 today_str = datetime.now().strftime("%Y%m%d")
                                 payload_data = data.get("payload", {})
                                 instrument_data = payload_data.get("instrument", {})
-                                acknowledgement_no = payload_data.get("acknowledgement_no", "")
-                                payer_bank_code = instrument_data.get("payer_bank_code", "")
-                                payer_account_number = instrument_data.get("payer_account_number", "")
-                                cbs_user_id = userid
-                                hold_amount = incidents[idx].get("amount", 0)
+                                acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                                payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                                transaction_branch = payer_account_number[:4] if len(payer_account_number) >= 4 else ""
+                                cbs_user_id = str(userid)
+                                hold_amount = "{:.2f}".format(float(incidents[idx].get("amount", 0)))
                                 hold_fund_dict = {
-                                    "EarMarkType": 32,
-                                    "Reason": 7,
+                                    "CBSUserID": cbs_user_id,
+                                    "TransactionBranch": transaction_branch,
+                                    "AccountNumber": payer_account_number,
+                                    "HoldAmount": hold_amount,
+                                    "EarMarkType": "32",
+                                    "Reason": "7",
                                     "Narration": acknowledgement_no,
                                     "ExpiryDate": "20991231",
                                     "TransactionType": "A",
-                                    "TransactionDate": today_str,
-                                    "CBSUserID": cbs_user_id,
-                                    "TransactionBranch": payer_bank_code,
-                                    "AccountNumber": payer_account_number,
-                                    "HoldAmount": hold_amount
+                                    "HoldNumber": "",
+                                    "TransactionDate": today_str
                                 }
                                 encrypted_hold = aes_util.aes_encrypt(kvb_key, json.dumps(hold_fund_dict))
                                 hold_post_payload = {

@@ -474,3 +474,5 @@ data/
 
 # sql files necessary for database modification
 *.sql
+
+*.zip

@@ -476,3 +476,4 @@ data/
 *.sql
 
 *.zip
+*.rpm

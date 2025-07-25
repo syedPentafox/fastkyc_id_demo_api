@@ -21,6 +21,9 @@ pip download fastapi==0.115.13 boto3==1.38.38 pydantic[email] cx_Oracle oracledb
 rm packages.zip
 zip -r packages.zip packages
 
+# postgres and oracle db dependencies
+dnf download --destdir rpms --resolve libaio postgresql-devel
+
 # =======
 # commands for container
 # =======
@@ -34,8 +37,7 @@ source .venv/bin/activate
 rm -rf packages
 unzip packages.zip
 
-# postgres dependency
-sudo dnf install postgresql-devel
+# install all python dependencies
 pip install --no-index --find-links=packages -r requirements-all.txt
 pip install --no-index --find-links=packages fastapi boto3 pydantic[email] cx_Oracle oracledb
 
@@ -43,7 +45,9 @@ pip install --no-index --find-links=packages fastapi boto3 pydantic[email] cx_Or
 wget https://download.oracle.com/otn_software/linux/instantclient/2112000/el9/instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip
 unzip instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip
 export LD_LIBRARY_PATH=/home/ec2-user/instantclient_21_12:$LD_LIBRARY_PATH
-sudo yum install libaio
+
+# installing postgres and oracle dependencies
+sudo yum localinstall rpms/*.rpm
 
 # inside project directory
 uvicorn app:app --reload --host 127.0.0.1 --port 5000

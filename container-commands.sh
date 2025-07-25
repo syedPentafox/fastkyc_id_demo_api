@@ -23,9 +23,12 @@ zip -r packages.zip packages
 
 # postgres and oracle db dependencies
 dnf download --destdir rpms --resolve libaio postgresql-devel
+rm rpms.zip
+zip -r rpms.zip rpms
+wget https://download.oracle.com/otn_software/linux/instantclient/2112000/el9/instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip
 
 # =======
-# commands for container
+# commands for server without internet
 # =======
 
 # inside project directory
@@ -33,17 +36,17 @@ rm -rf .venv
 python3.12 -m venv .venv
 source .venv/bin/activate
 
-# wherever packages.zip and requirements-all.txt are located
+# wherever packages.zip, rpms.zip, instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip and requirements-all.txt are located
 rm -rf packages
 unzip packages.zip
+unzip rpms.zip
+unzip instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip
 
 # install all python dependencies
 pip install --no-index --find-links=packages -r requirements-all.txt
 pip install --no-index --find-links=packages fastapi boto3 pydantic[email] cx_Oracle oracledb
 
 # oracle db dependency
-wget https://download.oracle.com/otn_software/linux/instantclient/2112000/el9/instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip
-unzip instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip
 export LD_LIBRARY_PATH=/home/ec2-user/instantclient_21_12:$LD_LIBRARY_PATH
 
 # installing postgres and oracle dependencies

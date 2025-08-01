@@ -22,7 +22,7 @@ rm packages.zip
 zip -r packages.zip packages
 
 # postgres and oracle db dependencies
-dnf download --destdir rpms --resolve libaio postgresql-devel
+dnf download --destdir rpms --resolve libaio postgresql-devel gcc python3.12-devel
 rm rpms.zip
 zip -r rpms.zip rpms
 wget https://download.oracle.com/otn_software/linux/instantclient/2112000/el9/instantclient-basic-linux.x64-21.12.0.0.0dbru.el9.zip

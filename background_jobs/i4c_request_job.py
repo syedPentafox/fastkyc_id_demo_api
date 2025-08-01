@@ -2,6 +2,7 @@ import logging
 from .background_jobs_file_logger import add_background_jobs_file_handler
 import os
 from background_jobs.hold_funds_api import call_hold_funds_api
+from .i4c_response_api import call_i4c_response_api
 
 
 logger = logging.getLogger(__name__)
@@ -126,9 +127,16 @@ def i4c_request_job(request_json: str):
                         kvb_key=kvb_key,
                         src_channel=src_channel,
                         username=username,
-                        password=password,
-                        # logger=logger
+                        password=password
                     )
+
+                    # =======
+                    # Call I4C response API after hold
+                    # =======
+                    # this should be transaction_datetime from the i4c request
+                    today_str = datetime.now().strftime("%Y%m%d")
+                    hold_amount = "{:.2f}".format(disputed_amount)
+                    call_i4c_response_api(data, decrypted_obj, kvb_key, kvb_endpoint, today_str, hold_amount)
                 else:
                     logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold full balance")
             else:

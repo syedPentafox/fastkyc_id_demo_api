@@ -9,17 +9,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 add_background_jobs_file_handler(logger)
 
-def call_hold_funds_api(kvb_endpoint, disputed_amount, data, userid, kvb_key, src_channel, username, password, logger):
-    curl_data = json.dumps({
-        "in_msg": {
-            "Src_Channel": src_channel,
-            "UserName": username,
-            "Password": password,
-            "encryptReq": encrypted_hold
-        }
-    })
-    logger.info(f"[HOLD_FUNDS_CURL] curl -X POST '{hold_fund_url}' -H 'Content-Type: application/json' -d '{curl_data}'")
-    hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
+def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, userid, kvb_key, src_channel, username, password):
+    # hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
     hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
     today_str = datetime.now().strftime("%Y%m%d")
     payload_data = data.get("payload", {})
@@ -43,6 +34,14 @@ def call_hold_funds_api(kvb_endpoint, disputed_amount, data, userid, kvb_key, sr
         "TransactionDate": today_str
     }
     encrypted_hold = AESUtil().aes_encrypt(kvb_key, json.dumps(hold_fund_dict))
+    curl_data = json.dumps({
+        "in_msg": {
+            "Src_Channel": src_channel,
+            "UserName": username,
+            "Password": password,
+            "encryptReq": encrypted_hold
+        }
+    })
     hold_post_payload = {
         "in_msg": {
             "Src_Channel": src_channel,
@@ -52,6 +51,7 @@ def call_hold_funds_api(kvb_endpoint, disputed_amount, data, userid, kvb_key, sr
             "encryptReq": encrypted_hold
         }
     }
+    logger.info(f"[HOLD_FUNDS_CURL] curl -X POST '{hold_fund_url}' -H 'Content-Type: application/json' -d '{curl_data}'")
     try:
         logger.info(f"[KVB_HOLD_API_ENDPOINT] {hold_fund_url}")
         logger.info(f"[KVB_HOLD_API_REQUEST] {json.dumps(hold_post_payload, indent=4)}")

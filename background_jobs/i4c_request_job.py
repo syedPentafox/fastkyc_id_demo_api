@@ -60,31 +60,32 @@ def i4c_request_job(request_json: str):
             error_code = decrypted_obj.get("ErrorCode") if decrypted_obj is not None else None
             error_message = decrypted_obj.get("ErrorMessage") if decrypted_obj is not None else None
 
-            # =======
-            # PAYMENT STATUS Inquiry API
-            # =======
-            payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
-            payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
-            rrn = incident.get("rrn", "")
-            mode_of_payment = instrument.get("mode_of_payment", "")
-            payment_status_dict = {
-                "Transaction_Ref_Number": rrn,
-                "Mode_Of_Payment": mode_of_payment
-            }
-            try:
-                payment_status_response = payment_status_inquiry_api(
-                    payment_status_dict,
-                    kvb_key,
-                    payment_status_url,
-                    src_channel,
-                    username,
-                    password
-                )
-            except Exception as psi_exc:
-                logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
+            # # =======
+            # # PAYMENT STATUS Inquiry API
+            # # =======
+            # payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
+            # payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+            # rrn = incident.get("rrn", "")
+            # mode_of_payment = instrument.get("mode_of_payment", "")
+            # payment_status_dict = {
+            #     "Transaction_Ref_Number": rrn,
+            #     "Mode_Of_Payment": mode_of_payment
+            # }
+            # try:
+            #     payment_status_response = payment_status_inquiry_api(
+            #         payment_status_dict,
+            #         kvb_key,
+            #         payment_status_url,
+            #         src_channel,
+            #         username,
+            #         password
+            #     )
+            # except Exception as psi_exc:
+            #     logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
 
             # ========
             # Check if both CASA STMT and Payment Status Inquiry were successful
+            # Only check if CASA STMT API was successful
             # ========
             casa_stmt_success = False
             if decrypted_obj is not None:
@@ -94,19 +95,20 @@ def i4c_request_job(request_json: str):
                     error_code is not None and str(error_code) == "0" and
                     error_message is not None and str(error_message).lower() == "success"
                 )
-            payment_status_success = False
-            if payment_status_response is not None:
-                ps_error_code = payment_status_response.get("ErrorCode")
-                ps_error_message = payment_status_response.get("ErrorMessage")
-                payment_status_success = (
-                    ps_error_code is not None and str(ps_error_code) == "0" and
-                    ps_error_message is not None and str(ps_error_message).lower() == "success"
-                )
+            # payment_status_success = False
+            # if payment_status_response is not None:
+            #     ps_error_code = payment_status_response.get("ErrorCode")
+            #     ps_error_message = payment_status_response.get("ErrorMessage")
+            #     payment_status_success = (
+            #         ps_error_code is not None and str(ps_error_code) == "0" and
+            #         ps_error_message is not None and str(ps_error_message).lower() == "success"
+            #     )
 
             # =======
-            # If both APIs were successful, go to the decision for the balance
+            # If CASA API was successful, go to the decision for the balance
             # =======
-            if casa_stmt_success and payment_status_success:
+            # if casa_stmt_success and payment_status_success:
+            if casa_stmt_success:
                 net_balance = decrypted_obj.get("NetBalance")
                 net_balance_float = float(net_balance) if net_balance else 0.0
                 disputed_amount = float(incident.get("disputed_amount", 0) or 0)
@@ -125,9 +127,9 @@ def i4c_request_job(request_json: str):
                         src_channel=src_channel,
                         username=username,
                         password=password,
-                        logger=logger
+                        # logger=logger
                     )
                 else:
                     logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold full balance")
             else:
-                logger.info("Either CASA STMT or Payment Status Inquiry failed.")
+                logger.info("CASA STMT failed.")

@@ -1,10 +1,12 @@
 import logging
+from .background_jobs_file_logger import add_background_jobs_file_handler
 import os
 from background_jobs.hold_funds_api import call_hold_funds_api
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+add_background_jobs_file_handler(logger)
 
 
 

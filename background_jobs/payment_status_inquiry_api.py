@@ -1,4 +1,5 @@
 import logging
+from .background_jobs_file_logger import add_background_jobs_file_handler
 import json
 import os
 from utils.aes_encryption_decryption import AESUtil
@@ -6,6 +7,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+add_background_jobs_file_handler(logger)
 
 def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url, src_channel, username, password):
     encrypted_payment_status = AESUtil().aes_encrypt(kvb_key, json.dumps(payment_status_dict))

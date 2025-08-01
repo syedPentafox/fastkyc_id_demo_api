@@ -1,4 +1,5 @@
 import logging
+from .background_jobs_file_logger import add_background_jobs_file_handler
 import os
 import json
 from utils.aes_encryption_decryption import AESUtil
@@ -6,6 +7,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+add_background_jobs_file_handler(logger)
 
 def casa_stmt_api(payload, kvb_key, kvb_url, src_channel, username, password, userid):
     logger.info(f"[CASA_STMT_DICT] {json.dumps(payload, indent=4)}")

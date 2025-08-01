@@ -1,8 +1,13 @@
 import os
+import logging
+from .background_jobs_file_logger import add_background_jobs_file_handler
 import json
 from datetime import datetime
 from utils.aes_encryption_decryption import AESUtil
 import requests
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+add_background_jobs_file_handler(logger)
 
 def call_hold_funds_api(kvb_endpoint, disputed_amount, data, userid, kvb_key, src_channel, username, password, logger):
     curl_data = json.dumps({

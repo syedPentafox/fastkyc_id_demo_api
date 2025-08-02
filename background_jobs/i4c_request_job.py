@@ -42,7 +42,6 @@ def i4c_request_job(request_json: str):
             # =======
             # Generate a unique alphanumeric txn_ref_no (max length 30)
             txn_ref_no = uuid.uuid4().hex[:30]
-            txn_ref_no = incident.get("rrn", "")
             raw_date = incident.get("transaction_date", "")
             formatted_date = datetime.strptime(raw_date, "%Y-%m-%d").strftime("%d-%m-%Y") if raw_date else raw_date
             casa_stmt_payload = {
@@ -115,7 +114,7 @@ def i4c_request_job(request_json: str):
             if casa_stmt_success:
                 net_balance = decrypted_obj.get("NetBalance")
                 net_balance_float = float(net_balance) if net_balance else 0.0
-                disputed_amount = float(incident.get("disputed_amount", 0) or 0)
+                disputed_amount = incident.get("disputed_amount", 0)
                 disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
                 if net_balance_float > disputed_amount:
                     # =======
@@ -125,7 +124,7 @@ def i4c_request_job(request_json: str):
                     call_hold_funds_api(
                         kvb_endpoint=kvb_endpoint,
                         hold_fund_path=hold_fund_path,
-                        disputed_amount=disputed_amount,
+                        disputed_amount=disputed_amount_float,
                         data=data,
                         userid=userid,
                         kvb_key=kvb_key,
@@ -138,7 +137,7 @@ def i4c_request_job(request_json: str):
                     # Call I4C response API after hold
                     # =======
                     logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                    hold_amount = "{:.2f}".format(disputed_amount)
+                    hold_amount = "{:.2f}".format(disputed_amount_float)
                     call_i4c_response_api(data, incident, decrypted_obj, kvb_key, kvb_endpoint, hold_amount)
                 else:
                     # =======
@@ -149,7 +148,7 @@ def i4c_request_job(request_json: str):
                     call_hold_funds_api(
                         kvb_endpoint=kvb_endpoint,
                         hold_fund_path=hold_fund_path,
-                        disputed_amount=net_balance,
+                        disputed_amount=net_balance_float,
                         data=data,
                         userid=userid,
                         kvb_key=kvb_key,
@@ -162,7 +161,7 @@ def i4c_request_job(request_json: str):
                     # Call I4C response API after hold
                     # =======
                     logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                    hold_amount = "{:.2f}".format(net_balance)
+                    hold_amount = "{:.2f}".format(net_balance_float)
                     call_i4c_response_api(data, incident, decrypted_obj, kvb_key, kvb_endpoint, hold_amount)
 
                     # =======

@@ -22,7 +22,7 @@ def call_i4c_response_api(data, incident, casa_stmt_res, kvb_key, kvb_endpoint, 
     rrn = ""
     instrument_data = payload_data.get("instrument", {})
     payer_account_number = str(instrument_data.get("payer_account_number", ""))
-    transaction_datetime_val = incident.get("transaction_datetime") + " " + incident.get("transaction_time")
+    transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
     amount = hold_amount
     i4c_payload = {
         "acknowledgement_no": acknowledgement_no,

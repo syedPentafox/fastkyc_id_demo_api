@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 add_background_jobs_file_handler(logger)
 
-def call_i4c_response_api(data, casa_stmt_res, kvb_key, kvb_endpoint, transaction_datetime, hold_amount):
+def call_i4c_response_api(data, incident, casa_stmt_res, kvb_key, kvb_endpoint, hold_amount):
     payload_data = data.get("payload", {})
     acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
     job_id = str(data.get("job_id", ""))
@@ -17,26 +17,12 @@ def call_i4c_response_api(data, casa_stmt_res, kvb_key, kvb_endpoint, transactio
     pan_number = casa_stmt_res.get("PAN", "")
     ifsc_code = casa_stmt_res.get("IFSCCode", "")
     net_balance = casa_stmt_res.get("NetBalance", None)
-    hold_balance = casa_stmt_res.get("HoldBalance", None)
-    root_effective_balance = None
-    try:
-        if net_balance is not None and hold_balance is not None:
-            root_effective_balance = float(net_balance) - float(hold_balance)
-    except Exception:
-        root_effective_balance = None
     # Get payer_account_number and rrn from i4c request
     payer_account_number = ""
     rrn = ""
     instrument_data = payload_data.get("instrument", {})
     payer_account_number = str(instrument_data.get("payer_account_number", ""))
-    incidents = instrument_data.get("incidents", [])
-    if incidents and isinstance(incidents, list):
-        rrn = str(incidents[0].get("rrn", ""))
-        transaction_datetime_val = incidents[0].get("transaction_date", transaction_datetime) + " " + incidents[0].get("transaction_time", transaction_datetime)
-    else:
-        transaction_datetime_val = transaction_datetime
-    # root_effective_balance as str
-    root_effective_balance_str = str(root_effective_balance) if root_effective_balance is not None else ""
+    transaction_datetime_val = incident.get("transaction_datetime") + " " + incident.get("transaction_time")
     amount = hold_amount
     i4c_payload = {
         "acknowledgement_no": acknowledgement_no,
@@ -57,7 +43,7 @@ def call_i4c_response_api(data, casa_stmt_res, kvb_key, kvb_endpoint, transactio
                 "status_code": "00",
                 "root_effective_balance": str(net_balance),
                 "root_ifsc_code": ifsc_code,
-                "remarks": "default remark"
+                "remarks": acknowledgement_no
             }
         ]
     }

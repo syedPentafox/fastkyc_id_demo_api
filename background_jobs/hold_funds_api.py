@@ -11,6 +11,7 @@ add_background_jobs_file_handler(logger)
 
 def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, userid, kvb_key, src_channel, username, password):
     # hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
+    logger.info(f"======= [HOLD_FUNDS_START] =======")
     hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
     today_str = datetime.now().strftime("%Y%m%d")
     payload_data = data.get("payload", {})
@@ -62,5 +63,8 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
         if hold_encrypt_res:
             decrypted_hold = AESUtil().aes_decrypt(kvb_key, hold_encrypt_res)
             logger.info(f"[KVB_HOLD_DECRYPTED_RESPONSE] {decrypted_hold}")
+        
+        logger.info(f"======= [HOLD_FUNDS_END] =======")
     except Exception as hold_api_exc:
         logger.error(f"[KVB_HOLD_API_ERROR] {hold_api_exc}")
+        logger.info(f"======= [HOLD_FUNDS_END] =======")

@@ -17,6 +17,7 @@ from utils.aes_encryption_decryption import AESUtil
 import requests
 from background_jobs.payment_status_inquiry_api import payment_status_inquiry_api
 from background_jobs.casa_stmt_api import casa_stmt_api
+import uuid
 
 def i4c_request_job(request_json: str):
     data = json.loads(request_json)
@@ -39,6 +40,8 @@ def i4c_request_job(request_json: str):
             # =======
             # CASA STMT Inquiry API
             # =======
+            # Generate a unique alphanumeric txn_ref_no (max length 30)
+            txn_ref_no = uuid.uuid4().hex[:30]
             txn_ref_no = incident.get("rrn", "")
             raw_date = incident.get("transaction_date", "")
             formatted_date = datetime.strptime(raw_date, "%Y-%m-%d").strftime("%d-%m-%Y") if raw_date else raw_date
@@ -113,11 +116,12 @@ def i4c_request_job(request_json: str):
                 net_balance = decrypted_obj.get("NetBalance")
                 net_balance_float = float(net_balance) if net_balance else 0.0
                 disputed_amount = float(incident.get("disputed_amount", 0) or 0)
+                disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
                 if net_balance_float > disputed_amount:
                     # =======
                     # Hold Funds API
                     # =======
-                    logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold balance")
+                    logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
                     call_hold_funds_api(
                         kvb_endpoint=kvb_endpoint,
                         hold_fund_path=hold_fund_path,
@@ -133,11 +137,38 @@ def i4c_request_job(request_json: str):
                     # =======
                     # Call I4C response API after hold
                     # =======
-                    # this should be transaction_datetime from the i4c request
-                    today_str = datetime.now().strftime("%Y%m%d")
+                    logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
                     hold_amount = "{:.2f}".format(disputed_amount)
-                    call_i4c_response_api(data, decrypted_obj, kvb_key, kvb_endpoint, today_str, hold_amount)
+                    call_i4c_response_api(data, incident, decrypted_obj, kvb_key, kvb_endpoint, hold_amount)
                 else:
-                    logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold full balance")
+                    # =======
+                    # Hold Net Balance only
+                    # =======
+                    logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
+                    logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
+                    call_hold_funds_api(
+                        kvb_endpoint=kvb_endpoint,
+                        hold_fund_path=hold_fund_path,
+                        disputed_amount=net_balance,
+                        data=data,
+                        userid=userid,
+                        kvb_key=kvb_key,
+                        src_channel=src_channel,
+                        username=username,
+                        password=password
+                    )
+
+                    # =======
+                    # Call I4C response API after hold
+                    # =======
+                    logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+                    hold_amount = "{:.2f}".format(net_balance)
+                    call_i4c_response_api(data, incident, decrypted_obj, kvb_key, kvb_endpoint, hold_amount)
+
+                    # =======
+                    # Calculate pending amount
+                    # =======
+                    pending_amount_float = disputed_amount_float - net_balance_float
+                    logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
             else:
                 logger.info("CASA STMT failed.")

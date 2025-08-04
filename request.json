@@ -1,0 +1,162 @@
+[
+  {
+    "payload": {
+      "acknowledgement_no": "33701250001190",
+      "sub_category": "UPI Related Frauds",
+      "instrument": {
+        "requestor": "I4C-MHA",
+        "payer_bank": "Karur Vysya Bank",
+        "mode_of_payment": "CREDIT",
+        "payer_bank_code": 25,
+        "payer_account_number": "1149166000041536",
+        "payer_mobile_number": "8129938920",
+        "state": "Tamil Nadu",
+        "district": "SATTUR",
+        "transaction_type": "UPI",
+        "incidents": [
+          {
+            "rrn": "537418533143",
+            "amount": 800.0,
+            "transaction_date": "2025-01-08",
+            "transaction_time": "15:54:16",
+            "disputed_amount": 800.0,
+            "layer": 3
+          }
+        ]
+      }
+    },
+    "ack_no": "33701250001190",
+    "job_id": "KVB-dac1fd74-3f0b-496d-bbca-766c66ebcd21",
+    "status": "N",
+    "msg_type": "REQ",
+    "received_dt": "14-07-25 1:15:47.000000000 PM"
+  },
+  {
+    "payload": {
+      "acknowledgement_no": "33701250000434",
+      "sub_category": "UPI Related Frauds",
+      "instrument": {
+        "requestor": "I4C-MHA",
+        "payer_bank": "Karur Vysya Bank",
+        "mode_of_payment": "CREDIT",
+        "payer_bank_code": 25,
+        "payer_account_number": "1431010000000146",
+        "payer_mobile_number": "9177534378",
+        "state": "Andhra Pradesh",
+        "district": "WEST GODAVARI",
+        "transaction_type": "UPI",
+        "incidents": [
+          {
+            "rrn": "500410047923",
+            "amount": 4000.0,
+            "transaction_date": "2025-01-04",
+            "transaction_time": "10:08:54",
+            "disputed_amount": 2000.0,
+            "layer": 2
+          }
+        ]
+      }
+    },
+    "ack_no": "33701250000434",
+    "job_id": "KVB-dac1fd74-3f0b-496d-bbca-766c66ebcd21",
+    "status": "N",
+    "msg_type": "REQ",
+    "received_dt": "14-07-25 1:15:47.000000000 PM"
+  },
+  {
+    "payload": {
+      "acknowledgement_no": "33701250000326",
+      "sub_category": "UPI Related Frauds",
+      "instrument": {
+        "requestor": "I4C-MHA",
+        "payer_bank": "Karur Vysya Bank",
+        "mode_of_payment": "CREDIT",
+        "payer_bank_code": 25,
+        "payer_account_number": "1720155000076189",
+        "payer_mobile_number": "6385171337",
+        "state": "Tamil Nadu",
+        "district": "CHENNAI",
+        "transaction_type": "IMPS",
+        "incidents": [
+          {
+            "rrn": "433722155603",
+            "amount": 1200.0,
+            "transaction_date": "2024-12-02",
+            "transaction_time": "22:55:08",
+            "disputed_amount": 100.0,
+            "layer": 8
+          }
+        ]
+      }
+    },
+    "ack_no": "33701250000326",
+    "job_id": "KVB-dac1fd74-3f0b-496d-bbca-766c66ebcd21",
+    "status": "N",
+    "msg_type": "REQ",
+    "received_dt": "14-07-25 1:15:47.000000000 PM"
+  },
+  {
+    "payload": {
+      "acknowledgement_no": "33301250000725",
+      "sub_category": "UPI Related Frauds",
+      "instrument": {
+        "requestor": "I4C-MHA",
+        "payer_bank": "Karur Vysya Bank",
+        "mode_of_payment": "CREDIT",
+        "payer_bank_code": 25,
+        "payer_account_number": "1432155000159105",
+        "payer_mobile_number": "7067666261",
+        "state": "Andhra Pradesh",
+        "district": "VISAKHAPATNAM",
+        "transaction_type": "UPI",
+        "incidents": [
+          {
+            "rrn": "729973809640",
+            "amount": 2000.0,
+            "transaction_date": "2024-12-22",
+            "transaction_time": "20:12:38",
+            "disputed_amount": 2000.0,
+            "layer": 1
+          }
+        ]
+      }
+    },
+    "ack_no": "33301250000725",
+    "job_id": "KVB-dac1fd74-3f0b-496d-bbca-766c66ebcd21",
+    "status": "N",
+    "msg_type": "REQ",
+    "received_dt": "14-07-25 1:15:47.000000000 PM"
+  },
+  {
+    "payload": {
+      "acknowledgement_no": "33301250000003",
+      "sub_category": "UPI Related Frauds",
+      "instrument": {
+        "requestor": "I4C-MHA",
+        "payer_bank": "Karur Vysya Bank",
+        "mode_of_payment": "CREDIT",
+        "payer_bank_code": 25,
+        "payer_account_number": "1128155000234891",
+        "payer_mobile_number": "7358880034",
+        "state": "Tamil Nadu",
+        "district": "DINDIGUL",
+        "transaction_type": "UPI",
+        "incidents": [
+          {
+            "rrn": "435501551396",
+            "amount": 54000.0,
+            "transaction_date": "2024-12-20",
+            "transaction_time": "22:46:43",
+            "disputed_amount": 5000.0,
+            "layer": 6
+          }
+        ]
+      }
+    },
+    "ack_no": "33301250000003",
+    "job_id": "KVB-dac1fd74-3f0b-496d-bbca-766c66ebcd21",
+    "status": "N",
+    "msg_type": "REQ",
+    "received_dt": "14-07-25 1:15:47.000000000 PM"
+  }
+]

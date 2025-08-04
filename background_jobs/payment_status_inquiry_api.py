@@ -10,6 +10,8 @@ logger.setLevel(logging.INFO)
 add_background_jobs_file_handler(logger)
 
 def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url, src_channel, username, password):
+    logger.info(f"======= [PAYMENT_STATUS_INQUIRY_START] =======")
+    logger.info(f"[PAYMENT_STATUS_DICT] {json.dumps(payment_status_dict, indent=4)}")
     encrypted_payment_status = AESUtil().aes_encrypt(kvb_key, json.dumps(payment_status_dict))
     curl_data = json.dumps({
         "inputVariables": {

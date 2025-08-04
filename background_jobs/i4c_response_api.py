@@ -9,44 +9,44 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 add_background_jobs_file_handler(logger)
 
-def call_i4c_response_api(data, incident, casa_stmt_res, kvb_key, kvb_endpoint, hold_amount):
-    payload_data = data.get("payload", {})
-    acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
-    job_id = str(data.get("job_id", ""))
-    # CASA STMT response fields
-    pan_number = casa_stmt_res.get("PAN", "")
-    ifsc_code = casa_stmt_res.get("IFSCCode", "")
-    net_balance = casa_stmt_res.get("NetBalance", None)
-    # Get payer_account_number and rrn from i4c request
-    payer_account_number = ""
-    rrn = ""
-    instrument_data = payload_data.get("instrument", {})
-    payer_account_number = str(instrument_data.get("payer_account_number", ""))
-    transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
-    amount = hold_amount
-    i4c_payload = {
-        "acknowledgement_no": acknowledgement_no,
-        "job_id": job_id,
-        "transactions": [
-            {
-                "txn_type": "Transaction Put on Hold",
-                "txn_type_id": "1",
-                "amount": amount,
-                "transaction_datetime": transaction_datetime_val,
-                "phone_number": "1234567890",
-                "email": "testing@gmail.com",
-                "pan_number": pan_number,
-                "ifsc_code": ifsc_code,
-                "root_account_number": payer_account_number,
-                "root_rrn_transaction_id": rrn,
-                "root_bankid": "25",
-                "status_code": "00",
-                "root_effective_balance": str(net_balance),
-                "root_ifsc_code": ifsc_code,
-                "remarks": acknowledgement_no
-            }
-        ]
-    }
+def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint):
+    # payload_data = data.get("payload", {})
+    # acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+    # job_id = str(data.get("job_id", ""))
+    # # CASA STMT response fields
+    # pan_number = casa_stmt_res.get("PAN", "")
+    # ifsc_code = casa_stmt_res.get("IFSCCode", "")
+    # net_balance = casa_stmt_res.get("NetBalance", None)
+    # # Get payer_account_number and rrn from i4c request
+    # payer_account_number = ""
+    # rrn = ""
+    # instrument_data = payload_data.get("instrument", {})
+    # payer_account_number = str(instrument_data.get("payer_account_number", ""))
+    # transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
+    # amount = hold_amount
+    # i4c_payload = {
+    #     "acknowledgement_no": acknowledgement_no,
+    #     "job_id": job_id,
+    #     "transactions": [
+    #         {
+    #             "txn_type": "Transaction Put on Hold",
+    #             "txn_type_id": "1",
+    #             "amount": amount,
+    #             "transaction_datetime": transaction_datetime_val,
+    #             "phone_number": "1234567890",
+    #             "email": "testing@gmail.com",
+    #             "pan_number": pan_number,
+    #             "ifsc_code": ifsc_code,
+    #             "root_account_number": payer_account_number,
+    #             "root_rrn_transaction_id": rrn,
+    #             "root_bankid": "25",
+    #             "status_code": "00",
+    #             "root_effective_balance": str(net_balance),
+    #             "root_ifsc_code": ifsc_code,
+    #             "remarks": acknowledgement_no
+    #         }
+    #     ]
+    # }
     aes_util = AESUtil()
     encrypted_i4c_payload = aes_util.aes_encrypt(kvb_key, json.dumps(i4c_payload))
     src_channel = os.getenv("KVB_SRC_CHANNEL", "")

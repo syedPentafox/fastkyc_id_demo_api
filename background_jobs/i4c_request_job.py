@@ -2,6 +2,7 @@ import logging
 from .background_jobs_file_logger import add_background_jobs_file_handler
 import os
 from background_jobs.hold_funds_api import call_hold_funds_api
+import re
 from .i4c_response_api import call_i4c_response_api
 
 
@@ -14,8 +15,8 @@ add_background_jobs_file_handler(logger)
 import json
 from datetime import datetime
 from utils.aes_encryption_decryption import AESUtil
-import requests
 from background_jobs.payment_status_inquiry_api import payment_status_inquiry_api
+from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 from background_jobs.casa_stmt_api import casa_stmt_api
 import uuid
 
@@ -42,14 +43,28 @@ def i4c_request_job(request_json: str):
             # =======
             # Generate a unique alphanumeric txn_ref_no (max length 30)
             txn_ref_no = uuid.uuid4().hex[:30]
-            raw_date = incident.get("transaction_date", "")
-            formatted_date = datetime.strptime(raw_date, "%Y-%m-%d").strftime("%d-%m-%Y") if raw_date else raw_date
+            # FromDate: transaction_date from incident (format: dd-mm-yyyy)
+            from_date_raw = incident.get("transaction_date", "")
+            from_date = datetime.strptime(from_date_raw, "%Y-%m-%d").strftime("%d-%m-%Y") if from_date_raw else from_date_raw
+            # ToDate: received_dt from payload (format: dd-mm-yyyy)
+            received_dt_raw = data.get("received_dt", "")
+            to_date = ""
+            if received_dt_raw:
+                # received_dt example: "14-07-25 1:15:47.000000000 PM"
+                try:
+                    # Split date and time, take first part
+                    date_part = received_dt_raw.split()[0]  # '14-07-25'
+                    # Convert 'yy-mm-dd' to 'dd-mm-yyyy'
+                    d, m, y = date_part.split('-')
+                    to_date = f"{d}-{m}-20{y}"
+                except Exception as e:
+                    logger.warning(f"[CASA_STMT_PAYLOAD] Could not parse received_dt: {received_dt_raw}, error: {e}")
             casa_stmt_payload = {
                 "TxnBranch": txn_branch,
                 "TxnRefNo": txn_ref_no,
                 "AccountNumber": account_number,
-                "FromDate": formatted_date,
-                "ToDate": formatted_date
+                "FromDate": from_date,
+                "ToDate": to_date
             }
             decrypted_obj = casa_stmt_api(
                 casa_stmt_payload,
@@ -63,28 +78,6 @@ def i4c_request_job(request_json: str):
             error_code = decrypted_obj.get("ErrorCode") if decrypted_obj is not None else None
             error_message = decrypted_obj.get("ErrorMessage") if decrypted_obj is not None else None
 
-            # # =======
-            # # PAYMENT STATUS Inquiry API
-            # # =======
-            # payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
-            # payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
-            # rrn = incident.get("rrn", "")
-            # mode_of_payment = instrument.get("mode_of_payment", "")
-            # payment_status_dict = {
-            #     "Transaction_Ref_Number": rrn,
-            #     "Mode_Of_Payment": mode_of_payment
-            # }
-            # try:
-            #     payment_status_response = payment_status_inquiry_api(
-            #         payment_status_dict,
-            #         kvb_key,
-            #         payment_status_url,
-            #         src_channel,
-            #         username,
-            #         password
-            #     )
-            # except Exception as psi_exc:
-            #     logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
 
             # ========
             # Check if both CASA STMT and Payment Status Inquiry were successful
@@ -110,64 +103,606 @@ def i4c_request_job(request_json: str):
             # =======
             # If CASA API was successful, go to the decision for the balance
             # =======
-            # if casa_stmt_success and payment_status_success:
             if casa_stmt_success:
-                net_balance = decrypted_obj.get("NetBalance")
-                net_balance_float = float(net_balance) if net_balance else 0.0
-                disputed_amount = incident.get("disputed_amount", 0)
-                disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
-                if net_balance_float > disputed_amount:
-                    # =======
-                    # Hold Funds API
-                    # =======
-                    logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
-                    call_hold_funds_api(
-                        kvb_endpoint=kvb_endpoint,
-                        hold_fund_path=hold_fund_path,
-                        disputed_amount=disputed_amount_float,
-                        data=data,
-                        userid=userid,
-                        kvb_key=kvb_key,
-                        src_channel=src_channel,
-                        username=username,
-                        password=password
-                    )
-
-                    # =======
-                    # Call I4C response API after hold
-                    # =======
-                    logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                    hold_amount = "{:.2f}".format(disputed_amount_float)
-                    call_i4c_response_api(data, incident, decrypted_obj, kvb_key, kvb_endpoint, hold_amount)
+                mode_of_payment = instrument.get("mode_of_payment", "CREDIT").upper()
+                transaction_type = instrument.get("transaction_type", "").upper()
+                if mode_of_payment == "DEBIT" and transaction_type in ["IMPS", "NEFT", "RTGS", "UPI"]:
+                    # For DEBIT, directly call payment inquiry API and then I4C response API
+                    payment_status_response = None
+                    try:
+                        if transaction_type in ["IMPS", "NEFT", "RTGS"]:
+                            # Prepare payment inquiry payload
+                            txn_ref_number = instrument.get("transaction_ref_number", "")
+                            payment_status_dict = {
+                                "Transaction_Ref_Number": txn_ref_number,
+                                "Mode_Of_Payment": transaction_type
+                            }
+                            payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+                            payment_status_response = payment_status_inquiry_api(
+                                payment_status_dict,
+                                kvb_key,
+                                payment_status_url,
+                                src_channel,
+                                username,
+                                password
+                            )
+                            logger.info(f"[PAYMENT_STATUS_INQUIRY_DEBIT] Response: {payment_status_response}")
+                            payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
+                            i4c_payload = {
+                                "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                "job_id": data.get("job_id", ""),
+                                "transactions": [
+                                    {
+                                        "txn_type": transaction_type,
+                                        "txn_type_id": "2",
+                                        "amount": str(instrument.get("disputed_amount", "")),
+                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": instrument.get("pan_number", ""),
+                                        "ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                        "root_rrn_transaction_id": instrument.get("rrn", ""),
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "root_effective_balance": str(instrument.get("net_balance", "")),
+                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                        "payee_bank": "KVB",
+                                        "payee_bank_code": "25",
+                                        "payee_account_number": payee_account_number
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                        elif transaction_type == "UPI":
+                            upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
+                            upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
+                            reference_id = instrument.get("reference_id", "")
+                            txn_date_str = instrument.get("transaction_date", "")
+                            txn_date_formatted = ""
+                            try:
+                                date_part = txn_date_str.split()[0] if txn_date_str else ""
+                                if date_part:
+                                    day, month, year = date_part.split('-')
+                                    import calendar
+                                    month_name = calendar.month_abbr[int(month)]
+                                    txn_date_formatted = f"{int(day)}-{month_name}-{year}"
+                            except Exception as date_exc:
+                                logger.warning(f"[UPI_TXN_DATE_FORMAT] Could not format txn date: {txn_date_str}, error: {date_exc}")
+                            upi_payload = {
+                                "ReferenceId": reference_id,
+                                "TxnDate": txn_date_formatted
+                            }
+                            upi_response = upi_payment_status_inquiry_api(
+                                upi_payload,
+                                kvb_key,
+                                upi_payment_status_url,
+                                src_channel,
+                                username,
+                                password
+                            )
+                            logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_DEBIT] Response: {upi_response}")
+                            rrn = upi_response.get("TransactionId", "") if upi_response else ""
+                            payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
+                            upi_amount = upi_response.get("Amount", "") if upi_response else ""
+                            i4c_payload = {
+                                "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                "job_id": data.get("job_id", ""),
+                                "transactions": [
+                                    {
+                                        "txn_type": "UPI",
+                                        "txn_type_id": "3",
+                                        "rrn": rrn,
+                                        "payee_bank": "KVB",
+                                        "payee_bank_code": "25",
+                                        "payee_account_number": payee_account_number,
+                                        "amount": upi_amount,
+                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": instrument.get("pan_number", ""),
+                                        "disputed_amount": upi_amount,
+                                        "ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                        "root_rrn_transaction_id": rrn,
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                        "root_effective_balance": str(instrument.get("net_balance", "")),
+                                        "root_ifsc_code": instrument.get("ifsc_code", "")
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                    except Exception as debit_exc:
+                        logger.error(f"[DEBIT_FLOW_ERROR] {debit_exc}")
                 else:
-                    # =======
-                    # Hold Net Balance only
-                    # =======
-                    logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
-                    logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
-                    call_hold_funds_api(
-                        kvb_endpoint=kvb_endpoint,
-                        hold_fund_path=hold_fund_path,
-                        disputed_amount=net_balance_float,
-                        data=data,
-                        userid=userid,
-                        kvb_key=kvb_key,
-                        src_channel=src_channel,
-                        username=username,
-                        password=password
-                    )
+                    net_balance = decrypted_obj.get("NetBalance")
+                    net_balance_float = float(net_balance) if net_balance else 0.0
+                    disputed_amount = incident.get("disputed_amount", 0)
+                    disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
+                    if net_balance_float > disputed_amount:
+                        # =======
+                        # Hold Funds API
+                        # =======
+                        logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
+                        call_hold_funds_api(
+                            kvb_endpoint=kvb_endpoint,
+                            hold_fund_path=hold_fund_path,
+                            disputed_amount=disputed_amount_float,
+                            data=data,
+                            userid=userid,
+                            kvb_key=kvb_key,
+                            src_channel=src_channel,
+                            username=username,
+                            password=password
+                        )
 
-                    # =======
-                    # Call I4C response API after hold
-                    # =======
-                    logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                    hold_amount = "{:.2f}".format(net_balance_float)
-                    call_i4c_response_api(data, incident, decrypted_obj, kvb_key, kvb_endpoint, hold_amount)
+                        # =======
+                        # Call I4C response API after hold
+                        # =======
+                        logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+                        payload_data = data.get("payload", {})
+                        acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                        job_id = str(data.get("job_id", ""))
+                        # CASA STMT response fields
+                        pan_number = decrypted_obj.get("PAN", "")
+                        ifsc_code = decrypted_obj.get("IFSCCode", "")
+                        net_balance = decrypted_obj.get("NetBalance", None)
+                        # Get payer_account_number and rrn from i4c request
+                        payer_account_number = ""
+                        rrn = ""
+                        instrument_data = payload_data.get("instrument", {})
+                        payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                        transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
+                        hold_amount = "{:.2f}".format(disputed_amount_float)
+                        i4c_payload = {
+                            "acknowledgement_no": acknowledgement_no,
+                            "job_id": job_id,
+                            "transactions": [
+                                {
+                                    "txn_type": "Transaction Put on Hold",
+                                    "txn_type_id": "1",
+                                    "amount": hold_amount,
+                                    "transaction_datetime": transaction_datetime_val,
+                                    "phone_number": "1234567890",
+                                    "email": "testing@gmail.com",
+                                    "pan_number": pan_number,
+                                    "ifsc_code": ifsc_code,
+                                    "root_account_number": payer_account_number,
+                                    "root_rrn_transaction_id": rrn,
+                                    "root_bankid": "25",
+                                    "status_code": "00",
+                                    "root_effective_balance": str(net_balance),
+                                    "root_ifsc_code": ifsc_code,
+                                    "remarks": acknowledgement_no
+                                }
+                            ]
+                        }
+                        call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                    else:
+                        if net_balance_float < 0:
+                            # =======
+                            # Cannot hold any amount or call I4C response API if net balance is negative
+                            # =======
+                            logger.warning(f"[KVB_NEGATIVE_BALANCE] NetBalance ({net_balance_float}) is negative. Cannot hold or call I4C response API.")
+                            pending_amount_float = disputed_amount_float
+                            logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
+                        else:
+                            # =======
+                            # Hold Net Balance only
+                            # =======
+                            logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
+                            logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
+                            call_hold_funds_api(
+                                kvb_endpoint=kvb_endpoint,
+                                hold_fund_path=hold_fund_path,
+                                disputed_amount=net_balance_float,
+                                data=data,
+                                userid=userid,
+                                kvb_key=kvb_key,
+                                src_channel=src_channel,
+                                username=username,
+                                password=password
+                            )
 
-                    # =======
-                    # Calculate pending amount
-                    # =======
-                    pending_amount_float = disputed_amount_float - net_balance_float
-                    logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
+                            # =======
+                            # Call I4C response API after hold
+                            # =======
+                            logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+                            hold_amount = "{:.2f}".format(net_balance_float)
+                            payload_data = data.get("payload", {})
+                            acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                            job_id = str(data.get("job_id", ""))
+                            # CASA STMT response fields
+                            pan_number = decrypted_obj.get("PAN", "")
+                            ifsc_code = decrypted_obj.get("IFSCCode", "")
+                            net_balance = decrypted_obj.get("NetBalance", None)
+                            # Get payer_account_number and rrn from i4c request
+                            payer_account_number = ""
+                            rrn = ""
+                            instrument_data = payload_data.get("instrument", {})
+                            payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                            transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
+                            i4c_payload = {
+                                "acknowledgement_no": acknowledgement_no,
+                                "job_id": job_id,
+                                "transactions": [
+                                    {
+                                        "txn_type": "Transaction Put on Hold",
+                                        "txn_type_id": "1",
+                                        "amount": hold_amount,
+                                        "transaction_datetime": transaction_datetime_val,
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": pan_number,
+                                        "ifsc_code": ifsc_code,
+                                        "root_account_number": payer_account_number,
+                                        "root_rrn_transaction_id": rrn,
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "root_effective_balance": str(net_balance),
+                                        "root_ifsc_code": ifsc_code,
+                                        "remarks": acknowledgement_no
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+
+                            # =======
+                            # Calculate pending amount
+                            # =======
+                            pending_amount_float = disputed_amount_float - net_balance_float
+                            logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
+
+                        # =======
+                        # Find fraudulent transaction in CasaTransactionDetails by RRN and keep reference
+                        # =======
+                        rrn = incident.get("rrn", "")
+                        casa_txn_details = decrypted_obj.get("CasaTransactionDetails", [])
+                        matched_txn = None
+                        matched_index = None
+                        for idx, txn in enumerate(casa_txn_details):
+                            txn_desc = txn.get("TransactionDescription", "")
+                            if rrn and rrn in txn_desc:
+                                matched_txn = txn
+                                matched_index = idx
+                                break
+                        if matched_txn is not None:
+                            logger.info(f"[CASA_MATCHED_TXN] Found transaction for RRN {rrn} at index {matched_index}: {matched_txn}")
+                            # =======
+                            # Select transactions after the matched one until sum >= pending_amount_float
+                            # =======
+                            selected_txns = []
+                            total_selected_amount = 0.0
+                            if matched_index is not None:
+                                for txn in casa_txn_details[matched_index+1:]:
+                                    txn_desc = txn.get("TransactionDescription", "").upper()
+                                    txn_amount_str = txn.get("TransactionAmount", "0")
+                                    try:
+                                        txn_amount = float(txn_amount_str)
+                                    except Exception:
+                                        txn_amount = 0.0
+
+                                    # Only select transactions based on description rules
+                                    if any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]):
+                                        selected_txns.append(txn)
+                                        total_selected_amount += txn_amount
+                                        logger.info(f"[CASA_SELECTED_TXN] Adding NEFT/RTGS/IMPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
+                                        # Hit payment status inquiry API
+                                        txn_desc_original = txn.get("TransactionDescription", "")
+                                        txn_ref_number = ""
+                                        match = re.search(r"-(\d+)-", txn_desc_original)
+                                        if match:
+                                            txn_ref_number = match.group(1)
+                                        payment_status_dict = {
+                                            "Transaction_Ref_Number": txn_ref_number,
+                                            "Mode_Of_Payment": next((x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc), "")
+                                        }
+                                        payment_status_response = None
+                                        try:
+                                            payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+                                            payment_status_response = payment_status_inquiry_api(
+                                                payment_status_dict,
+                                                kvb_key,
+                                                payment_status_url,
+                                                src_channel,
+                                                username,
+                                                password
+                                            )
+                                            logger.info(f"[PAYMENT_STATUS_INQUIRY] Response for txn {txn.get('ChequeNumber', '')}: {payment_status_response}")
+                                            # Hit I4C response API with required payload only after successful payment status inquiry
+                                            payee_bank = "KVB"
+                                            payee_bank_code = "25"
+                                            payee_account_number = ""
+                                            if payment_status_response and isinstance(payment_status_response, dict):
+                                                payee_account_number = payment_status_response.get("Beneficiary_Account_No", "")
+                                            i4c_payload = {
+                                                "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                "job_id": data.get("job_id", ""),
+                                                "transactions": [
+                                                    {
+                                                        "txn_type": payment_status_dict["Mode_Of_Payment"],
+                                                        "txn_type_id": "2",
+                                                        "amount": str(txn_amount),
+                                                        "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
+                                                        "phone_number": "1234567890",
+                                                        "email": "testing@gmail.com",
+                                                        "pan_number": decrypted_obj.get("PAN", ""),
+                                                        "ifsc_code": decrypted_obj.get("IFSCCode", ""),
+                                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                                        "root_rrn_transaction_id": rrn,
+                                                        "root_bankid": payee_bank_code,
+                                                        "status_code": "00",
+                                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
+                                                        "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                        "payee_bank": payee_bank,
+                                                        "payee_bank_code": payee_bank_code,
+                                                        "payee_account_number": payee_account_number
+                                                    }
+                                                ]
+                                            }
+                                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                                            logger.info(f"[I4C_RESPONSE_API] Called for txn {txn.get('ChequeNumber', '')} amount {txn_amount}")
+                                        except Exception as psi_exc:
+                                            logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
+                                    elif "UPI" in txn_desc:
+                                        selected_txns.append(txn)
+                                        total_selected_amount += txn_amount
+                                        logger.info(f"[CASA_SELECTED_TXN] Adding UPI transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
+                                        # Hit UPI payment status inquiry API and then I4C response API for this transaction
+                                        try:
+                                            upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
+                                            upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
+                                            # Extract ReferenceId (number between two hyphens in TransactionDescription)
+                                            txn_desc_original = txn.get("TransactionDescription", "")
+                                            reference_id = ""
+                                            match = re.search(r"-(\d+)-", txn_desc_original)
+                                            if match:
+                                                reference_id = match.group(1)
+                                            # Format TxnDate to 13-Jul-2025
+                                            txn_date_str = txn.get("TransactionDate", "")
+                                            txn_date_formatted = ""
+                                            try:
+                                                date_part = txn_date_str.split()[0] if txn_date_str else ""
+                                                if date_part:
+                                                    day, month, year = date_part.split('-')
+                                                    import calendar
+                                                    month_name = calendar.month_abbr[int(month)]
+                                                    txn_date_formatted = f"{int(day)}-{month_name}-{year}"
+                                            except Exception as date_exc:
+                                                logger.warning(f"[UPI_TXN_DATE_FORMAT] Could not format txn date: {txn_date_str}, error: {date_exc}")
+                                            upi_payload = {
+                                                "ReferenceId": reference_id,
+                                                "TxnDate": txn_date_formatted
+                                            }
+                                            logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY] Payload for txn {reference_id}: {upi_payload}")
+                                            upi_response = upi_payment_status_inquiry_api(
+                                                upi_payload,
+                                                kvb_key,
+                                                upi_payment_status_url,
+                                                src_channel,
+                                                username,
+                                                password
+                                            )
+                                            logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY] Response for txn {reference_id}: {upi_response}")
+                                            # Hit I4C response API with required payload only after successful UPI inquiry
+                                            try:
+                                                rrn = upi_response.get("TransactionId", "") if upi_response else ""
+                                                payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
+                                                upi_amount = upi_response.get("Amount", "") if upi_response else ""
+                                                i4c_payload = {
+                                                    "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                    "job_id": data.get("job_id", ""),
+                                                    "transactions": [
+                                                        {
+                                                            "txn_type": "UPI",
+                                                            "txn_type_id": "3",
+                                                            "rrn": rrn,
+                                                            "payee_bank": "KVB",
+                                                            "payee_bank_code": "25",
+                                                            "payee_account_number": payee_account_number,
+                                                            "amount": upi_amount,
+                                                            "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
+                                                            "phone_number": "1234567890",
+                                                            "email": "testing@gmail.com",
+                                                            "pan_number": decrypted_obj.get("PAN", ""),
+                                                            "disputed_amount": upi_amount,
+                                                            "ifsc_code": decrypted_obj.get("IFSCCode", ""),
+                                                            "root_account_number": instrument.get("payer_account_number", ""),
+                                                            "root_rrn_transaction_id": rrn,
+                                                            "root_bankid": "25",
+                                                            "status_code": "00",
+                                                            "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                            "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                                            "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
+                                                        }
+                                                    ]
+                                                }
+                                                call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                                                logger.info(f"[I4C_RESPONSE_API] Called for UPI txn {reference_id} amount {upi_amount}")
+                                            except Exception as i4c_exc:
+                                                logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
+                                        except Exception as upi_exc:
+                                            logger.error(f"[UPI_PAYMENT_STATUS_INQUIRY_ERROR] {upi_exc}")
+                                    elif any(x in txn_desc for x in ["ATM", "POS", "CHQ PAID", "AEPS"]):
+                                        selected_txns.append(txn)
+                                        total_selected_amount += txn_amount
+                                        logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
+                                        try:
+                                            payload_data = data.get("payload", {})
+                                            acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                                            job_id = str(data.get("job_id", ""))
+                                            pan_number = decrypted_obj.get("PAN", "")
+                                            ifsc_code = decrypted_obj.get("IFSCCode", "")
+                                            net_balance = decrypted_obj.get("NetBalance", None)
+                                            payer_account_number = instrument.get("payer_account_number", "")
+                                            transaction_datetime_val = txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", "")
+                                            root_rrn_transaction_id = rrn
+                                            root_bankid = "25"
+                                            status_code = "00"
+                                            remarks = acknowledgement_no
+                                            root_effective_balance = str(decrypted_obj.get("NetBalance", ""))
+                                            root_ifsc_code = decrypted_obj.get("IFSCCode", "")
+                                            phone_number = "1234567890"
+                                            email = "testing@gmail.com"
+                                            disputed_amount = txn.get("TransactionAmount", "")
+                                            # ATM
+                                            if "ATM" in txn_desc:
+                                                # Parse ATM fields
+                                                # Example: ATM CSW/0120068848/SIVANANATHA COLON/COIMBAT
+                                                atm_id = ""
+                                                place_of_atm = ""
+                                                atm_of_bank = ""
+                                                desc_parts = txn.get("TransactionDescription", "").split("/")
+                                                if len(desc_parts) >= 3:
+                                                    atm_id = desc_parts[1].strip()
+                                                    place_of_atm = desc_parts[2].strip()
+                                                i4c_payload = {
+                                                    "acknowledgement_no": acknowledgement_no,
+                                                    "Job_id": job_id,
+                                                    "transactions": [
+                                                        {
+                                                            "txn_type": "ATM",
+                                                            "txn_type_id": "4",
+                                                            "amount": txn.get("TransactionAmount", ""),
+                                                            "transaction_datetime": transaction_datetime_val,
+                                                            "phone_number": phone_number,
+                                                            "email": email,
+                                                            "pan_number": pan_number,
+                                                            "disputed_amount": disputed_amount,
+                                                            "atm_id": atm_id,
+                                                            "place_of_atm": place_of_atm,
+                                                            "atm_of_bank": atm_of_bank,
+                                                            "root_account_number": payer_account_number,
+                                                            "root_rrn_transaction_id": root_rrn_transaction_id,
+                                                            "root_bankid": root_bankid,
+                                                            "status_code": status_code,
+                                                            "remarks": remarks,
+                                                            "root_effective_balance": root_effective_balance,
+                                                            "root_ifsc_code": root_ifsc_code
+                                                        }
+                                                    ]
+                                                }
+                                            # POS
+                                            elif "POS" in txn_desc:
+                                                # Example: POS/123456/MID123/TID456/APPROVAL789/MERCHANT/NAME/POSID
+                                                mid = txn.get("MID", "")
+                                                tid = txn.get("TID", "")
+                                                approval_code = txn.get("ApprovalCode", "")
+                                                merchant_name = txn.get("MerchantName", "")
+                                                pos_transaction_id = txn.get("PosTransactionId", "")
+                                                i4c_payload = {
+                                                    "acknowledgement_no": acknowledgement_no,
+                                                    "Job_id": job_id,
+                                                    "transactions": [
+                                                        {
+                                                            "txn_type": "POS",
+                                                            "txn_type_id": "5",
+                                                            "amount": txn.get("TransactionAmount", ""),
+                                                            "transaction_datetime": transaction_datetime_val,
+                                                            "phone_number": phone_number,
+                                                            "email": email,
+                                                            "pan_number": pan_number,
+                                                            "disputed_amount": disputed_amount,
+                                                            "mid": mid,
+                                                            "tid": tid,
+                                                            "approval_code": approval_code,
+                                                            "merchant_name": merchant_name,
+                                                            "Pos_transaction_id": pos_transaction_id,
+                                                            "root_account_number": payer_account_number,
+                                                            "root_rrn_transaction_id": root_rrn_transaction_id,
+                                                            "root_bankid": root_bankid,
+                                                            "status_code": status_code,
+                                                            "remarks": remarks,
+                                                            "root_effective_balance": root_effective_balance,
+                                                            "root_ifsc_code": root_ifsc_code
+                                                        }
+                                                    ]
+                                                }
+                                            # CHQ PAID
+                                            elif "CHQ PAID" in txn_desc:
+                                                cheque_no = txn.get("ChequeNumber", "")
+                                                withdrawal_date = txn.get("TransactionDate", "")
+                                                location = txn.get("BranchCode", "")
+                                                managername = "Abc"
+                                                managernumber = "9876543210"
+                                                i4c_payload = {
+                                                    "acknowledgement_no": acknowledgement_no,
+                                                    "Job_id": job_id,
+                                                    "transactions": [
+                                                        {
+                                                            "txn_type": "CHQ PAID",
+                                                            "txn_type_id": "6",
+                                                            "account_number": payer_account_number,
+                                                            "ifsc_code": ifsc_code,
+                                                            "cheque_no": cheque_no,
+                                                            "withdrawal_date": withdrawal_date,
+                                                            "amount": txn.get("TransactionAmount", ""),
+                                                            "disputed_amount": disputed_amount,
+                                                            "location": location,
+                                                            "managername": managername,
+                                                            "managernumber": managernumber,
+                                                            "phone_number": phone_number,
+                                                            "email": email,
+                                                            "pan_number": pan_number,
+                                                            "root_account_number": payer_account_number,
+                                                            "root_rrn_transaction_id": root_rrn_transaction_id,
+                                                            "root_bankid": root_bankid,
+                                                            "status_code": status_code,
+                                                            "remarks": remarks,
+                                                            "root_effective_balance": root_effective_balance,
+                                                            "root_ifsc_code": root_ifsc_code
+                                                        }
+                                                    ]
+                                                }
+                                            # AEPS
+                                            elif "AEPS" in txn_desc:
+                                                # Example: AEPS ACQ CW-99506997-KVB-11:15 AM-RRN:424711036020-1 112, ...
+                                                rrn_val = ""
+                                                match = re.search(r"RRN:([\w\d]+)", txn.get("TransactionDescription", ""))
+                                                if match:
+                                                    rrn_val = match.group(1)
+                                                i4c_payload = {
+                                                    "acknowledgement_no": acknowledgement_no,
+                                                    "Job_id": job_id,
+                                                    "transactions": [
+                                                        {
+                                                            "txn_type": "AEPS",
+                                                            "txn_type_id": "7",
+                                                            "rrn": rrn_val,
+                                                            "amount": txn.get("TransactionAmount", ""),
+                                                            "disputed_amount": disputed_amount,
+                                                            "phone_number": phone_number,
+                                                            "email": email,
+                                                            "pan_number": pan_number,
+                                                            "root_account_number": payer_account_number,
+                                                            "root_rrn_transaction_id": root_rrn_transaction_id,
+                                                            "root_bankid": root_bankid,
+                                                            "status_code": status_code,
+                                                            "remarks": remarks,
+                                                            "root_effective_balance": root_effective_balance,
+                                                            "root_ifsc_code": root_ifsc_code
+                                                        }
+                                                    ]
+                                                }
+                                            else:
+                                                i4c_payload = None
+                                            if i4c_payload:
+                                                call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                                                logger.info(f"[I4C_RESPONSE_API] Called for {txn_desc} txn: {txn}")
+                                        except Exception as i4c_exc:
+                                            logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
+                                    else:
+                                        logger.info(f"[CASA_SKIPPED_TXN] Skipping transaction: {txn} | Description: {txn_desc}")
+                                        continue
+                                    if total_selected_amount >= pending_amount_float:
+                                        break
+                            logger.info(f"[CASA_SELECTED_TXNS] Selected {len(selected_txns)} transactions after matched RRN, total amount: {total_selected_amount}, pending required: {pending_amount_float}")
+                            logger.debug(f"[CASA_SELECTED_TXNS_DETAILS] {selected_txns}")
+                        else:
+                            logger.warning(f"[CASA_MATCHED_TXN] No transaction found for RRN {rrn}")
             else:
                 logger.info("CASA STMT failed.")

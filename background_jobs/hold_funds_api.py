@@ -14,7 +14,7 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
     logger.info(f"======= [HOLD_FUNDS_START] =======")
     hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
     today_str = datetime.now().strftime("%Y%m%d")
-    payload_data = data.get("payload", {})
+    payload_data = data.get("request", {})
     instrument_data = payload_data.get("instrument", {})
     acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
     payer_account_number = str(instrument_data.get("payer_account_number", ""))

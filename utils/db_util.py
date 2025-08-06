@@ -54,6 +54,8 @@ from dateutil import parser
 
 logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 load_dotenv()
 
@@ -74,7 +76,7 @@ class DatabaseHandler:
     def __init__(self):
         print(">>>>>Connecting to the database")
         DB_URL = os.getenv("DATABASE_URL")
-        self.engine = create_engine(DB_URL, pool_size=20, max_overflow=40)
+        self.engine = create_engine(DB_URL, pool_size=50, max_overflow=60)
         self.Base = automap_base()
         self.Base.prepare(self.engine)
         self.Session = sessionmaker(bind=self.engine)
@@ -450,6 +452,28 @@ class DatabaseHandler:
             try:
                 result = session.execute(query)
                 return result.fetchall()
+            except Exception as e:
+                logging.error("Error executing query: %s", e)
+                return None
+    def try_parser_datetime(self,value):
+        iso_datetime_pattern=re.compile(r"^\d{2}-\d{2}\s\d{1,2}:\d{2}-\d{2}\.\d{6}$")
+        if isinstance(value,str):
+            try:
+                if iso_datetime_pattern.match(value):
+                    return datetime.fromisoformat(value)
+            except:
+                pass
+
+    def execute_ddl(self, query):
+        with self.Session() as session:
+            try:
+                logger.info(f'trying to execute query : {query}')
+                result = session.execute(query)
+                logger.info(f'query executed : {query}')
+                session.commit()
+                logger.info(f'commit done : {query}')
+                return True
+                #return result.fetchall()
             except Exception as e:
                 logging.error("Error executing query: %s", e)
                 return None
@@ -1660,36 +1684,50 @@ class DatabaseHandler:
             data["modified_date"] = datetime.utcnow()
 
         with self.Session() as s:
-            s.info["user_id"] = user_id
+            #s.info["user_id"] = user_id
 
             # Handle ID with Oracle sequence
-            if "id" in self.table_metadata[tbl_name] and "id" not in data:
-                seq_name = f"{tbl_name.lower()}_seq"  # Assumes naming like: working_program_seq
-                try:
-                    result = s.execute(text(f"SELECT {seq_name}.NEXTVAL FROM dual"))
-                    next_id = result.scalar()
-                except DBAPIError as e:
-                    if "ORA-02289" in str(e):  # Sequence does not exist
-                        # Create the sequence
-                        s.execute(
-                            text(
-                                f"CREATE SEQUENCE {seq_name} START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE"
-                            )
-                        )
-                        s.commit()
+            #if "id" in self.table_metadata[tbl_name] and "id" not in data:
+            #    seq_name = f"{tbl_name.lower()}_seq"  # Assumes naming like: working_program_seq
+            #    try:
+            #        result = s.execute(text(f"SELECT {seq_name}.NEXTVAL FROM dual"))
+            #        next_id = result.scalar()
+            #    except DBAPIError as e:
+            #        if "ORA-02289" in str(e):  # Sequence does not exist
+            #            # Create the sequence
+            #            s.execute(
+            #                text(
+            #                    f"CREATE SEQUENCE {seq_name} START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE"
+            #                )
+            #            )
+            #            s.commit()
 
-                        # Retry fetching the value
-                        result = s.execute(text(f"SELECT {seq_name}.NEXTVAL FROM dual"))
-                        next_id = result.scalar()
-                    else:
-                        raise  # Re-raise other errors
+            #            # Retry fetching the value
+            #            result = s.execute(text(f"SELECT {seq_name}.NEXTVAL FROM dual"))
+            #            next_id = result.scalar()
+            #        else:
+            #            raise  # Re-raise other errors
 
-                data["id"] = next_id
+            #    data["id"] = next_id
+            try:
+                logger.info(f"parser datetime{data}")
+                for key,value in data.items():
+                    data[key]==self.try_parser_datetime(value)
+                logger.info(f"datetime parsed{data}")
+                new_record = model(**data)
+                logger.info("data adding")
+                s.add(new_record)
+                logger.info("data_flush")
+                #s.flush()
+                logger.info("try to committing")
+                s.commit()
+                logger.info("committed")
+            except Exception as e:
+                logger.info(e)
 
-            new_record = model(**data)
-            s.add(new_record)
-            s.commit()
-            return new_record.id
+            #return new_record.id
+            #return new_record
+            return True
 
     def insert_record(
         self, session, table, data, parent_id=None, parent_table=None, default_fields={}

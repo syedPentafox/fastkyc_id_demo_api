@@ -28,6 +28,7 @@ class SqlProfiler:
         def before_cursor_execute(
             conn, cursor, statement, parameters, context, executemany
         ):
+            self.logger.debug("before logging")
             conn.info.setdefault("query_start_time", []).append(time.time())
             formatted_statement = self._format_sql_statement(statement, parameters)
             self.logger.debug("SQL Statement: %s", formatted_statement)
@@ -40,19 +41,22 @@ class SqlProfiler:
             self.logger.debug("Total Time: %f", total_time)
 
     def _format_sql_statement(self, statement, parameters):
-        if parameters:
-            if isinstance(parameters, dict):
-                return self._format_dict_parameters(statement, parameters)
-            elif isinstance(parameters, tuple):
-                return self._format_tuple_parameters(statement, parameters)
-        return statement
+        try:
+            if parameters:
+                if isinstance(parameters, dict):
+                    return self._format_dict_parameters(statement, parameters)
+                elif isinstance(parameters, tuple):
+                    return self._format_tuple_parameters(statement, parameters)
+            return statement
+        except Exception as e:
+            self.logger.debug(e)
 
     def _format_dict_parameters(self, statement, parameters):
         for key, value in parameters.items():
             if isinstance(value, str):
-                statement = statement.replace(f"%({key})s", f"'{value}'")
+                statement = statement.replace(f":{key}", f"'{value}'")
             else:
-                statement = statement.replace(f"%({key})s", str(value))
+                statement = statement.replace(f":{key}", str(value))
         return statement
 
     def _format_tuple_parameters(self, statement, parameters):

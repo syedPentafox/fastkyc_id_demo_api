@@ -21,8 +21,12 @@ from background_jobs.casa_stmt_api import casa_stmt_api
 import uuid
 
 def i4c_request_job(request_json: str):
-    data = json.loads(request_json)
-    instrument = data.get("payload", {}).get("instrument", {})
+    data = request_json
+    #logger.info(json.dumps(data, indent=4))
+    logger.info('i4c_request_job request_json start')
+    logger.info(data)
+    logger.info('i4c_request_job request_json end')
+    instrument = request_json.get('request').get('instrument')#data.get("payload", {}).get("instrument", {})
     account_number = instrument.get("payer_account_number", "")
     txn_branch = account_number[:4] if len(account_number) >= 4 else ""
     incidents = instrument.get("incidents", [])
@@ -48,17 +52,18 @@ def i4c_request_job(request_json: str):
             from_date = datetime.strptime(from_date_raw, "%Y-%m-%d").strftime("%d-%m-%Y") if from_date_raw else from_date_raw
             # ToDate: received_dt from payload (format: dd-mm-yyyy)
             received_dt_raw = data.get("received_dt", "")
-            to_date = ""
-            if received_dt_raw:
-                # received_dt example: "14-07-25 1:15:47.000000000 PM"
-                try:
-                    # Split date and time, take first part
-                    date_part = received_dt_raw.split()[0]  # '14-07-25'
-                    # Convert 'yy-mm-dd' to 'dd-mm-yyyy'
-                    d, m, y = date_part.split('-')
-                    to_date = f"{d}-{m}-20{y}"
-                except Exception as e:
-                    logger.warning(f"[CASA_STMT_PAYLOAD] Could not parse received_dt: {received_dt_raw}, error: {e}")
+            to_date = received_dt_raw.strftime('%d-%m-%Y')
+            #to_date = datetime.strptime(from_date_raw, "%Y-%m-%d").strftime("%d-%m-%Y") if from_date_raw else from_date_raw
+            #if received_dt_raw:
+            #    # received_dt example: "14-07-25 1:15:47.000000000 PM"
+            #    try:
+            #        # Split date and time, take first part
+            #        date_part = str(received_dt_raw).split()[0]  # '14-07-25'
+            #        # Convert 'yy-mm-dd' to 'dd-mm-yyyy'
+            #        d, m, y = date_part.split('-')
+            #        to_date = f"{d}-{m}-20{y}"
+            #    except Exception as e:
+            #        logger.warning(f"[CASA_STMT_PAYLOAD] Could not parse received_dt: {received_dt_raw}, error: {e}")
             casa_stmt_payload = {
                 "TxnBranch": txn_branch,
                 "TxnRefNo": txn_ref_no,
@@ -91,11 +96,11 @@ def i4c_request_job(request_json: str):
                     error_code is not None and str(error_code) == "0" and
                     error_message is not None and str(error_message).lower() == "success"
                 )
-            # payment_status_success = False
-            # if payment_status_response is not None:
-            #     ps_error_code = payment_status_response.get("ErrorCode")
-            #     ps_error_message = payment_status_response.get("ErrorMessage")
-            #     payment_status_success = (
+            payment_status_success = False
+            #if payment_status_response is not None:
+            #    ps_error_code = payment_status_response.get("ErrorCode")
+            #    ps_error_message = payment_status_response.get("ErrorMessage")
+            #    payment_status_success = (
             #         ps_error_code is not None and str(ps_error_code) == "0" and
             #         ps_error_message is not None and str(ps_error_message).lower() == "success"
             #     )

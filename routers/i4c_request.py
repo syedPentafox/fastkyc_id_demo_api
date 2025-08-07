@@ -19,7 +19,7 @@ async def i4c_request(background_tasks:BackgroundTasks):
     out, _ = db.get_data_from_table(
         tbl_name="i4c_request",
         columns="*",
-        #filters={"status_neq": "P", "msg_type_eq": "REQ", "job_id_eq": "KVB-57272284-15ff-4aeb-ad8a-6caa70c69948"},
+        #filters={"status_neq": "P", "msg_type_eq": "REQ", "job_id_eq": "KVB-79988661-d853-4c63-b1f2-f510f454273d"},
         filters={"status_neq": "P", "msg_type_eq": "REQ"},
         sort_by=["-job_id"],
         page=-1

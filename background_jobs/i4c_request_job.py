@@ -26,7 +26,7 @@ def i4c_request_job(request_json: str):
     logger.info('i4c_request_job request_json start')
     logger.info(data)
     logger.info('i4c_request_job request_json end')
-    instrument = request_json.get('request').get('instrument')#data.get("payload", {}).get("instrument", {})
+    instrument = request_json.get('request').get('instrument')#data.get("request", {}).get("instrument", {})
     account_number = instrument.get("payer_account_number", "")
     txn_branch = account_number[:4] if len(account_number) >= 4 else ""
     incidents = instrument.get("incidents", [])
@@ -134,7 +134,7 @@ def i4c_request_job(request_json: str):
                             logger.info(f"[PAYMENT_STATUS_INQUIRY_DEBIT] Response: {payment_status_response}")
                             payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
                             i4c_payload = {
-                                "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
@@ -152,7 +152,7 @@ def i4c_request_job(request_json: str):
                                         "status_code": "00",
                                         "root_effective_balance": str(instrument.get("net_balance", "")),
                                         "root_ifsc_code": instrument.get("ifsc_code", ""),
-                                        "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                        "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                                         "payee_bank": "KVB",
                                         "payee_bank_code": "25",
                                         "payee_account_number": payee_account_number
@@ -189,10 +189,11 @@ def i4c_request_job(request_json: str):
                             )
                             logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_DEBIT] Response: {upi_response}")
                             rrn = upi_response.get("TransactionId", "") if upi_response else ""
+                            rrn = incident.get("rrn", "")
                             payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
                             upi_amount = upi_response.get("Amount", "") if upi_response else ""
                             i4c_payload = {
-                                "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
@@ -202,18 +203,18 @@ def i4c_request_job(request_json: str):
                                         "payee_bank": "KVB",
                                         "payee_bank_code": "25",
                                         "payee_account_number": payee_account_number,
-                                        "amount": upi_amount,
+                                        "amount": str(instrument.get("disputed_amount", "")),
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
                                         "pan_number": instrument.get("pan_number", ""),
-                                        "disputed_amount": upi_amount,
+                                        "disputed_amount": str(instrument.get("disputed_amount", "")),
                                         "ifsc_code": instrument.get("ifsc_code", ""),
                                         "root_account_number": instrument.get("payer_account_number", ""),
                                         "root_rrn_transaction_id": rrn,
                                         "root_bankid": "25",
                                         "status_code": "00",
-                                        "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                        "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                                         "root_effective_balance": str(instrument.get("net_balance", "")),
                                         "root_ifsc_code": instrument.get("ifsc_code", "")
                                     }
@@ -248,7 +249,7 @@ def i4c_request_job(request_json: str):
                         # Call I4C response API after hold
                         # =======
                         logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                        payload_data = data.get("payload", {})
+                        payload_data = data.get("request", {})
                         acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                         job_id = str(data.get("job_id", ""))
                         # CASA STMT response fields
@@ -258,6 +259,7 @@ def i4c_request_job(request_json: str):
                         # Get payer_account_number and rrn from i4c request
                         payer_account_number = ""
                         rrn = ""
+                        rrn = incident.get("rrn", "")
                         instrument_data = payload_data.get("instrument", {})
                         payer_account_number = str(instrument_data.get("payer_account_number", ""))
                         transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
@@ -287,7 +289,7 @@ def i4c_request_job(request_json: str):
                         }
                         call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
                     else:
-                        if net_balance_float < 0:
+                        if net_balance_float <= 0:
                             # =======
                             # Cannot hold any amount or call I4C response API if net balance is negative
                             # =======
@@ -317,7 +319,7 @@ def i4c_request_job(request_json: str):
                             # =======
                             logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
                             hold_amount = "{:.2f}".format(net_balance_float)
-                            payload_data = data.get("payload", {})
+                            payload_data = data.get("request", {})
                             acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                             job_id = str(data.get("job_id", ""))
                             # CASA STMT response fields
@@ -327,6 +329,7 @@ def i4c_request_job(request_json: str):
                             # Get payer_account_number and rrn from i4c request
                             payer_account_number = ""
                             rrn = ""
+                            rrn = incident.get("rrn", "")
                             instrument_data = payload_data.get("instrument", {})
                             payer_account_number = str(instrument_data.get("payer_account_number", ""))
                             transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
@@ -385,6 +388,8 @@ def i4c_request_job(request_json: str):
                                 for txn in casa_txn_details[matched_index+1:]:
                                     txn_desc = txn.get("TransactionDescription", "").upper()
                                     txn_amount_str = txn.get("TransactionAmount", "0")
+                                    if txn.get("CodeDRCR") == "C":
+                                        continue
                                     try:
                                         txn_amount = float(txn_amount_str)
                                     except Exception:
@@ -401,9 +406,12 @@ def i4c_request_job(request_json: str):
                                         match = re.search(r"-(\d+)-", txn_desc_original)
                                         if match:
                                             txn_ref_number = match.group(1)
+                                        mode_of_payment = next((x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc), "")
+                                        split_txn_desc = txn_desc_original.split('-')
+                                        txn_ref_number = split_txn_desc[1 if mode_of_payment in ['NEFT', 'IMPS'] else -1]
                                         payment_status_dict = {
                                             "Transaction_Ref_Number": txn_ref_number,
-                                            "Mode_Of_Payment": next((x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc), "")
+                                            "Mode_Of_Payment": mode_of_payment
                                         }
                                         payment_status_response = None
                                         try:
@@ -424,7 +432,7 @@ def i4c_request_job(request_json: str):
                                             if payment_status_response and isinstance(payment_status_response, dict):
                                                 payee_account_number = payment_status_response.get("Beneficiary_Account_No", "")
                                             i4c_payload = {
-                                                "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
                                                 "job_id": data.get("job_id", ""),
                                                 "transactions": [
                                                     {
@@ -442,7 +450,7 @@ def i4c_request_job(request_json: str):
                                                         "status_code": "00",
                                                         "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
                                                         "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
-                                                        "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                        "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                                                         "payee_bank": payee_bank,
                                                         "payee_bank_code": payee_bank_code,
                                                         "payee_account_number": payee_account_number
@@ -455,6 +463,11 @@ def i4c_request_job(request_json: str):
                                             logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
                                     elif "UPI" in txn_desc:
                                         selected_txns.append(txn)
+                                        txn_amount_str = txn.get("TransactionAmount", "0")
+                                        try:
+                                            txn_amount = float(txn_amount_str)
+                                        except Exception:
+                                            txn_amount = 0.0
                                         total_selected_amount += txn_amount
                                         logger.info(f"[CASA_SELECTED_TXN] Adding UPI transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         # Hit UPI payment status inquiry API and then I4C response API for this transaction
@@ -496,10 +509,11 @@ def i4c_request_job(request_json: str):
                                             # Hit I4C response API with required payload only after successful UPI inquiry
                                             try:
                                                 rrn = upi_response.get("TransactionId", "") if upi_response else ""
+                                                rrn = incident.get("rrn", "")
                                                 payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
                                                 upi_amount = upi_response.get("Amount", "") if upi_response else ""
                                                 i4c_payload = {
-                                                    "acknowledgement_no": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                    "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
                                                     "job_id": data.get("job_id", ""),
                                                     "transactions": [
                                                         {
@@ -509,18 +523,18 @@ def i4c_request_job(request_json: str):
                                                             "payee_bank": "KVB",
                                                             "payee_bank_code": "25",
                                                             "payee_account_number": payee_account_number,
-                                                            "amount": upi_amount,
+                                                            "amount": txn_amount,
                                                             "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
                                                             "phone_number": "1234567890",
                                                             "email": "testing@gmail.com",
                                                             "pan_number": decrypted_obj.get("PAN", ""),
-                                                            "disputed_amount": upi_amount,
+                                                            "disputed_amount": txn_amount,
                                                             "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                                             "root_account_number": instrument.get("payer_account_number", ""),
                                                             "root_rrn_transaction_id": rrn,
                                                             "root_bankid": "25",
                                                             "status_code": "00",
-                                                            "remarks": data.get("payload", {}).get("acknowledgement_no", ""),
+                                                            "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                                                             "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
                                                             "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
                                                         }
@@ -537,7 +551,7 @@ def i4c_request_job(request_json: str):
                                         total_selected_amount += txn_amount
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         try:
-                                            payload_data = data.get("payload", {})
+                                            payload_data = data.get("request", {})
                                             acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                                             job_id = str(data.get("job_id", ""))
                                             pan_number = decrypted_obj.get("PAN", "")
@@ -545,6 +559,7 @@ def i4c_request_job(request_json: str):
                                             net_balance = decrypted_obj.get("NetBalance", None)
                                             payer_account_number = instrument.get("payer_account_number", "")
                                             transaction_datetime_val = txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", "")
+                                            rrn = incident.get("rrn", "")
                                             root_rrn_transaction_id = rrn
                                             root_bankid = "25"
                                             status_code = "00"

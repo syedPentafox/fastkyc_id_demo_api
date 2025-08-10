@@ -206,7 +206,7 @@ def i4c_request_job(request_json: str):
                 
                 mode_of_payment = instrument.get("mode_of_payment", "CREDIT").upper()
                 transaction_type = instrument.get("transaction_type", "").upper()
-                if mode_of_payment == "DEBIT" and transaction_type in ["IMPS", "NEFT", "RTGS", "UPI"]:
+                if mode_of_payment == "DEBIT" and transaction_type in ["IMPS", "NEFT", "RTGS", "UPI", "ATM", "POS", "CHQ PAID", "AEPS"]:
                     # For DEBIT, directly call payment inquiry API and then I4C response API
                     payment_status_response = None
                     try:
@@ -312,6 +312,142 @@ def i4c_request_job(request_json: str):
                                         "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                                         "root_effective_balance": str(instrument.get("net_balance", "")),
                                         "root_ifsc_code": instrument.get("ifsc_code", "")
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                        elif transaction_type == "ATM":
+                            # For DEBIT ATM, directly call I4C response API without inquiry
+                            atm_id = instrument.get("atm_id", "")
+                            place_of_atm = instrument.get("place_of_atm", "")
+                            atm_of_bank = instrument.get("atm_of_bank", "")
+                            
+                            i4c_payload = {
+                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
+                                "job_id": data.get("job_id", ""),
+                                "transactions": [
+                                    {
+                                        "txn_type": "ATM",
+                                        "txn_type_id": "4",
+                                        "amount": str(instrument.get("disputed_amount", "")),
+                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": instrument.get("pan_number", ""),
+                                        "disputed_amount": str(instrument.get("disputed_amount", "")),
+                                        "atm_id": atm_id,
+                                        "place_of_atm": place_of_atm,
+                                        "atm_of_bank": atm_of_bank,
+                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                        "root_rrn_transaction_id": instrument.get("rrn", ""),
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "root_effective_balance": str(instrument.get("net_balance", "")),
+                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "remarks": data.get("request", {}).get("acknowledgement_no", "")
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                        elif transaction_type == "POS":
+                            # For DEBIT POS, directly call I4C response API without inquiry
+                            mid = instrument.get("mid", "")
+                            tid = instrument.get("tid", "")
+                            approval_code = instrument.get("approval_code", "")
+                            merchant_name = instrument.get("merchant_name", "")
+                            pos_transaction_id = instrument.get("pos_transaction_id", "")
+                            
+                            i4c_payload = {
+                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
+                                "job_id": data.get("job_id", ""),
+                                "transactions": [
+                                    {
+                                        "txn_type": "POS",
+                                        "txn_type_id": "5",
+                                        "amount": str(instrument.get("disputed_amount", "")),
+                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": instrument.get("pan_number", ""),
+                                        "disputed_amount": str(instrument.get("disputed_amount", "")),
+                                        "mid": mid,
+                                        "tid": tid,
+                                        "approval_code": approval_code,
+                                        "merchant_name": merchant_name,
+                                        "Pos_transaction_id": pos_transaction_id,
+                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                        "root_rrn_transaction_id": instrument.get("rrn", ""),
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "root_effective_balance": str(instrument.get("net_balance", "")),
+                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "remarks": data.get("request", {}).get("acknowledgement_no", "")
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                        elif transaction_type == "CHQ PAID":
+                            # For DEBIT CHQ PAID, directly call I4C response API without inquiry
+                            cheque_no = instrument.get("cheque_no", "")
+                            withdrawal_date = instrument.get("transaction_date", "")
+                            location = instrument.get("location", "")
+                            managername = instrument.get("managername", "Abc")
+                            managernumber = instrument.get("managernumber", "9876543210")
+                            
+                            i4c_payload = {
+                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
+                                "job_id": data.get("job_id", ""),
+                                "transactions": [
+                                    {
+                                        "txn_type": "CHQ PAID",
+                                        "txn_type_id": "6",
+                                        "account_number": instrument.get("payer_account_number", ""),
+                                        "ifsc_code": instrument.get("ifsc_code", ""),
+                                        "cheque_no": cheque_no,
+                                        "withdrawal_date": withdrawal_date,
+                                        "amount": str(instrument.get("disputed_amount", "")),
+                                        "disputed_amount": str(instrument.get("disputed_amount", "")),
+                                        "location": location,
+                                        "managername": managername,
+                                        "managernumber": managernumber,
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": instrument.get("pan_number", ""),
+                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                        "root_rrn_transaction_id": instrument.get("rrn", ""),
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "root_effective_balance": str(instrument.get("net_balance", "")),
+                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "remarks": data.get("request", {}).get("acknowledgement_no", "")
+                                    }
+                                ]
+                            }
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                        elif transaction_type == "AEPS":
+                            # For DEBIT AEPS, directly call I4C response API without inquiry
+                            rrn_val = instrument.get("rrn", "")
+                            
+                            i4c_payload = {
+                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
+                                "job_id": data.get("job_id", ""),
+                                "transactions": [
+                                    {
+                                        "txn_type": "AEPS",
+                                        "txn_type_id": "7",
+                                        "rrn": rrn_val,
+                                        "amount": str(instrument.get("disputed_amount", "")),
+                                        "disputed_amount": str(instrument.get("disputed_amount", "")),
+                                        "phone_number": "1234567890",
+                                        "email": "testing@gmail.com",
+                                        "pan_number": instrument.get("pan_number", ""),
+                                        "root_account_number": instrument.get("payer_account_number", ""),
+                                        "root_rrn_transaction_id": instrument.get("rrn", ""),
+                                        "root_bankid": "25",
+                                        "status_code": "00",
+                                        "root_effective_balance": str(instrument.get("net_balance", "")),
+                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "remarks": data.get("request", {}).get("acknowledgement_no", "")
                                     }
                                 ]
                             }

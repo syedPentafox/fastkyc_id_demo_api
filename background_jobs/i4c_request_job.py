@@ -464,7 +464,9 @@ def i4c_request_job(request_json: str):
                         # Hold Funds API
                         # =======
                         logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
-                        call_hold_funds_api(
+                        
+                        # Call hold funds API and capture the timestamp it used
+                        hold_timestamp = call_hold_funds_api(
                             kvb_endpoint=kvb_endpoint,
                             hold_fund_path=hold_fund_path,
                             disputed_amount=disputed_amount_float,
@@ -493,7 +495,8 @@ def i4c_request_job(request_json: str):
                         rrn = incident.get("rrn", "")
                         instrument_data = payload_data.get("instrument", {})
                         payer_account_number = str(instrument_data.get("payer_account_number", ""))
-                        transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
+                        # Use the same server timestamp for I4C response
+                        transaction_datetime_val = hold_timestamp.strftime("%d-%m-%Y %H:%M:%S")
                         hold_amount = "{:.2f}".format(disputed_amount_float)
                         i4c_payload = {
                             "acknowledgement_no": acknowledgement_no,
@@ -533,7 +536,9 @@ def i4c_request_job(request_json: str):
                             # =======
                             logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
                             logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
-                            call_hold_funds_api(
+                            
+                            # Call hold funds API and capture the timestamp it used
+                            hold_timestamp = call_hold_funds_api(
                                 kvb_endpoint=kvb_endpoint,
                                 hold_fund_path=hold_fund_path,
                                 disputed_amount=net_balance_float,
@@ -563,7 +568,8 @@ def i4c_request_job(request_json: str):
                             rrn = incident.get("rrn", "")
                             instrument_data = payload_data.get("instrument", {})
                             payer_account_number = str(instrument_data.get("payer_account_number", ""))
-                            transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
+                            # Use the same server timestamp for I4C response
+                            transaction_datetime_val = hold_timestamp.strftime("%d-%m-%Y %H:%M:%S")
                             i4c_payload = {
                                 "acknowledgement_no": acknowledgement_no,
                                 "job_id": job_id,

@@ -13,7 +13,9 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
     # hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
     logger.info(f"======= [HOLD_FUNDS_START] =======")
     hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
-    today_str = datetime.now().strftime("%Y%m%d")
+    # Capture timestamp to return to caller
+    hold_timestamp = datetime.now()
+    today_str = hold_timestamp.strftime("%Y%m%d")
     payload_data = data.get("request", {})
     instrument_data = payload_data.get("instrument", {})
     acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
@@ -65,6 +67,8 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
             logger.info(f"[KVB_HOLD_DECRYPTED_RESPONSE] {decrypted_hold}")
         
         logger.info(f"======= [HOLD_FUNDS_END] =======")
+        return hold_timestamp
     except Exception as hold_api_exc:
         logger.error(f"[KVB_HOLD_API_ERROR] {hold_api_exc}")
         logger.info(f"======= [HOLD_FUNDS_END] =======")
+        return hold_timestamp

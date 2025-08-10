@@ -96,7 +96,7 @@ def i4c_request_job(request_json: str):
                     error_code is not None and str(error_code) == "0" and
                     error_message is not None and str(error_message).lower() == "success"
                 )
-            payment_status_success = False
+            # payment_status_success = False
             #if payment_status_response is not None:
             #    ps_error_code = payment_status_response.get("ErrorCode")
             #    ps_error_message = payment_status_response.get("ErrorMessage")
@@ -106,9 +106,104 @@ def i4c_request_job(request_json: str):
             #     )
 
             # =======
-            # If CASA API was successful, go to the decision for the balance
+            # If CASA API was successful, validate RRN before proceeding
             # =======
             if casa_stmt_success:
+                # =======
+                # RRN Validation - Check if incident RRN, amount and datetime exist in CASA transactions
+                # =======
+                rrn = incident.get("rrn", "")
+                incident_amount = incident.get("amount", 0)
+                incident_date = incident.get("transaction_date", "")
+                incident_time = incident.get("transaction_time", "")
+                
+                # Parse incident datetime
+                incident_datetime = None
+                try:
+                    incident_datetime_str = f"{incident_date} {incident_time}"
+                    incident_datetime = datetime.strptime(incident_datetime_str, "%Y-%m-%d %H:%M:%S")
+                except Exception as date_exc:
+                    logger.warning(f"[RRN_VALIDATION] Could not parse incident datetime: {incident_datetime_str}, error: {date_exc}")
+                
+                # Search for matching transaction in CASA
+                casa_txn_details = decrypted_obj.get("CasaTransactionDetails", [])
+                rrn_valid = False
+                matched_casa_txn = None
+                matched_index = None
+                
+                logger.info(f"[RRN_VALIDATION] Validating RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
+                
+                for idx, casa_txn in enumerate(casa_txn_details):
+                    txn_desc = casa_txn.get("TransactionDescription", "")
+                    txn_amount_str = casa_txn.get("TransactionAmount", "0")
+                    txn_date_str = casa_txn.get("TransactionDate", "")
+                    
+                    # Check RRN match using string matching
+                    if rrn and rrn in txn_desc:
+                        # Check amount match (convert both to float)
+                        try:
+                            casa_amount = float(txn_amount_str)
+                            incident_amount_float = float(incident_amount)
+                            
+                            if casa_amount == incident_amount_float:
+                                # Check datetime match
+                                try:
+                                    # Parse CASA datetime format: "18-02-2025 14:58:22"
+                                    casa_datetime = datetime.strptime(txn_date_str, "%d-%m-%Y %H:%M:%S")
+                                    
+                                    if incident_datetime and casa_datetime == incident_datetime:
+                                        # All three conditions match
+                                        rrn_valid = True
+                                        matched_casa_txn = casa_txn
+                                        matched_index = idx
+                                        logger.info(f"[RRN_VALIDATION] Valid RRN found - RRN: {rrn}, Amount: {casa_amount}, DateTime: {casa_datetime}")
+                                        break
+                                    else:
+                                        logger.info(f"[RRN_VALIDATION] RRN and amount match but datetime mismatch - Casa: {casa_datetime}, Incident: {incident_datetime}")
+                                except Exception as casa_date_exc:
+                                    logger.warning(f"[RRN_VALIDATION] Could not parse CASA datetime: {txn_date_str}, error: {casa_date_exc}")
+                            else:
+                                logger.info(f"[RRN_VALIDATION] RRN match but amount mismatch - Casa: {casa_amount}, Incident: {incident_amount_float}")
+                        except Exception as amount_exc:
+                            logger.warning(f"[RRN_VALIDATION] Could not parse amounts for comparison: {amount_exc}")
+                
+                if not rrn_valid:
+                    # =======
+                    # RRN Invalid - Send status code 02 response and skip balance logic
+                    # =======
+                    logger.warning(f"[RRN_VALIDATION] Invalid RRN - not found in CASA transactions: {rrn}")
+                    
+                    # Prepare status 02 response payload with blue fields only
+                    payload_data = data.get("request", {})
+                    acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                    job_id = str(data.get("job_id", ""))
+                    instrument_data = payload_data.get("instrument", {})
+                    payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                    
+                    invalid_rrn_payload = {
+                        "acknowledgement_no": acknowledgement_no,
+                        "Job_id": job_id,
+                        "transactions": [
+                            {
+                                "txn_type": "Transaction Put on Hold",
+                                "txn_type_id": "1",
+                                "root_account_number": payer_account_number,
+                                "root_rrn_transaction_id": rrn,
+                                "root_bankid": "25",
+                                "status_code": "02",
+                                "remarks": acknowledgement_no
+                            }
+                        ]
+                    }
+                    
+                    call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint)
+                    logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
+                    
+                    # Skip balance logic for this incident
+                    continue
+                
+                logger.info(f"[RRN_VALIDATION] RRN validation passed for: {rrn}")
+                
                 mode_of_payment = instrument.get("mode_of_payment", "CREDIT").upper()
                 transaction_type = instrument.get("transaction_type", "").upper()
                 if mode_of_payment == "DEBIT" and transaction_type in ["IMPS", "NEFT", "RTGS", "UPI"]:
@@ -365,20 +460,10 @@ def i4c_request_job(request_json: str):
                             logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
 
                         # =======
-                        # Find fraudulent transaction in CasaTransactionDetails by RRN and keep reference
+                        # Use the already matched transaction from RRN validation
                         # =======
-                        rrn = incident.get("rrn", "")
-                        casa_txn_details = decrypted_obj.get("CasaTransactionDetails", [])
-                        matched_txn = None
-                        matched_index = None
-                        for idx, txn in enumerate(casa_txn_details):
-                            txn_desc = txn.get("TransactionDescription", "")
-                            if rrn and rrn in txn_desc:
-                                matched_txn = txn
-                                matched_index = idx
-                                break
-                        if matched_txn is not None:
-                            logger.info(f"[CASA_MATCHED_TXN] Found transaction for RRN {rrn} at index {matched_index}: {matched_txn}")
+                        if matched_casa_txn is not None:
+                            logger.info(f"[CASA_MATCHED_TXN] Found transaction for RRN {rrn} at index {matched_index}: {matched_casa_txn}")
                             # =======
                             # Select transactions after the matched one until sum >= pending_amount_float
                             # =======

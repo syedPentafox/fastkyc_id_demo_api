@@ -239,14 +239,14 @@ def i4c_request_job(request_json: str):
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
-                                        "pan_number": instrument.get("pan_number", ""),
-                                        "ifsc_code": instrument.get("ifsc_code", ""),
+                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
+                                        "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "root_account_number": instrument.get("payer_account_number", ""),
-                                        "root_rrn_transaction_id": instrument.get("rrn", ""),
+                                        "root_rrn_transaction_id": incident.get("rrn", ""),
                                         "root_bankid": "25",
                                         "status_code": "00",
-                                        "root_effective_balance": str(instrument.get("net_balance", "")),
-                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                                         "payee_bank": "KVB",
                                         "payee_bank_code": "25",
@@ -302,16 +302,16 @@ def i4c_request_job(request_json: str):
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
-                                        "pan_number": instrument.get("pan_number", ""),
+                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                         "disputed_amount": str(instrument.get("disputed_amount", "")),
-                                        "ifsc_code": instrument.get("ifsc_code", ""),
+                                        "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "root_account_number": instrument.get("payer_account_number", ""),
                                         "root_rrn_transaction_id": rrn,
                                         "root_bankid": "25",
                                         "status_code": "00",
                                         "remarks": data.get("request", {}).get("acknowledgement_no", ""),
-                                        "root_effective_balance": str(instrument.get("net_balance", "")),
-                                        "root_ifsc_code": instrument.get("ifsc_code", "")
+                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
                                     }
                                 ]
                             }
@@ -333,7 +333,7 @@ def i4c_request_job(request_json: str):
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
-                                        "pan_number": instrument.get("pan_number", ""),
+                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                         "disputed_amount": str(instrument.get("disputed_amount", "")),
                                         "atm_id": atm_id,
                                         "place_of_atm": place_of_atm,
@@ -342,8 +342,8 @@ def i4c_request_job(request_json: str):
                                         "root_rrn_transaction_id": instrument.get("rrn", ""),
                                         "root_bankid": "25",
                                         "status_code": "00",
-                                        "root_effective_balance": str(instrument.get("net_balance", "")),
-                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "remarks": data.get("request", {}).get("acknowledgement_no", "")
                                     }
                                 ]
@@ -368,7 +368,7 @@ def i4c_request_job(request_json: str):
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
-                                        "pan_number": instrument.get("pan_number", ""),
+                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                         "disputed_amount": str(instrument.get("disputed_amount", "")),
                                         "mid": mid,
                                         "tid": tid,
@@ -379,8 +379,8 @@ def i4c_request_job(request_json: str):
                                         "root_rrn_transaction_id": instrument.get("rrn", ""),
                                         "root_bankid": "25",
                                         "status_code": "00",
-                                        "root_effective_balance": str(instrument.get("net_balance", "")),
-                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "remarks": data.get("request", {}).get("acknowledgement_no", "")
                                     }
                                 ]
@@ -402,7 +402,7 @@ def i4c_request_job(request_json: str):
                                         "txn_type": "CHQ PAID",
                                         "txn_type_id": "6",
                                         "account_number": instrument.get("payer_account_number", ""),
-                                        "ifsc_code": instrument.get("ifsc_code", ""),
+                                        "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "cheque_no": cheque_no,
                                         "withdrawal_date": withdrawal_date,
                                         "amount": str(instrument.get("disputed_amount", "")),
@@ -412,13 +412,13 @@ def i4c_request_job(request_json: str):
                                         "managernumber": managernumber,
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
-                                        "pan_number": instrument.get("pan_number", ""),
+                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                         "root_account_number": instrument.get("payer_account_number", ""),
                                         "root_rrn_transaction_id": instrument.get("rrn", ""),
                                         "root_bankid": "25",
                                         "status_code": "00",
-                                        "root_effective_balance": str(instrument.get("net_balance", "")),
-                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "remarks": data.get("request", {}).get("acknowledgement_no", "")
                                     }
                                 ]
@@ -440,13 +440,13 @@ def i4c_request_job(request_json: str):
                                         "disputed_amount": str(instrument.get("disputed_amount", "")),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
-                                        "pan_number": instrument.get("pan_number", ""),
+                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                         "root_account_number": instrument.get("payer_account_number", ""),
                                         "root_rrn_transaction_id": instrument.get("rrn", ""),
                                         "root_bankid": "25",
                                         "status_code": "00",
-                                        "root_effective_balance": str(instrument.get("net_balance", "")),
-                                        "root_ifsc_code": instrument.get("ifsc_code", ""),
+                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "remarks": data.get("request", {}).get("acknowledgement_no", "")
                                     }
                                 ]
@@ -486,7 +486,7 @@ def i4c_request_job(request_json: str):
                         acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                         job_id = str(data.get("job_id", ""))
                         # CASA STMT response fields
-                        pan_number = decrypted_obj.get("PAN", "")
+                        pan_number = decrypted_obj.get("PAN", "") or "FORM60"
                         ifsc_code = decrypted_obj.get("IFSCCode", "")
                         net_balance = decrypted_obj.get("NetBalance", None)
                         # Get payer_account_number and rrn from i4c request
@@ -559,7 +559,7 @@ def i4c_request_job(request_json: str):
                             acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                             job_id = str(data.get("job_id", ""))
                             # CASA STMT response fields
-                            pan_number = decrypted_obj.get("PAN", "")
+                            pan_number = decrypted_obj.get("PAN", "") or "FORM60"
                             ifsc_code = decrypted_obj.get("IFSCCode", "")
                             net_balance = decrypted_obj.get("NetBalance", None)
                             # Get payer_account_number and rrn from i4c request
@@ -669,7 +669,7 @@ def i4c_request_job(request_json: str):
                                                         "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
                                                         "phone_number": "1234567890",
                                                         "email": "testing@gmail.com",
-                                                        "pan_number": decrypted_obj.get("PAN", ""),
+                                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                                         "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                                         "root_account_number": instrument.get("payer_account_number", ""),
                                                         "root_rrn_transaction_id": rrn,
@@ -754,7 +754,7 @@ def i4c_request_job(request_json: str):
                                                             "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
                                                             "phone_number": "1234567890",
                                                             "email": "testing@gmail.com",
-                                                            "pan_number": decrypted_obj.get("PAN", ""),
+                                                            "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                                                             "disputed_amount": txn_amount,
                                                             "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                                             "root_account_number": instrument.get("payer_account_number", ""),
@@ -781,7 +781,7 @@ def i4c_request_job(request_json: str):
                                             payload_data = data.get("request", {})
                                             acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                                             job_id = str(data.get("job_id", ""))
-                                            pan_number = decrypted_obj.get("PAN", "")
+                                            pan_number = decrypted_obj.get("PAN", "") or "FORM60"
                                             ifsc_code = decrypted_obj.get("IFSCCode", "")
                                             net_balance = decrypted_obj.get("NetBalance", None)
                                             payer_account_number = instrument.get("payer_account_number", "")

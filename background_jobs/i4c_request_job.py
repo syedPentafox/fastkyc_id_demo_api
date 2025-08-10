@@ -622,6 +622,9 @@ def i4c_request_job(request_json: str):
                                     except Exception:
                                         txn_amount = 0.0
 
+                                    # Simple disputed amount calculation
+                                    disputed_amt = min(txn_amount, pending_amount_float - total_selected_amount)
+
                                     # Only select transactions based on description rules
                                     if any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]):
                                         selected_txns.append(txn)
@@ -666,6 +669,7 @@ def i4c_request_job(request_json: str):
                                                         "txn_type": payment_status_dict["Mode_Of_Payment"],
                                                         "txn_type_id": "2",
                                                         "amount": str(txn_amount),
+                                                        "disputed_amount": str(disputed_amt),
                                                         "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
                                                         "phone_number": "1234567890",
                                                         "email": "testing@gmail.com",
@@ -750,12 +754,12 @@ def i4c_request_job(request_json: str):
                                                             "payee_bank": "KVB",
                                                             "payee_bank_code": "25",
                                                             "payee_account_number": payee_account_number,
-                                                            "amount": txn_amount,
+                                                            "amount": str(txn_amount),
+                                                            "disputed_amount": str(disputed_amt),
                                                             "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
                                                             "phone_number": "1234567890",
                                                             "email": "testing@gmail.com",
                                                             "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
-                                                            "disputed_amount": txn_amount,
                                                             "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                                             "root_account_number": instrument.get("payer_account_number", ""),
                                                             "root_rrn_transaction_id": rrn,
@@ -795,7 +799,6 @@ def i4c_request_job(request_json: str):
                                             root_ifsc_code = decrypted_obj.get("IFSCCode", "")
                                             phone_number = "1234567890"
                                             email = "testing@gmail.com"
-                                            disputed_amount = txn.get("TransactionAmount", "")
                                             # ATM
                                             if "ATM" in txn_desc:
                                                 # Parse ATM fields
@@ -814,12 +817,12 @@ def i4c_request_job(request_json: str):
                                                         {
                                                             "txn_type": "ATM",
                                                             "txn_type_id": "4",
-                                                            "amount": txn.get("TransactionAmount", ""),
+                                                            "amount": str(txn_amount),
+                                                            "disputed_amount": str(disputed_amt),
                                                             "transaction_datetime": transaction_datetime_val,
                                                             "phone_number": phone_number,
                                                             "email": email,
                                                             "pan_number": pan_number,
-                                                            "disputed_amount": disputed_amount,
                                                             "atm_id": atm_id,
                                                             "place_of_atm": place_of_atm,
                                                             "atm_of_bank": atm_of_bank,
@@ -848,12 +851,12 @@ def i4c_request_job(request_json: str):
                                                         {
                                                             "txn_type": "POS",
                                                             "txn_type_id": "5",
-                                                            "amount": txn.get("TransactionAmount", ""),
+                                                            "amount": str(txn_amount),
+                                                            "disputed_amount": str(disputed_amt),
                                                             "transaction_datetime": transaction_datetime_val,
                                                             "phone_number": phone_number,
                                                             "email": email,
                                                             "pan_number": pan_number,
-                                                            "disputed_amount": disputed_amount,
                                                             "mid": mid,
                                                             "tid": tid,
                                                             "approval_code": approval_code,
@@ -887,8 +890,8 @@ def i4c_request_job(request_json: str):
                                                             "ifsc_code": ifsc_code,
                                                             "cheque_no": cheque_no,
                                                             "withdrawal_date": withdrawal_date,
-                                                            "amount": txn.get("TransactionAmount", ""),
-                                                            "disputed_amount": disputed_amount,
+                                                            "amount": str(txn_amount),
+                                                            "disputed_amount": str(disputed_amt),
                                                             "location": location,
                                                             "managername": managername,
                                                             "managernumber": managernumber,
@@ -920,8 +923,8 @@ def i4c_request_job(request_json: str):
                                                             "txn_type": "AEPS",
                                                             "txn_type_id": "7",
                                                             "rrn": rrn_val,
-                                                            "amount": txn.get("TransactionAmount", ""),
-                                                            "disputed_amount": disputed_amount,
+                                                            "amount": str(txn_amount),
+                                                            "disputed_amount": str(disputed_amt),
                                                             "phone_number": phone_number,
                                                             "email": email,
                                                             "pan_number": pan_number,

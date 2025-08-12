@@ -189,7 +189,7 @@ def i4c_request_job(request_json: str):
                     
                     # Use current timestamp for invalid RRN
                     current_timestamp = datetime.now()
-                    transaction_datetime_val = current_timestamp.strftime("%d-%m-%Y %H:%M:%S")
+                    transaction_datetime_val = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
                     amount = "{:.2f}".format(disputed_amount_float)
                     
                     invalid_rrn_payload = {
@@ -516,7 +516,7 @@ def i4c_request_job(request_json: str):
                         instrument_data = payload_data.get("instrument", {})
                         payer_account_number = str(instrument_data.get("payer_account_number", ""))
                         # Use the same server timestamp for I4C response
-                        transaction_datetime_val = hold_timestamp.strftime("%d-%m-%Y %H:%M:%S")
+                        transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
                         hold_amount = "{:.2f}".format(disputed_amount_float)
                         i4c_payload = {
                             "acknowledgement_no": acknowledgement_no,
@@ -589,7 +589,7 @@ def i4c_request_job(request_json: str):
                             instrument_data = payload_data.get("instrument", {})
                             payer_account_number = str(instrument_data.get("payer_account_number", ""))
                             # Use the same server timestamp for I4C response
-                            transaction_datetime_val = hold_timestamp.strftime("%d-%m-%Y %H:%M:%S")
+                            transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
                             i4c_payload = {
                                 "acknowledgement_no": acknowledgement_no,
                                 "job_id": job_id,
@@ -681,6 +681,16 @@ def i4c_request_job(request_json: str):
                                             payee_account_number = ""
                                             if payment_status_response and isinstance(payment_status_response, dict):
                                                 payee_account_number = payment_status_response.get("Beneficiary_Account_No", "")
+                                            
+                                            # Convert CASA datetime format from %d-%m-%Y to %Y-%m-%d
+                                            casa_txn_date = txn.get("TransactionDate", "")
+                                            casa_txn_time = txn.get("TransactionTime", "")
+                                            try:
+                                                casa_datetime_obj = datetime.strptime(f"{casa_txn_date} {casa_txn_time}", "%d-%m-%Y %H:%M:%S")
+                                                converted_datetime = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
+                                            except Exception:
+                                                converted_datetime = f"{casa_txn_date} {casa_txn_time}"
+                                            
                                             i4c_payload = {
                                                 "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
                                                 "job_id": data.get("job_id", ""),
@@ -690,7 +700,7 @@ def i4c_request_job(request_json: str):
                                                         "txn_type_id": "2",
                                                         "amount": str(txn_amount),
                                                         "disputed_amount": str(disputed_amt),
-                                                        "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
+                                                        "transaction_datetime": converted_datetime,
                                                         "phone_number": "1234567890",
                                                         "email": "testing@gmail.com",
                                                         "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
@@ -763,6 +773,16 @@ def i4c_request_job(request_json: str):
                                                 rrn = incident.get("rrn", "")
                                                 payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
                                                 upi_amount = upi_response.get("Amount", "") if upi_response else ""
+                                                
+                                                # Convert CASA datetime format from %d-%m-%Y to %Y-%m-%d
+                                                casa_txn_date = txn.get("TransactionDate", "")
+                                                casa_txn_time = txn.get("TransactionTime", "")
+                                                try:
+                                                    casa_datetime_obj = datetime.strptime(f"{casa_txn_date} {casa_txn_time}", "%d-%m-%Y %H:%M:%S")
+                                                    converted_datetime = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
+                                                except Exception:
+                                                    converted_datetime = f"{casa_txn_date} {casa_txn_time}"
+                                                
                                                 i4c_payload = {
                                                     "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
                                                     "job_id": data.get("job_id", ""),
@@ -776,7 +796,7 @@ def i4c_request_job(request_json: str):
                                                             "payee_account_number": payee_account_number,
                                                             "amount": str(txn_amount),
                                                             "disputed_amount": str(disputed_amt),
-                                                            "transaction_datetime": txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", ""),
+                                                            "transaction_datetime": converted_datetime,
                                                             "phone_number": "1234567890",
                                                             "email": "testing@gmail.com",
                                                             "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
@@ -809,7 +829,14 @@ def i4c_request_job(request_json: str):
                                             ifsc_code = decrypted_obj.get("IFSCCode", "")
                                             net_balance = decrypted_obj.get("NetBalance", None)
                                             payer_account_number = instrument.get("payer_account_number", "")
-                                            transaction_datetime_val = txn.get("TransactionDate", "") + " " + txn.get("TransactionTime", "")
+                                            # Convert CASA datetime format from %d-%m-%Y to %Y-%m-%d
+                                            casa_txn_date = txn.get("TransactionDate", "")
+                                            casa_txn_time = txn.get("TransactionTime", "")
+                                            try:
+                                                casa_datetime_obj = datetime.strptime(f"{casa_txn_date} {casa_txn_time}", "%d-%m-%Y %H:%M:%S")
+                                                transaction_datetime_val = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
+                                            except Exception:
+                                                transaction_datetime_val = f"{casa_txn_date} {casa_txn_time}"
                                             rrn = incident.get("rrn", "")
                                             root_rrn_transaction_id = rrn
                                             root_bankid = "25"

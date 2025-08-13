@@ -777,7 +777,7 @@ def i4c_request_job(request_json: str):
                                                 logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
                                         except Exception as upi_exc:
                                             logger.error(f"[UPI_PAYMENT_STATUS_INQUIRY_ERROR] {upi_exc}")
-                                    elif any(x in txn_desc for x in ["ATM", "POS", "CHQ PAID", "AEPS"]):
+                                    elif any(x in txn_desc for x in ["ATM CSW", "POS", "CHQ PAID", "AEPS"]):
                                         selected_txns.append(txn)
                                         total_selected_amount += txn_amount
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
@@ -800,7 +800,7 @@ def i4c_request_job(request_json: str):
                                             phone_number = "1234567890"
                                             email = "testing@gmail.com"
                                             # ATM
-                                            if "ATM" in txn_desc:
+                                            if "ATM CSW" in txn_desc:
                                                 # Parse ATM fields
                                                 # Example: ATM CSW/0120068848/SIVANANATHA COLON/COIMBAT
                                                 atm_id = ""

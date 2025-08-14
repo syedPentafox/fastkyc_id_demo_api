@@ -1,9 +1,11 @@
 import os
+import logging
 import json
 import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class AESUtil:
     def __init__(self):
@@ -40,7 +42,16 @@ class AESUtil:
         return self.aes_encrypt(self.AD_PASSWORD_SECRET_KEY, plaintext)
 
     def decrypt_ad_password_payload(self, ciphertext):
-        return json.loads(self.aes_decrypt(self.AD_PASSWORD_SECRET_KEY, ciphertext))
+        logger.info(f">>>>>>>>>>>>{ciphertext}")
+        logger.info(f">>>>>>>>>>>>>>>>{self.aes_decrypt(self.AD_PASSWORD_SECRET_KEY, ciphertext)}")
+        logger.info(f">>>>>>>>>>>>>>>>{type(self.aes_decrypt(self.AD_PASSWORD_SECRET_KEY, ciphertext))}")
+        decrypted_str=self.aes_decrypt(self.AD_PASSWORD_SECRET_KEY, ciphertext)
+        logger.info(">>>>>>>>>>>>>>>> ds {decrypted_str}")
+        replaced_str= decrypted_str.replace('\\"','"')
+        logger.info(f">>>>>>>>>>>>>>>>>>>>>>>cleaned str {replaced_str}")
+        logger.info(f">>>>>>>>>>>>>>>>>>>>>string type {type(replaced_str)}")
+        return json.loads(replaced_str)
+        #return json.loads(self.aes_decrypt(self.AD_PASSWORD_SECRET_KEY, ciphertext))
 
     def encrypt_ad_otp_payload(self, plaintext):
         return self.aes_encrypt(self.AD_OTP_SECRET_KEY, plaintext)

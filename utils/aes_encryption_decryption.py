@@ -8,7 +8,7 @@ from Crypto.Util.Padding import pad, unpad
 class AESUtil:
     def __init__(self):
         self.AES_SECRET_KEY = os.getenv("AES_SECRET_KEY")
-        self.AD_PASSWORD_SECRET_KEY = os.getenv("AD_PASSWORD_SECRET_KEY")
+        self.AD_PASSWORD_SECRET_KEY = os.getenv("KVB_KEY_VALUE")
         self.AD_OTP_SECRET_KEY = os.getenv("AD_OTP_SECRET_KEY")
 
     def aes_encrypt(self, key, plaintext):

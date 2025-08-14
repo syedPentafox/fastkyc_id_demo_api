@@ -1,21 +1,14 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, requests
 from pydantic import BaseModel
 import logging
-from utils.custom_class import APIRouteWrapper
+from response_models.response_models import make_failure_response, make_success_response
+from utils.authentication import create_access_token_ncrp, create_refresh_token_ncrp
+from utils.custom_class import APIRouteWrapper, CustomRequest
 import os
 from dotenv import load_dotenv
 from utils.aes_encryption_decryption import AESUtil
 from utils.external_api import APIRequester
-from router_helper.login_helper import (
-    lms_login,
-    fetch_user_details,
-    user_not_found_response,
-)
-
-from fastapi.security import OAuth2PasswordRequestForm
-import orjson
-from fastapi.responses import JSONResponse, ORJSONResponse
-import json
+import json,requests
 
 router = APIRouter(route_class=APIRouteWrapper)
 
@@ -32,56 +25,75 @@ class EncryptedPayload(BaseModel):
     encrypted_payload: str
 
 
-@router.post("/api/login", tags=["Auth"])
-def user_login_encrypt(payload: EncryptedPayload):
-    """
-    Authenticate the user using the mobile number.
-    If successful, create a JWT token and return it.
-    """
+@router.post("/api/login")
+def user_login(payload: EncryptedPayload):
+    logger.info(f"Encrypted payload from frontend: {payload.encrypted_payload}")
     plaintext = aes.decrypt_password_payload(payload.encrypted_payload)
-    print("plaintext", plaintext)
-    plaintext.pop("origin", "").upper()
-
-    user_details, _ = fetch_user_details(plaintext)
-    if not user_details:
-        return user_not_found_response(plaintext)
-    # if not verify_password(plaintext.get("password"), user_details[0].get("user_password")):
-    #     return password_incorrect_response()
-    return lms_login(user_details[0].get("emp_code"))
-
-
-@router.post("/token", tags=["Auth"])
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Obtain an access token using username and password.
-    """
-    raw_payload = json.dumps(
-        {
-            "emp_code": form_data.username,
-            "password": form_data.password,
-            "origin": "web",
-            "device_id": None,
+    logger.info(f"Decrypted frontend payload: {plaintext}")
+    print(f"Decrypted frontend payload: {plaintext}")
+    username = plaintext.get("user_name")
+    password = plaintext.get("password")
+    if not username or not password:
+        return make_failure_response(message="Username and password are required.")
+    ad_plain = {"Usr_Name": username, "Usr_Psw": password, "Source": "AD"}
+    encrypted_req = aes.encrypt_ad_password_payload(json.dumps(ad_plain))
+    logger.info(f"Encrypted AD request: {encrypted_req}")
+    print(f"Encrypted AD request: {encrypted_req}")
+    kvb_payload = {
+        "inputVariables": {
+            "in_msg": {
+                "Src_Channel": "APII4C",
+                "UserName": os.getenv("KVB_USERNAME"),
+                "Password": os.getenv("KVB_PASSWORD"),
+                "encryptReq": encrypted_req
+            }
         }
-    )
-    encrypt_payload: EncryptedPayload = {
-        "encrypted_payload": aes.encrypt_password_payload(raw_payload)
     }
-    # Call the user_login_encrypt function and process the response
-    login_response_obj = user_login_encrypt(EncryptedPayload(**encrypt_payload))
-
-    # Check if the response is of ORJSONResponse type
-    if isinstance(login_response_obj, ORJSONResponse):
-        login_response = orjson.loads(login_response_obj.body)
+    headers = {"Content-Type": "application/json"}
+    resp = requests.post(os.getenv("AD_LOGIN"), json=kvb_payload, headers=headers, verify=False)
+    logger.info(f"Raw AD API response: {resp.text}")
+    print(f"Raw AD API response: {resp.text}")
+    if not resp.ok:
+        return make_failure_response(message="Couldn't reach AD server")
+    resp_json = resp.json()
+    out_msg = resp_json.get("out_msg")
+    if isinstance(out_msg, str):
+        try:
+            out_msg = json.loads(out_msg)
+        except json.JSONDecodeError:
+            out_msg = {}
+    decrypted = {}
+    if isinstance(out_msg, dict) and "encryptRes" in out_msg:
+        encrypt_res = out_msg["encryptRes"].strip()
+        logger.info(f"Encrypted AD response: {encrypt_res}")
+        print(f"Encrypted AD response: {encrypt_res}")
+        try:
+            decrypted = aes.decrypt_ad_password_payload(encrypt_res)
+            logger.info(f"Decrypted AD response: {decrypted}")
+            print(f"Decrypted AD response: {decrypted}")
+        except Exception as e:
+            return make_failure_response(message=f"Failed to decrypt AD response: {str(e)}")
+    elif isinstance(out_msg, dict):
+        decrypted = out_msg
+        logger.info(f"Plain AD response: {decrypted}")
+        print(f"Plain AD response: {decrypted}")
     else:
-        raise TypeError("Expected ORJSONResponse")
-
-    print("login_response.get('data')", login_response.get("data"))
-    # Extract the token from the response (ensure your response includes the token)
-    token = login_response.get("data").get("access_token")
-    if not token:
-        return JSONResponse(
-            content={"detail": "Invalid login response"}, status_code=401
-        )
-
-    # Return the response in a format Swagger expects
-    return {"access_token": token, "token_type": "bearer"}
+        return make_failure_response(message="Invalid out_msg format from AD")
+    if decrypted.get("ErrorMessage") == "Success":
+        if decrypted.get("Department") not in ["ITD", "OD", "1260"]:
+            return make_failure_response(message="Unauthorized Department")
+        user_id = decrypted.get("EmployeeCode")
+        access_token = create_access_token_ncrp({"user_id": user_id})
+        refresh_token = create_refresh_token_ncrp({"user_id": user_id})
+        final_payload = {
+            "user": decrypted,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        }
+        encrypted_response = aes.encrypt_password_payload(json.dumps(final_payload))
+        logger.info(f"Encrypted final response to frontend: {encrypted_response}")
+        print(f"Encrypted final response to frontend: {encrypted_response}")
+        return {"encrypted_payload": encrypted_response}
+    else:
+        return make_failure_response(message=decrypted.get("ErrorMessage"))

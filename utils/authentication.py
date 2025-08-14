@@ -137,3 +137,15 @@ async def get_user_id_from_refresh_token(token):
     except jwt.InvalidTokenError:
         raise credentials_exception
     return token_data.get("user_id")
+
+def create_access_token_ncrp(data: dict, expires_delta: int = 60):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=expires_delta)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, os.getenv("JWT_SECRET_KEY"), algorithm="HS256")
+
+def create_refresh_token_ncrp(data: dict, expires_delta: int = 1440):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=expires_delta)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, os.getenv("JWT_SECRET_KEY"), algorithm="HS256")

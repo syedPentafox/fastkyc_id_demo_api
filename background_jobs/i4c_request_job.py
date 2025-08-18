@@ -282,8 +282,8 @@ def i4c_request_job(request_json: str):
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
-                                        "txn_type": transaction_type,
-                                        "txn_type_id": "2",
+                                        "txn_type": "Money Transfer To",
+                                        "txn_type_id": "3",
                                         "amount": str(instrument.get("disputed_amount", "")),
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
@@ -341,7 +341,7 @@ def i4c_request_job(request_json: str):
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
-                                        "txn_type": "UPI",
+                                        "txn_type": "Money Transfer To",
                                         "txn_type_id": "3",
                                         "rrn": rrn,
                                         "payee_bank": "KVB",
@@ -376,8 +376,8 @@ def i4c_request_job(request_json: str):
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
-                                        "txn_type": "ATM",
-                                        "txn_type_id": "4",
+                                        "txn_type": "Withdrawal through ATM",
+                                        "txn_type_id": "5",
                                         "amount": str(instrument.get("disputed_amount", "")),
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
@@ -411,8 +411,8 @@ def i4c_request_job(request_json: str):
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
-                                        "txn_type": "POS",
-                                        "txn_type_id": "5",
+                                        "txn_type": "Withdrawal through POS",
+                                        "txn_type_id": "11",
                                         "amount": str(instrument.get("disputed_amount", "")),
                                         "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
                                         "phone_number": "1234567890",
@@ -448,8 +448,8 @@ def i4c_request_job(request_json: str):
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
-                                        "txn_type": "CHQ PAID",
-                                        "txn_type_id": "6",
+                                        "txn_type": "Withdrawal through Cheque",
+                                        "txn_type_id": "14",
                                         "account_number": instrument.get("payer_account_number", ""),
                                         "ifsc_code": decrypted_obj.get("IFSCCode", ""),
                                         "cheque_no": cheque_no,
@@ -482,8 +482,8 @@ def i4c_request_job(request_json: str):
                                 "job_id": data.get("job_id", ""),
                                 "transactions": [
                                     {
-                                        "txn_type": "AEPS",
-                                        "txn_type_id": "7",
+                                        "txn_type": "Withdrawal through AEPS",
+                                        "txn_type_id": "6",
                                         "rrn": rrn_val,
                                         "amount": str(instrument.get("disputed_amount", "")),
                                         "disputed_amount": str(instrument.get("disputed_amount", "")),
@@ -725,8 +725,8 @@ def i4c_request_job(request_json: str):
                                                 "job_id": data.get("job_id", ""),
                                                 "transactions": [
                                                     {
-                                                        "txn_type": payment_status_dict["Mode_Of_Payment"],
-                                                        "txn_type_id": "2",
+                                                        "txn_type": "Money Transfer To",
+                                                        "txn_type_id": "3",
                                                         "amount": str(txn_amount),
                                                         "disputed_amount": str(disputed_amt),
                                                         "transaction_datetime": converted_datetime,
@@ -817,7 +817,7 @@ def i4c_request_job(request_json: str):
                                                     "job_id": data.get("job_id", ""),
                                                     "transactions": [
                                                         {
-                                                            "txn_type": "UPI",
+                                                            "txn_type": "Money Transfer To",
                                                             "txn_type_id": "3",
                                                             "rrn": rrn,
                                                             "payee_bank": "KVB",
@@ -891,8 +891,8 @@ def i4c_request_job(request_json: str):
                                                     "Job_id": job_id,
                                                     "transactions": [
                                                         {
-                                                            "txn_type": "ATM",
-                                                            "txn_type_id": "4",
+                                                            "txn_type": "Withdrawal through ATM",
+                                                            "txn_type_id": "5",
                                                             "amount": str(txn_amount),
                                                             "disputed_amount": str(disputed_amt),
                                                             "transaction_datetime": transaction_datetime_val,
@@ -925,8 +925,8 @@ def i4c_request_job(request_json: str):
                                                     "Job_id": job_id,
                                                     "transactions": [
                                                         {
-                                                            "txn_type": "POS",
-                                                            "txn_type_id": "5",
+                                                            "txn_type": "Withdrawal through POS",
+                                                            "txn_type_id": "11",
                                                             "amount": str(txn_amount),
                                                             "disputed_amount": str(disputed_amt),
                                                             "transaction_datetime": transaction_datetime_val,
@@ -960,8 +960,8 @@ def i4c_request_job(request_json: str):
                                                     "Job_id": job_id,
                                                     "transactions": [
                                                         {
-                                                            "txn_type": "CHQ PAID",
-                                                            "txn_type_id": "6",
+                                                            "txn_type": "Withdrawal through Cheque",
+                                                            "txn_type_id": "14",
                                                             "account_number": payer_account_number,
                                                             "ifsc_code": ifsc_code,
                                                             "cheque_no": cheque_no,
@@ -996,8 +996,8 @@ def i4c_request_job(request_json: str):
                                                     "Job_id": job_id,
                                                     "transactions": [
                                                         {
-                                                            "txn_type": "AEPS",
-                                                            "txn_type_id": "7",
+                                                            "txn_type": "Withdrawal through AEPS",
+                                                            "txn_type_id": "6",
                                                             "rrn": rrn_val,
                                                             "amount": str(txn_amount),
                                                             "disputed_amount": str(disputed_amt),

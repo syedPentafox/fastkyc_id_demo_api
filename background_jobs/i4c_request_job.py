@@ -20,6 +20,8 @@ from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_in
 from background_jobs.casa_stmt_api import casa_stmt_api
 import uuid
 
+from utils.db_connection import db
+
 def i4c_request_job(request_json: str):
     data = request_json
     #logger.info(json.dumps(data, indent=4))
@@ -41,7 +43,34 @@ def i4c_request_job(request_json: str):
     payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
     hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
 
+    # db.create_record_('upi_fraud_transactions', {
+    #     'job_id': data['job_id'],
+    #     'sub_category': data['request']['sub_category'],
+    #     'requestor': data['request']['instrument']['requestor'],
+    #     'payer_bank_code': data['request']['instrument']['payer_bank_code'],
+    #     'mode_of_payment': data['request']['instrument']['mode_of_payment'],
+    #     'payer_mobile_number': data['request']['instrument']['payer_mobile_number'],
+    #     'payer_account_number': data['request']['instrument']['payer_account_number'],
+    #     'state': data['request']['instrument']['state'],
+    #     'district': data['request']['instrument']['district'],
+    #     'received_dt': data['received_dt'] 
+    # })
+
     for idx, incident in enumerate(incidents):
+            # db.create_record_('upi_fraud_incidents', {
+            #     'ack_no': data['ack_no'],
+            #     'job_id': data['job_id'],
+            #     'amount': incident['amount'],
+            #     'rrn': incident['rrn'],
+            #     'transaction_date': incident['transaction_date'],
+            #     'transaction_time': incident['transaction_time'],
+            #     'disputed_amount': incident['disputed_amount'],
+            #     'layer': incident['layer']
+            # })
+            
+            # # Commit after creating transaction and all incidents
+            # db.commit()
+
             # =======
             # CASA STMT Inquiry API
             # =======

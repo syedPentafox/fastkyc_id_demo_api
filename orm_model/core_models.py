@@ -362,6 +362,50 @@ class ResourcePermissionsValidation(Base):
     optional_fields = Column(JSONEncodedText)
 
 
+class I4CRequest(Base):
+    __tablename__ = "i4c_request"
+    
+    request = Column(Text, nullable=True)  # CLOB
+    ack_no = Column(String(30), nullable=True)  # VARCHAR2(30)
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    status = Column(String(6), nullable=True)  # VARCHAR2(6)
+    msg_type = Column(String(15), nullable=True)  # VARCHAR2(15)
+    received_dt = Column(DateTime, nullable=True)  # TIMESTAMP(6)
+    created_date = Column(DateTime, nullable=True)  # TIMESTAMP(6)
+    modified_date = Column(DateTime, nullable=True)  # TIMESTAMP(6)
+    created_by = Column(Numeric, nullable=True)  # NUMBER
+    modified_by = Column(Numeric, nullable=True)  # NUMBER
+
+
+class UpiFraudTransactions(Base):
+    __tablename__ = "upi_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class UpiFraudIncidents(Base):
+    __tablename__ = "upi_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
+
 
 # Dictionary mapping models to their corresponding JSON files
 models_and_files = {

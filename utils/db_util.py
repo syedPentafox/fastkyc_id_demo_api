@@ -52,6 +52,8 @@ import numpy as np
 import ast
 from dateutil import parser
 
+from utils.new_tables import import_table_metadata
+
 logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
@@ -84,9 +86,12 @@ class DatabaseHandler:
         for table in tables:
             columns = [col["name"] for col in self.inspector.get_columns(table)]
             table_metadata[table] = columns
+        
         self.tables = tables
         self.session = self.Session()
         self.table_metadata = table_metadata
+        # Manually add i4c_request table metadata (Oracle filters out SYSTEM tablespace tables)
+        import_table_metadata(self.table_metadata, self.tables)
         self.FILTER_OPERATORS = {
             "eq": lambda column, value: column == value,
             "neq": lambda column, value: column != value,
@@ -150,6 +155,10 @@ class DatabaseHandler:
             table: [col["name"] for col in self.inspector.get_columns(table)]
             for table in self.inspector.get_table_names()
         }
+        
+        # Manually add i4c_request table metadata (Oracle filters out SYSTEM tablespace tables)
+        import_table_metadata(self.table_metadata, self.tables)
+
         self.tables = list(self.table_metadata.keys())
 
         # Dispose the engine to clear cached metadata
@@ -300,6 +309,16 @@ class DatabaseHandler:
 
     def get_model(self, tbl_name):
         if self.check_table_exists(tbl_name):
+            # Special case for i4c_request table - use the manually defined model
+            if tbl_name == 'i4c_request':
+                from orm_model.core_models import I4CRequest
+                return I4CRequest
+            if tbl_name == 'upi_fraud_transactions':
+                from orm_model.core_models import UpiFraudTransactions
+                return UpiFraudTransactions
+            if tbl_name == 'upi_fraud_incidents':
+                from orm_model.core_models import UpiFraudIncidents
+                return UpiFraudIncidents
             return getattr(self.Base.classes, tbl_name)
 
     def get_columns_by_table(self, tbl_name):
@@ -1685,6 +1704,60 @@ class DatabaseHandler:
                         raise  # Re-raise other errors
 
                 data["id"] = next_id
+
+            new_record = model(**data)
+            s.add(new_record)
+            s.commit()
+            #return new_record.id
+            return True
+
+    def create_record_(self, tbl_name, data, user_id=None):
+        model = self.get_model(tbl_name)
+        # Filter allowed columns
+        data = self.remove_unwanted_column(
+            {
+                col: data[col]
+                for col in data.keys()
+                if col in self.table_metadata[tbl_name]
+            }
+        )
+
+        # # Audit fields
+        # for user_column in ["created_by", "modified_by"]:
+        #     if user_column in self.table_metadata[tbl_name]:
+        #         data[user_column] = user_id
+
+        # if "created_date" in self.table_metadata[tbl_name]:
+        #     data["created_date"] = datetime.utcnow()
+        # if "modified_date" in self.table_metadata[tbl_name]:
+        #     data["modified_date"] = datetime.utcnow()
+
+        with self.Session() as s:
+            s.info["user_id"] = user_id
+
+            # # Handle ID with Oracle sequence
+            # if "id" in self.table_metadata[tbl_name] and "id" not in data:
+            #     seq_name = f"{tbl_name.lower()}_seq"  # Assumes naming like: working_program_seq
+            #     try:
+            #         result = s.execute(text(f"SELECT {seq_name}.NEXTVAL FROM dual"))
+            #         next_id = result.scalar()
+            #     except DBAPIError as e:
+            #         if "ORA-02289" in str(e):  # Sequence does not exist
+            #             # Create the sequence
+            #             s.execute(
+            #                 text(
+            #                     f"CREATE SEQUENCE {seq_name} START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE"
+            #                 )
+            #             )
+            #             s.commit()
+
+            #             # Retry fetching the value
+            #             result = s.execute(text(f"SELECT {seq_name}.NEXTVAL FROM dual"))
+            #             next_id = result.scalar()
+            #         else:
+            #             raise  # Re-raise other errors
+
+            #     data["id"] = next_id
 
             new_record = model(**data)
             s.add(new_record)

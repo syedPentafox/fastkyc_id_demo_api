@@ -285,7 +285,7 @@ def i4c_request_job(request_json: str):
                                         "txn_type": "Money Transfer To",
                                         "txn_type_id": "3",
                                         "amount": str(instrument.get("disputed_amount", "")),
-                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
                                         "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
@@ -348,7 +348,7 @@ def i4c_request_job(request_json: str):
                                         "payee_bank_code": "25",
                                         "payee_account_number": payee_account_number,
                                         "amount": str(instrument.get("disputed_amount", "")),
-                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
                                         "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
@@ -379,7 +379,7 @@ def i4c_request_job(request_json: str):
                                         "txn_type": "Withdrawal through ATM",
                                         "txn_type_id": "5",
                                         "amount": str(instrument.get("disputed_amount", "")),
-                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
                                         "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
@@ -414,7 +414,7 @@ def i4c_request_job(request_json: str):
                                         "txn_type": "Withdrawal through POS",
                                         "txn_type_id": "11",
                                         "amount": str(instrument.get("disputed_amount", "")),
-                                        "transaction_datetime": instrument.get("transaction_date", "") + " " + instrument.get("transaction_time", ""),
+                                        "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
                                         "phone_number": "1234567890",
                                         "email": "testing@gmail.com",
                                         "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
@@ -713,12 +713,11 @@ def i4c_request_job(request_json: str):
                                             
                                             # Convert CASA datetime format from %d-%m-%Y to %Y-%m-%d
                                             casa_txn_date = txn.get("TransactionDate", "")
-                                            casa_txn_time = txn.get("TransactionTime", "")
                                             try:
-                                                casa_datetime_obj = datetime.strptime(f"{casa_txn_date} {casa_txn_time}", "%d-%m-%Y %H:%M:%S")
+                                                casa_datetime_obj = datetime.strptime(casa_txn_date, "%d-%m-%Y %H:%M:%S")
                                                 converted_datetime = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
                                             except Exception:
-                                                converted_datetime = f"{casa_txn_date} {casa_txn_time}"
+                                                converted_datetime = casa_txn_date
                                             
                                             i4c_payload = {
                                                 "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
@@ -805,12 +804,11 @@ def i4c_request_job(request_json: str):
                                                 
                                                 # Convert CASA datetime format from %d-%m-%Y to %Y-%m-%d
                                                 casa_txn_date = txn.get("TransactionDate", "")
-                                                casa_txn_time = txn.get("TransactionTime", "")
                                                 try:
-                                                    casa_datetime_obj = datetime.strptime(f"{casa_txn_date} {casa_txn_time}", "%d-%m-%Y %H:%M:%S")
+                                                    casa_datetime_obj = datetime.strptime(casa_txn_date, "%d-%m-%Y %H:%M:%S")
                                                     converted_datetime = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
                                                 except Exception:
-                                                    converted_datetime = f"{casa_txn_date} {casa_txn_time}"
+                                                    converted_datetime = casa_txn_date
                                                 
                                                 i4c_payload = {
                                                     "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
@@ -860,12 +858,11 @@ def i4c_request_job(request_json: str):
                                             payer_account_number = instrument.get("payer_account_number", "")
                                             # Convert CASA datetime format from %d-%m-%Y to %Y-%m-%d
                                             casa_txn_date = txn.get("TransactionDate", "")
-                                            casa_txn_time = txn.get("TransactionTime", "")
                                             try:
-                                                casa_datetime_obj = datetime.strptime(f"{casa_txn_date} {casa_txn_time}", "%d-%m-%Y %H:%M:%S")
+                                                casa_datetime_obj = datetime.strptime(casa_txn_date, "%d-%m-%Y %H:%M:%S")
                                                 transaction_datetime_val = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
                                             except Exception:
-                                                transaction_datetime_val = f"{casa_txn_date} {casa_txn_time}"
+                                                transaction_datetime_val = casa_txn_date
                                             rrn = incident.get("rrn", "")
                                             root_rrn_transaction_id = rrn
                                             root_bankid = "25"

@@ -62,7 +62,8 @@ async def i4c_request(background_tasks:BackgroundTasks):
         logger.info('i4c_request entry start')
         logger.info(str(o))
         logger.info('i4c_request entry end')
-        background_tasks.add_task(i4c_request_job, o)
+        i4c_request_job(o)
+        # background_tasks.add_task(i4c_request_job, o)
     logger.info(f"Received data from db : {str(out)}")
     #background_tasks.add_task(i4c_request_job,out)
-    return [out, a] 
+    return out

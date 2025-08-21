@@ -319,6 +319,9 @@ class DatabaseHandler:
             if tbl_name == 'upi_fraud_incidents':
                 from orm_model.core_models import UpiFraudIncidents
                 return UpiFraudIncidents
+            if tbl_name == 'roles':
+                from orm_model.core_models import Role
+                return Role
             return getattr(self.Base.classes, tbl_name)
 
     def get_columns_by_table(self, tbl_name):
@@ -1558,7 +1561,7 @@ class DatabaseHandler:
             # Modify the query string to remove duplicate aliases dynamically
 
             query_str = self.remove_duplicate_aliases(compiled_query.string)
-            #query_str = query_str.replace("', ", "' VALUE ")
+            query_str = query_str.replace("', ", "' VALUE ")
 
             # Step 1: Remove ORDER BY for count
             countable_query = self.remove_order_by(query_str.strip().rstrip(";"))

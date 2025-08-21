@@ -368,7 +368,7 @@ class I4CRequest(Base):
     request = Column(Text, nullable=True)  # CLOB
     ack_no = Column(String(30), nullable=True)  # VARCHAR2(30)
     job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
-    status = Column(String(6), nullable=True)  # VARCHAR2(6)
+    status = Column(String(20), nullable=True)  # VARCHAR2(6)
     msg_type = Column(String(15), nullable=True)  # VARCHAR2(15)
     received_dt = Column(DateTime, nullable=True)  # TIMESTAMP(6)
     created_date = Column(DateTime, nullable=True)  # TIMESTAMP(6)

@@ -12,3 +12,7 @@ def import_table_metadata(table_metadata, tables):
   if 'upi_fraud_incidents' not in table_metadata:
     table_metadata['upi_fraud_incidents'] = ['ack_no', 'job_id', 'amount', 'rrn', 'transaction_date', 'transaction_time', 'disputed_amount', 'layer']
     tables.append('upi_fraud_incidents')
+
+  if 'roles' not in table_metadata:
+    table_metadata['roles'] = ['id', 'created_date', 'modified_date', 'name']
+    tables.append('roles')

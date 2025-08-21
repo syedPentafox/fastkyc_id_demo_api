@@ -28,6 +28,7 @@ def i4c_request_job(request_json: str):
     logger.info('i4c_request_job request_json start')
     logger.info(data)
     logger.info('i4c_request_job request_json end')
+    request = request_json.get('request')
     instrument = request_json.get('request').get('instrument')#data.get("request", {}).get("instrument", {})
     account_number = instrument.get("payer_account_number", "")
     txn_branch = account_number[:4] if len(account_number) >= 4 else ""
@@ -43,30 +44,38 @@ def i4c_request_job(request_json: str):
     payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
     hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
 
-    # db.create_record_('upi_fraud_transactions', {
-    #     'job_id': data['job_id'],
-    #     'sub_category': data['request']['sub_category'],
-    #     'requestor': data['request']['instrument']['requestor'],
-    #     'payer_bank_code': data['request']['instrument']['payer_bank_code'],
-    #     'mode_of_payment': data['request']['instrument']['mode_of_payment'],
-    #     'payer_mobile_number': data['request']['instrument']['payer_mobile_number'],
-    #     'payer_account_number': data['request']['instrument']['payer_account_number'],
-    #     'state': data['request']['instrument']['state'],
-    #     'district': data['request']['instrument']['district'],
-    #     'received_dt': data['received_dt'] 
-    # })
+    db.create_record_('upi_fraud_transactions', {
+        'job_id': data['job_id'],
+        'sub_category': data['request']['sub_category'],
+        'requestor': data['request']['instrument']['requestor'],
+        'payer_bank_code': data['request']['instrument']['payer_bank_code'],
+        'mode_of_payment': data['request']['instrument']['mode_of_payment'],
+        'payer_mobile_number': data['request']['instrument']['payer_mobile_number'],
+        'payer_account_number': data['request']['instrument']['payer_account_number'],
+        'state': data['request']['instrument']['state'],
+        'district': data['request']['instrument']['district'],
+        'received_dt': data['received_dt'] 
+    })
 
     for idx, incident in enumerate(incidents):
-            # db.create_record_('upi_fraud_incidents', {
-            #     'ack_no': data['ack_no'],
-            #     'job_id': data['job_id'],
-            #     'amount': incident['amount'],
-            #     'rrn': incident['rrn'],
-            #     'transaction_date': incident['transaction_date'],
-            #     'transaction_time': incident['transaction_time'],
-            #     'disputed_amount': incident['disputed_amount'],
-            #     'layer': incident['layer']
-            # })
+            # Convert 'YYYY-MM-DD' to 'DD-Month-YYYY' (e.g., 2022-12-04 -> 04-December-2022)
+            txn_date_str = incident.get('transaction_date', '')
+            try:
+                txn_date_obj = datetime.strptime(txn_date_str, '%Y-%m-%d')
+                formatted_txn_date = txn_date_obj.strftime('%d-%B-%Y')
+            except Exception:
+                formatted_txn_date = txn_date_str
+
+            db.create_record_('upi_fraud_incidents', {
+                'ack_no': data['ack_no'],
+                'job_id': data['job_id'],
+                'amount': incident['amount'],
+                'rrn': incident['rrn'],
+                'transaction_date': formatted_txn_date,
+                'transaction_time': incident['transaction_time'],
+                'disputed_amount': incident['disputed_amount'],
+                'layer': incident['layer']
+            })
             
             # # Commit after creating transaction and all incidents
             # db.commit()

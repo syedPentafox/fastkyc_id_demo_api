@@ -123,8 +123,7 @@ def i4c_request_job(request_json: str):
 
 
             # ========
-            # Check if both CASA STMT and Payment Status Inquiry were successful
-            # Only check if CASA STMT API was successful
+            # check if CASA STMT API was successful
             # ========
             casa_stmt_success = False
             if decrypted_obj is not None:
@@ -134,14 +133,6 @@ def i4c_request_job(request_json: str):
                     error_code is not None and str(error_code) == "0" and
                     error_message is not None and str(error_message).lower() == "success"
                 )
-            # payment_status_success = False
-            #if payment_status_response is not None:
-            #    ps_error_code = payment_status_response.get("ErrorCode")
-            #    ps_error_message = payment_status_response.get("ErrorMessage")
-            #    payment_status_success = (
-            #         ps_error_code is not None and str(ps_error_code) == "0" and
-            #         ps_error_message is not None and str(ps_error_message).lower() == "success"
-            #     )
 
             # =======
             # If CASA API was successful, validate RRN before proceeding

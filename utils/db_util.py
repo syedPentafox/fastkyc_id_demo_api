@@ -90,8 +90,8 @@ class DatabaseHandler:
         self.tables = tables
         self.session = self.Session()
         self.table_metadata = table_metadata
-        # Manually add i4c_request table metadata (Oracle filters out SYSTEM tablespace tables)
-        import_table_metadata(self.table_metadata, self.tables)
+        # # Manually add i4c_request table metadata (Oracle filters out SYSTEM tablespace tables)
+        # import_table_metadata(self.table_metadata, self.tables)
         self.FILTER_OPERATORS = {
             "eq": lambda column, value: column == value,
             "neq": lambda column, value: column != value,
@@ -156,8 +156,8 @@ class DatabaseHandler:
             for table in self.inspector.get_table_names()
         }
         
-        # Manually add i4c_request table metadata (Oracle filters out SYSTEM tablespace tables)
-        import_table_metadata(self.table_metadata, self.tables)
+        # # Manually add i4c_request table metadata (Oracle filters out SYSTEM tablespace tables)
+        # import_table_metadata(self.table_metadata, self.tables)
 
         self.tables = list(self.table_metadata.keys())
 
@@ -309,19 +309,19 @@ class DatabaseHandler:
 
     def get_model(self, tbl_name):
         if self.check_table_exists(tbl_name):
-            # Special case for i4c_request table - use the manually defined model
-            if tbl_name == 'i4c_request':
-                from orm_model.core_models import I4CRequest
-                return I4CRequest
-            if tbl_name == 'upi_fraud_transactions':
-                from orm_model.core_models import UpiFraudTransactions
-                return UpiFraudTransactions
-            if tbl_name == 'upi_fraud_incidents':
-                from orm_model.core_models import UpiFraudIncidents
-                return UpiFraudIncidents
-            if tbl_name == 'roles':
-                from orm_model.core_models import Role
-                return Role
+            # # Special case for i4c_request table - use the manually defined model
+            # if tbl_name == 'i4c_request':
+            #     from orm_model.core_models import I4CRequest
+            #     return I4CRequest
+            # if tbl_name == 'upi_fraud_transactions':
+            #     from orm_model.core_models import UpiFraudTransactions
+            #     return UpiFraudTransactions
+            # if tbl_name == 'upi_fraud_incidents':
+            #     from orm_model.core_models import UpiFraudIncidents
+            #     return UpiFraudIncidents
+            # if tbl_name == 'roles':
+            #     from orm_model.core_models import Role
+            #     return Role
             return getattr(self.Base.classes, tbl_name)
 
     def get_columns_by_table(self, tbl_name):

@@ -21,6 +21,7 @@ from background_jobs.casa_stmt_api import casa_stmt_api
 import uuid
 
 from utils.db_connection import db
+from background_jobs.mappings import fraud_type_table_prefix
 
 def i4c_request_job(request_json: str):
     data = request_json
@@ -44,16 +45,20 @@ def i4c_request_job(request_json: str):
     payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
     hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
 
-    db.create_record_('upi_fraud_transactions', {
+    table_prefix = fraud_type_table_prefix.get(request['sub_category'])
+    transactions_table = f"{table_prefix}_transactions"
+    incidents_table = f"{table_prefix}_incidents"
+
+    db.create_record_(transactions_table, {
         'job_id': data['job_id'],
-        'sub_category': data['request']['sub_category'],
-        'requestor': data['request']['instrument']['requestor'],
-        'payer_bank_code': data['request']['instrument']['payer_bank_code'],
-        'mode_of_payment': data['request']['instrument']['mode_of_payment'],
-        'payer_mobile_number': data['request']['instrument']['payer_mobile_number'],
-        'payer_account_number': data['request']['instrument']['payer_account_number'],
-        'state': data['request']['instrument']['state'],
-        'district': data['request']['instrument']['district'],
+        'sub_category': request['sub_category'],
+        'requestor': instrument['requestor'],
+        'payer_bank_code': instrument['payer_bank_code'],
+        'mode_of_payment': instrument['mode_of_payment'],
+        'payer_mobile_number': instrument['payer_mobile_number'],
+        'payer_account_number': instrument['payer_account_number'],
+        'state': instrument['state'],
+        'district': instrument['district'],
         'received_dt': data['received_dt'] 
     })
 
@@ -66,7 +71,7 @@ def i4c_request_job(request_json: str):
             except Exception:
                 formatted_txn_date = txn_date_str
 
-            db.create_record_('upi_fraud_incidents', {
+            db.create_record_(incidents_table, {
                 'ack_no': data['ack_no'],
                 'job_id': data['job_id'],
                 'amount': incident['amount'],

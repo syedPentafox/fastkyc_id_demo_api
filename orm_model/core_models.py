@@ -406,6 +406,313 @@ class UpiFraudIncidents(Base):
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
 
+class UpiFraudResponse(Base):
+    __tablename__ = "upi_fraud_response"
+
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL
+
+
+class EwalletFraudTransaction(Base):
+    __tablename__ = "ewallet_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class EwalletFraudIncident(Base):
+    __tablename__ = "ewallet_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+
+
+class EwalletFraudResponse(Base):
+    __tablename__ = "ewallet_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
+#2
+
+
+
+class AepsFraudTransaction(Base):
+    __tablename__ = "aeps_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class AepsFraudIncident(Base):
+    __tablename__ = "aeps_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+
+
+class AepsFraudResponse(Base):
+    __tablename__ = "aeps_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
+#3
+
+
+
+class CreditCardFraudTransaction(Base):
+    __tablename__ = "credit_card_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class CreditCardFraudIncident(Base):
+    __tablename__ = "credit_card_fraud_incidents"
+    
+    rrn = Column(String(50), primary_key=True, nullable=False)  # VARCHAR2(50) NOT NULL
+    first6digit = Column(String(6), nullable=False)  # VARCHAR2(6) NOT NULL
+    last4digit = Column(String(4), nullable=False)  # VARCHAR2(4) NOT NULL
+    cardlength = Column(String(5), nullable=False)  # VARCHAR2(5) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
+
+
+class CreditCardFraudResponse(Base):
+    __tablename__ = "credit_card_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
+#4
+
+
+class DematFraudTransaction(Base):
+    __tablename__ = "demat_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class DematFraudIncident(Base):
+    __tablename__ = "demat_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+
+
+class DematFraudResponse(Base):
+    __tablename__ = "demat_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
+
+#5
+
+
+
+class EmailFraudTransaction(Base):
+    __tablename__ = "email_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class EmailFraudIncident(Base):
+    __tablename__ = "email_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+
+
+class EmailFraudResponse(Base):
+    __tablename__ = "email_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
+
+#6
+
+
+class InternetBankingFraudTransaction(Base):
+    __tablename__ = "internet_banking_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class InternetBankingFraudIncident(Base):
+    __tablename__ = "internet_banking_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+
+
+class InternetBankingFraudResponse(Base):
+    __tablename__ = "internet_banking_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
+
+
+
+class VishingFraudTransaction(Base):
+    __tablename__ = "vishing_fraud_transactions"
+    
+    # id = Column(Numeric, primary_key=True) # NUMBER
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class VishingFraudIncident(Base):
+    __tablename__ = "vishing_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+
+
+class FishingFraudResponse(Base):
+    __tablename__ = "vishing_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+
 
 # Dictionary mapping models to their corresponding JSON files
 models_and_files = {

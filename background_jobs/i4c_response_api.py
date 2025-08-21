@@ -8,8 +8,9 @@ import requests
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 add_background_jobs_file_handler(logger)
+from utils.db_connection import db
 
-def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint):
+def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, received_dt):
     # payload_data = data.get("payload", {})
     # acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
     # job_id = str(data.get("job_id", ""))
@@ -70,6 +71,16 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint):
         i4c_encrypt_res = i4c_resp_json.get("out_msg", {}).get("encryptRes")
         if i4c_encrypt_res:
             decrypted_i4c = aes_util.aes_decrypt(kvb_key, i4c_encrypt_res)
+            db.create_record_(
+                response_table,
+                {
+                    'job_id': i4c_payload['job_id'],
+                    'ack_no': i4c_payload['acknowledgement_no'],
+                    'rrn': i4c_payload['transactions'][0].get('root_rrn_transaction_id', ''),
+                    'incident_response': decrypted_i4c,
+                    'received_dt': received_dt
+                }
+            )
             logger.info(f"[I4C_RESPONSE_DECRYPTED_RESPONSE] {decrypted_i4c}")
         else:
             logger.error("[I4C_RESPONSE_ERROR] No encrypted response found in I4C response")

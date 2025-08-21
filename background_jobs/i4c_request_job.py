@@ -48,6 +48,7 @@ def i4c_request_job(request_json: str):
     table_prefix = fraud_type_table_prefix.get(request['sub_category'])
     transactions_table = f"{table_prefix}_transactions"
     incidents_table = f"{table_prefix}_incidents"
+    response_table = f"{table_prefix}_responses"
 
     db.create_record_(transactions_table, {
         'job_id': data['job_id'],
@@ -250,7 +251,7 @@ def i4c_request_job(request_json: str):
                         ]
                     }
                     
-                    call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint)
+                    call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                     logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
                     
                     # Skip balance logic for this incident
@@ -308,7 +309,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                         elif transaction_type == "UPI":
                             upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
                             upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
@@ -369,7 +370,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                         elif transaction_type == "ATM":
                             # For DEBIT ATM, directly call I4C response API without inquiry
                             atm_id = instrument.get("atm_id", "")
@@ -402,7 +403,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                         elif transaction_type == "POS":
                             # For DEBIT POS, directly call I4C response API without inquiry
                             mid = instrument.get("mid", "")
@@ -439,7 +440,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                         elif transaction_type == "CHQ PAID":
                             # For DEBIT CHQ PAID, directly call I4C response API without inquiry
                             cheque_no = instrument.get("cheque_no", "")
@@ -477,7 +478,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                         elif transaction_type == "AEPS":
                             # For DEBIT AEPS, directly call I4C response API without inquiry
                             rrn_val = instrument.get("rrn", "")
@@ -505,7 +506,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                     except Exception as debit_exc:
                         logger.error(f"[DEBIT_FLOW_ERROR] {debit_exc}")
                 else:
@@ -575,7 +576,7 @@ def i4c_request_job(request_json: str):
                                 }
                             ]
                         }
-                        call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                        call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                     else:
                         if net_balance_float <= 0:
                             # =======
@@ -647,7 +648,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
                             # =======
                             # Calculate pending amount
@@ -751,7 +752,7 @@ def i4c_request_job(request_json: str):
                                                     }
                                                 ]
                                             }
-                                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                                             logger.info(f"[I4C_RESPONSE_API] Called for txn {txn.get('ChequeNumber', '')} amount {txn_amount}")
                                         except Exception as psi_exc:
                                             logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
@@ -843,7 +844,7 @@ def i4c_request_job(request_json: str):
                                                         }
                                                     ]
                                                 }
-                                                call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                                                call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                                                 logger.info(f"[I4C_RESPONSE_API] Called for UPI txn {reference_id} amount {upi_amount}")
                                             except Exception as i4c_exc:
                                                 logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
@@ -1019,7 +1020,7 @@ def i4c_request_job(request_json: str):
                                             else:
                                                 i4c_payload = None
                                             if i4c_payload:
-                                                call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint)
+                                                call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                                                 logger.info(f"[I4C_RESPONSE_API] Called for {txn_desc} txn: {txn}")
                                         except Exception as i4c_exc:
                                             logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")

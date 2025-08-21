@@ -407,7 +407,7 @@ class UpiFraudIncidents(Base):
     layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
 
 class UpiFraudResponse(Base):
-    __tablename__ = "upi_fraud_response"
+    __tablename__ = "upi_fraud_responses"
 
     job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
     ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL

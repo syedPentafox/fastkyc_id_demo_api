@@ -522,10 +522,12 @@ class CreditCardFraudTransaction(Base):
 class CreditCardFraudIncident(Base):
     __tablename__ = "credit_card_fraud_incidents"
     
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
     rrn = Column(String(50), primary_key=True, nullable=False)  # VARCHAR2(50) NOT NULL
-    first6digit = Column(String(6), nullable=False)  # VARCHAR2(6) NOT NULL
-    last4digit = Column(String(4), nullable=False)  # VARCHAR2(4) NOT NULL
-    cardlength = Column(String(5), nullable=False)  # VARCHAR2(5) NOT NULL
+    first6digit = Column(String(6), nullable=True)  # VARCHAR2(6) NOT NULL
+    last4digit = Column(String(4), nullable=True)  # VARCHAR2(4) NOT NULL
+    cardlength = Column(String(5), nullable=True)  # VARCHAR2(5) NOT NULL
     amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL

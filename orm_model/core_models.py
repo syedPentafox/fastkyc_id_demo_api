@@ -408,6 +408,7 @@ class UpiFraudIncidents(Base):
     received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
     mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
     is_valid = Column(Boolean, nullable=True, default=False)
+    status = Column(String(20), nullable=True)  # VARCHAR2(6)
 
 class UpiFraudResponse(Base):
     __tablename__ = "upi_fraud_responses"

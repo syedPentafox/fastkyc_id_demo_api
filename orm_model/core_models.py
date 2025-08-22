@@ -405,10 +405,10 @@ class UpiFraudIncidents(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
-    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
-    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
-    is_valid = Column(Boolean, nullable=True, default=False)
-    status = Column(String(20), nullable=True)  # VARCHAR2(6)
+    # received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    # mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    # is_valid = Column(Boolean, nullable=True, default=False)
+    # status = Column(String(20), nullable=True)  # VARCHAR2(6)
 
 class UpiFraudResponse(Base):
     __tablename__ = "upi_fraud_responses"
@@ -537,7 +537,10 @@ class CreditCardFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
-
+    # received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    # mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    # is_valid = Column(Boolean, nullable=True, default=False)
+    # status = Column(String(20), nullable=True)  # VARCHAR2(6)
 
 class CreditCardFraudResponse(Base):
     __tablename__ = "credit_card_fraud_responses"
@@ -579,7 +582,10 @@ class DematFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)
-
+    # received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    # mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    # is_valid = Column(Boolean, nullable=True, default=False)
+    # status = Column(String(20), nullable=True)  # VARCHAR2(6)
 
 class DematFraudResponse(Base):
     __tablename__ = "demat_fraud_responses"
@@ -666,7 +672,10 @@ class InternetBankingFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)
-
+    # received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    # mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    # is_valid = Column(Boolean, nullable=True, default=False)
+    # status = Column(String(20), nullable=True)  # VARCHAR2(6)
 
 class InternetBankingFraudResponse(Base):
     __tablename__ = "internet_banking_fraud_responses"
@@ -708,7 +717,10 @@ class VishingFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)
-
+    # received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    # mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    # is_valid = Column(Boolean, nullable=True, default=False)
+    # status = Column(String(20), nullable=True)  # VARCHAR2(6)
 
 class VishingFraudResponse(Base):
     __tablename__ = "vishing_fraud_responses"

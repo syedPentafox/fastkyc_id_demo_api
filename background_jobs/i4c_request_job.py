@@ -257,6 +257,9 @@ def i4c_request_job(request_json: str):
                     
                     call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
                     logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
+
+                    db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                    db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'invalid', 'is_valid': False})
                     
                     # Skip balance logic for this incident
                     continue
@@ -314,6 +317,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                         elif transaction_type == "UPI":
                             upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
                             upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
@@ -375,6 +381,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                         elif transaction_type == "ATM":
                             # For DEBIT ATM, directly call I4C response API without inquiry
                             atm_id = instrument.get("atm_id", "")
@@ -408,6 +417,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                         elif transaction_type == "POS":
                             # For DEBIT POS, directly call I4C response API without inquiry
                             mid = instrument.get("mid", "")
@@ -445,6 +457,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                         elif transaction_type == "CHQ PAID":
                             # For DEBIT CHQ PAID, directly call I4C response API without inquiry
                             cheque_no = instrument.get("cheque_no", "")
@@ -483,6 +498,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                         elif transaction_type == "AEPS":
                             # For DEBIT AEPS, directly call I4C response API without inquiry
                             rrn_val = instrument.get("rrn", "")
@@ -511,6 +529,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                     except Exception as debit_exc:
                         logger.error(f"[DEBIT_FLOW_ERROR] {debit_exc}")
                 else:
@@ -581,6 +602,9 @@ def i4c_request_job(request_json: str):
                             ]
                         }
                         call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                        db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                        db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                     else:
                         if net_balance_float <= 0:
                             # =======
@@ -653,6 +677,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
 
                             # =======
                             # Calculate pending amount
@@ -757,6 +784,9 @@ def i4c_request_job(request_json: str):
                                                 ]
                                             }
                                             call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                                             logger.info(f"[I4C_RESPONSE_API] Called for txn {txn.get('ChequeNumber', '')} amount {txn_amount}")
                                         except Exception as psi_exc:
                                             logger.error(f"[PAYMENT_STATUS_INQUIRY_ERROR] {psi_exc}")
@@ -849,6 +879,8 @@ def i4c_request_job(request_json: str):
                                                     ]
                                                 }
                                                 call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                                                 logger.info(f"[I4C_RESPONSE_API] Called for UPI txn {reference_id} amount {upi_amount}")
                                             except Exception as i4c_exc:
                                                 logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
@@ -1025,6 +1057,8 @@ def i4c_request_job(request_json: str):
                                                 i4c_payload = None
                                             if i4c_payload:
                                                 call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
                                                 logger.info(f"[I4C_RESPONSE_API] Called for {txn_desc} txn: {txn}")
                                         except Exception as i4c_exc:
                                             logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")

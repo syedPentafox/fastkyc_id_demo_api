@@ -63,6 +63,8 @@ def i4c_request_job(request_json: str):
         'received_dt': data['received_dt'] 
     })
 
+    db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'R'})
+
     for idx, incident in enumerate(incidents):
             # Convert 'YYYY-MM-DD' to 'DD-Month-YYYY' (e.g., 2022-12-04 -> 04-December-2022)
             txn_date_str = incident.get('transaction_date', '')
@@ -80,7 +82,9 @@ def i4c_request_job(request_json: str):
                 'transaction_date': formatted_txn_date,
                 'transaction_time': incident['transaction_time'],
                 'disputed_amount': incident['disputed_amount'],
-                'layer': incident['layer']
+                'layer': incident['layer'],
+                'received_dt': data['received_dt'],
+                'mode_of_payment': instrument['mode_of_payment'],
             })
             
             # # Commit after creating transaction and all incidents

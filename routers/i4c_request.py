@@ -20,9 +20,9 @@ async def i4c_request(background_tasks:BackgroundTasks):
         tbl_name="i4c_request",
         columns="*",
         #filters={"status_neq": "P", "msg_type_eq": "REQ", "job_id_eq": "KVB-79988661-d853-4c63-b1f2-f510f454273d"},
-        filters={"status_neq": "P", "msg_type_eq": "REQ"},
+        filters={"status_eq": "N", "msg_type_eq": "REQ"},
         sort_by=["-job_id"],
-        page=-1
+        page=1
     )
 
     for o in out:

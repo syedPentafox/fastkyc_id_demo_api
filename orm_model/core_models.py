@@ -405,6 +405,9 @@ class UpiFraudIncidents(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)  # NUMBER NOT NULL
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    is_valid = Column(Boolean, nullable=True, default=False)
 
 class UpiFraudResponse(Base):
     __tablename__ = "upi_fraud_responses"
@@ -706,7 +709,7 @@ class VishingFraudIncident(Base):
     layer = Column(Numeric, nullable=False)
 
 
-class FishingFraudResponse(Base):
+class VishingFraudResponse(Base):
     __tablename__ = "vishing_fraud_responses"
  
     job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL

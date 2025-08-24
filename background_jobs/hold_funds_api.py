@@ -54,6 +54,7 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
             "encryptReq": encrypted_hold
         }
     }
+    is_success = False
     logger.info(f"[HOLD_FUNDS_CURL] curl -X POST '{hold_fund_url}' -H 'Content-Type: application/json' -d '{curl_data}'")
     try:
         logger.info(f"[KVB_HOLD_API_ENDPOINT] {hold_fund_url}")
@@ -65,10 +66,22 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
         if hold_encrypt_res:
             decrypted_hold = AESUtil().aes_decrypt(kvb_key, hold_encrypt_res)
             logger.info(f"[KVB_HOLD_DECRYPTED_RESPONSE] {decrypted_hold}")
-        
+            try:
+                decrypted_obj = json.loads(decrypted_hold)
+                error_code = decrypted_obj.get("ErrorCode")
+                error_message = decrypted_obj.get("ErrorMessage")
+                if str(error_code) == "0" and str(error_message).lower() == "success":
+                    is_success = True
+                    logger.info(f"[KVB_HOLD_SUCCESS] {json.dumps(decrypted_obj, indent=4)}")
+                else:
+                    # FIXME: error in KVB_ENDPOINT
+                    logger.error(f"[KVB_HOLD_ERROR] {json.dumps(decrypted_obj, indent=4)}")
+            except Exception as dec_exc:
+                # FIXME: error in KVB_ENDPOINT
+                logger.error(f"[KVB_HOLD_DECODE_ERROR] {dec_exc}")
         logger.info(f"======= [HOLD_FUNDS_END] =======")
-        return hold_timestamp
+        return hold_timestamp, is_success
     except Exception as hold_api_exc:
         logger.error(f"[KVB_HOLD_API_ERROR] {hold_api_exc}")
         logger.info(f"======= [HOLD_FUNDS_END] =======")
-        return hold_timestamp
+        return hold_timestamp, is_success

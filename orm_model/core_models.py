@@ -418,6 +418,7 @@ class UpiFraudResponse(Base):
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
     received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL
+    is_success = Column(Boolean, nullable=True, default=False)
 
 
 class EwalletFraudTransaction(Base):
@@ -457,7 +458,8 @@ class EwalletFraudResponse(Base):
     ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
-    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL  
+    is_success = Column(Boolean, nullable=True, default=False)         
 
 #2
 
@@ -500,7 +502,8 @@ class AepsFraudResponse(Base):
     ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
-    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL      
+    is_success = Column(Boolean, nullable=True, default=False)     
 
 #3
 
@@ -549,7 +552,8 @@ class CreditCardFraudResponse(Base):
     ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
-    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL        
+    is_success = Column(Boolean, nullable=True, default=False)   
 
 #4
 
@@ -595,6 +599,7 @@ class DematFraudResponse(Base):
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
     received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    is_success = Column(Boolean, nullable=True, default=False)
 
 
 #5
@@ -639,6 +644,7 @@ class EmailFraudResponse(Base):
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
     received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    is_success = Column(Boolean, nullable=True, default=False)
 
 
 #6
@@ -684,7 +690,8 @@ class InternetBankingFraudResponse(Base):
     ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
-    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL       
+    is_success = Column(Boolean, nullable=True, default=False)    
 
 
 
@@ -729,7 +736,8 @@ class VishingFraudResponse(Base):
     ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
     rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     incident_response = Column(Text, nullable=True)                  # CLOB
-    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL           
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL         
+    is_success = Column(Boolean, nullable=True, default=False)  
 
 
 # Dictionary mapping models to their corresponding JSON files

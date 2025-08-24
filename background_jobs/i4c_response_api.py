@@ -64,6 +64,7 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
     env_i4c_response_path = os.getenv("I4C_RESPONSE_PATH", "/ESB/CyberCrimeI4CRes")
     i4c_response_url = kvb_endpoint.rstrip("/") + "/" + env_i4c_response_path.lstrip("/")
     logger.info(f"[I4C_RESPONSE_API_REQUEST] {json.dumps(i4c_post_payload)}")
+    successful_response = False
     try:
         i4c_resp = requests.post(i4c_response_url, json=i4c_post_payload, timeout=30)
         logger.info(f"[I4C_RESPONSE_API_RESPONSE] {i4c_resp.status_code} {i4c_resp.text}")
@@ -71,6 +72,20 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
         i4c_encrypt_res = i4c_resp_json.get("out_msg", {}).get("encryptRes")
         if i4c_encrypt_res:
             decrypted_i4c = aes_util.aes_decrypt(kvb_key, i4c_encrypt_res)
+            logger.info(f"[I4C_RESPONSE_DECRYPTED_RESPONSE] {decrypted_i4c}")
+            try:
+                decrypted_obj = json.loads(decrypted_i4c)
+                error_code = decrypted_obj.get("ErrorCode")
+                error_message = decrypted_obj.get("ErrorMessage")
+                if str(error_code) == "0" and str(error_message).lower() == "success":
+                    successful_response = True
+                    logger.info(f"[I4C_RESPONSE_SUCCESS] {json.dumps(decrypted_obj, indent=4)}")
+                else:
+                    # FIXME: error in KVB_ENDPOINT
+                    logger.error(f"[I4C_RESPONSE_ERROR] {json.dumps(decrypted_obj, indent=4)}")
+            except Exception as dec_exc:
+                # FIXME: error in KVB_ENDPOINT
+                logger.error(f"[I4C_RESPONSE_DECODE_ERROR] {dec_exc}")
             db.create_record_(
                 response_table,
                 {
@@ -78,11 +93,15 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
                     'ack_no': i4c_payload['acknowledgement_no'],
                     'rrn': i4c_payload['transactions'][0].get('root_rrn_transaction_id', ''),
                     'incident_response': decrypted_i4c,
-                    'received_dt': received_dt
+                    'received_dt': received_dt,
+                    'is_success': successful_response
                 }
             )
-            logger.info(f"[I4C_RESPONSE_DECRYPTED_RESPONSE] {decrypted_i4c}")
         else:
+            # FIXME: error in KVB_ENDPOINT
             logger.error("[I4C_RESPONSE_ERROR] No encrypted response found in I4C response")
     except Exception as i4c_exc:
+        # FIXME: error in KVB_ENDPOINT
         logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
+
+    return successful_response

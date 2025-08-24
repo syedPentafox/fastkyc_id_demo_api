@@ -50,15 +50,19 @@ def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url,
                 payment_status_error_code = payment_status_decoded.get("ErrorCode")
                 payment_status_error_message = payment_status_decoded.get("ErrorMessage")
                 if (str(payment_status_error_code) != "0" or str(payment_status_error_message).lower() != "success"):
+                    # FIXME: error in KVB_ENDPOINT
                     logger.error(f"[KVB_PAYMENT_STATUS_ERROR] {json.dumps(payment_status_decoded, indent=4)}")
                 else:
                     logger.info(f"[KVB_PAYMENT_STATUS_SUCCESS] {json.dumps(payment_status_decoded, indent=4)}")
             except Exception as payment_status_json_exc:
+                # FIXME: error in KVB_ENDPOINT
                 logger.error(f"[KVB_PAYMENT_STATUS_DECODE_ERROR] {payment_status_json_exc}")
             return payment_status_decoded
         else:
+            # FIXME: error in KVB_ENDPOINT
             logger.error("[KVB_PAYMENT_STATUS_ERROR] No encrypted response found")
             return None
     except Exception as payment_status_api_exc:
+        # FIXME: error in KVB_ENDPOINT
         logger.error(f"[KVB_PAYMENT_STATUS_API_ERROR] {payment_status_api_exc}")
         return None

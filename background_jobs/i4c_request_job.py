@@ -289,37 +289,41 @@ def i4c_request_job(request_json: str):
                                 password
                             )
                             logger.info(f"[PAYMENT_STATUS_INQUIRY_DEBIT] Response: {payment_status_response}")
-                            payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
-                            i4c_payload = {
-                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
-                                "job_id": data.get("job_id", ""),
-                                "transactions": [
-                                    {
-                                        "txn_type": "Money Transfer To",
-                                        "txn_type_id": "3",
-                                        "amount": str(instrument.get("disputed_amount", "")),
-                                        "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
-                                        "phone_number": "1234567890",
-                                        "email": "testing@gmail.com",
-                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
-                                        "ifsc_code": decrypted_obj.get("IFSCCode", ""),
-                                        "root_account_number": instrument.get("payer_account_number", ""),
-                                        "root_rrn_transaction_id": incident.get("rrn", ""),
-                                        "root_bankid": "25",
-                                        "status_code": "00",
-                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
-                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
-                                        "remarks": data.get("request", {}).get("acknowledgement_no", ""),
-                                        "payee_bank": "KVB",
-                                        "payee_bank_code": "25",
-                                        "payee_account_number": payee_account_number
-                                    }
-                                ]
-                            }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            if payment_status_response and isinstance(payment_status_response, dict):
+                                payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
+                                i4c_payload = {
+                                    "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
+                                    "job_id": data.get("job_id", ""),
+                                    "transactions": [
+                                        {
+                                            "txn_type": "Money Transfer To",
+                                            "txn_type_id": "3",
+                                            "amount": str(instrument.get("disputed_amount", "")),
+                                            "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
+                                            "phone_number": "1234567890",
+                                            "email": "testing@gmail.com",
+                                            "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
+                                            "ifsc_code": decrypted_obj.get("IFSCCode", ""),
+                                            "root_account_number": instrument.get("payer_account_number", ""),
+                                            "root_rrn_transaction_id": incident.get("rrn", ""),
+                                            "root_bankid": "25",
+                                            "status_code": "00",
+                                            "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                            "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
+                                            "remarks": data.get("request", {}).get("acknowledgement_no", ""),
+                                            "payee_bank": "KVB",
+                                            "payee_bank_code": "25",
+                                            "payee_account_number": payee_account_number
+                                        }
+                                    ]
+                                }
+                                is_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
-                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
+                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
+                            else:
+                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'failure', 'is_valid': True})
                         elif transaction_type == "UPI":
                             upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
                             upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
@@ -348,42 +352,46 @@ def i4c_request_job(request_json: str):
                                 password
                             )
                             logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_DEBIT] Response: {upi_response}")
-                            rrn = upi_response.get("TransactionId", "") if upi_response else ""
-                            rrn = incident.get("rrn", "")
-                            payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
-                            upi_amount = upi_response.get("Amount", "") if upi_response else ""
-                            i4c_payload = {
-                                "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
-                                "job_id": data.get("job_id", ""),
-                                "transactions": [
-                                    {
-                                        "txn_type": "Money Transfer To",
-                                        "txn_type_id": "3",
-                                        "rrn": rrn,
-                                        "payee_bank": "KVB",
-                                        "payee_bank_code": "25",
-                                        "payee_account_number": payee_account_number,
-                                        "amount": str(instrument.get("disputed_amount", "")),
-                                        "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
-                                        "phone_number": "1234567890",
-                                        "email": "testing@gmail.com",
-                                        "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
-                                        "disputed_amount": str(instrument.get("disputed_amount", "")),
-                                        "ifsc_code": decrypted_obj.get("IFSCCode", ""),
-                                        "root_account_number": instrument.get("payer_account_number", ""),
-                                        "root_rrn_transaction_id": rrn,
-                                        "root_bankid": "25",
-                                        "status_code": "00",
-                                        "remarks": data.get("request", {}).get("acknowledgement_no", ""),
-                                        "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
-                                        "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
-                                    }
-                                ]
-                            }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            if upi_response and isinstance(upi_response, dict):
+                                rrn = upi_response.get("TransactionId", "") if upi_response else ""
+                                rrn = incident.get("rrn", "")
+                                payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
+                                upi_amount = upi_response.get("Amount", "") if upi_response else ""
+                                i4c_payload = {
+                                    "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
+                                    "job_id": data.get("job_id", ""),
+                                    "transactions": [
+                                        {
+                                            "txn_type": "Money Transfer To",
+                                            "txn_type_id": "3",
+                                            "rrn": rrn,
+                                            "payee_bank": "KVB",
+                                            "payee_bank_code": "25",
+                                            "payee_account_number": payee_account_number,
+                                            "amount": str(instrument.get("disputed_amount", "")),
+                                            "transaction_datetime": incident.get("transaction_date", "") + " " + incident.get("transaction_time", ""),
+                                            "phone_number": "1234567890",
+                                            "email": "testing@gmail.com",
+                                            "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
+                                            "disputed_amount": str(instrument.get("disputed_amount", "")),
+                                            "ifsc_code": decrypted_obj.get("IFSCCode", ""),
+                                            "root_account_number": instrument.get("payer_account_number", ""),
+                                            "root_rrn_transaction_id": rrn,
+                                            "root_bankid": "25",
+                                            "status_code": "00",
+                                            "remarks": data.get("request", {}).get("acknowledgement_no", ""),
+                                            "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                                            "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
+                                        }
+                                    ]
+                                }
+                                is_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
-                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
+                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
+                            else:
+                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'failure', 'is_valid': True})
                         elif transaction_type == "ATM":
                             # For DEBIT ATM, directly call I4C response API without inquiry
                             atm_id = instrument.get("atm_id", "")
@@ -416,10 +424,10 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            is_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "POS":
                             # For DEBIT POS, directly call I4C response API without inquiry
                             mid = instrument.get("mid", "")
@@ -456,10 +464,10 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            is_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "CHQ PAID":
                             # For DEBIT CHQ PAID, directly call I4C response API without inquiry
                             cheque_no = instrument.get("cheque_no", "")
@@ -497,10 +505,10 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            is_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "AEPS":
                             # For DEBIT AEPS, directly call I4C response API without inquiry
                             rrn_val = instrument.get("rrn", "")
@@ -528,10 +536,10 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            is_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                     except Exception as debit_exc:
                         logger.error(f"[DEBIT_FLOW_ERROR] {debit_exc}")
                 else:
@@ -546,7 +554,7 @@ def i4c_request_job(request_json: str):
                         logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
                         
                         # Call hold funds API and capture the timestamp it used
-                        hold_timestamp = call_hold_funds_api(
+                        hold_timestamp, is_hold_success = call_hold_funds_api(
                             kvb_endpoint=kvb_endpoint,
                             hold_fund_path=hold_fund_path,
                             disputed_amount=disputed_amount_float,
@@ -558,86 +566,11 @@ def i4c_request_job(request_json: str):
                             password=password
                         )
 
-                        # =======
-                        # Call I4C response API after hold
-                        # =======
-                        logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                        payload_data = data.get("request", {})
-                        acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
-                        job_id = str(data.get("job_id", ""))
-                        # CASA STMT response fields
-                        pan_number = decrypted_obj.get("PAN", "") or "FORM60"
-                        ifsc_code = decrypted_obj.get("IFSCCode", "")
-                        net_balance = decrypted_obj.get("NetBalance", None)
-                        # Get payer_account_number and rrn from i4c request
-                        payer_account_number = ""
-                        rrn = ""
-                        rrn = incident.get("rrn", "")
-                        instrument_data = payload_data.get("instrument", {})
-                        payer_account_number = str(instrument_data.get("payer_account_number", ""))
-                        # Use the same server timestamp for I4C response
-                        transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                        hold_amount = "{:.2f}".format(disputed_amount_float)
-                        i4c_payload = {
-                            "acknowledgement_no": acknowledgement_no,
-                            "job_id": job_id,
-                            "transactions": [
-                                {
-                                    "txn_type": "Transaction Put on Hold",
-                                    "txn_type_id": "1",
-                                    "amount": hold_amount,
-                                    "transaction_datetime": transaction_datetime_val,
-                                    "phone_number": "1234567890",
-                                    "email": "testing@gmail.com",
-                                    "pan_number": pan_number,
-                                    "ifsc_code": ifsc_code,
-                                    "root_account_number": payer_account_number,
-                                    "root_rrn_transaction_id": rrn,
-                                    "root_bankid": "25",
-                                    "status_code": "00",
-                                    "root_effective_balance": str(net_balance),
-                                    "root_ifsc_code": ifsc_code,
-                                    "remarks": acknowledgement_no
-                                }
-                            ]
-                        }
-                        call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
-
-                        db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                        db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
-                    else:
-                        if net_balance_float <= 0:
-                            # =======
-                            # Cannot hold any amount or call I4C response API if net balance is negative
-                            # =======
-                            logger.warning(f"[KVB_NEGATIVE_BALANCE] NetBalance ({net_balance_float}) is negative. Cannot hold or call I4C response API.")
-                            pending_amount_float = disputed_amount_float
-                            logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
-                        else:
-                            # =======
-                            # Hold Net Balance only
-                            # =======
-                            logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
-                            logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
-                            
-                            # Call hold funds API and capture the timestamp it used
-                            hold_timestamp = call_hold_funds_api(
-                                kvb_endpoint=kvb_endpoint,
-                                hold_fund_path=hold_fund_path,
-                                disputed_amount=net_balance_float,
-                                data=data,
-                                userid=userid,
-                                kvb_key=kvb_key,
-                                src_channel=src_channel,
-                                username=username,
-                                password=password
-                            )
-
+                        if is_hold_success:
                             # =======
                             # Call I4C response API after hold
                             # =======
                             logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                            hold_amount = "{:.2f}".format(net_balance_float)
                             payload_data = data.get("request", {})
                             acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                             job_id = str(data.get("job_id", ""))
@@ -653,6 +586,7 @@ def i4c_request_job(request_json: str):
                             payer_account_number = str(instrument_data.get("payer_account_number", ""))
                             # Use the same server timestamp for I4C response
                             transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                            hold_amount = "{:.2f}".format(disputed_amount_float)
                             i4c_payload = {
                                 "acknowledgement_no": acknowledgement_no,
                                 "job_id": job_id,
@@ -676,16 +610,94 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success', 'is_valid': True})
-
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_hold_i4c_success else 'failure', 'is_valid': True})
+                    else:
+                        if net_balance_float <= 0:
                             # =======
-                            # Calculate pending amount
+                            # Cannot hold any amount or call I4C response API if net balance is negative
                             # =======
-                            pending_amount_float = disputed_amount_float - net_balance_float
+                            logger.warning(f"[KVB_NEGATIVE_BALANCE] NetBalance ({net_balance_float}) is negative. Cannot hold or call I4C response API.")
+                            pending_amount_float = disputed_amount_float
                             logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
+                            is_hold_success = False
+                            is_hold_i4c_success = False
+                        else:
+                            # =======
+                            # Hold Net Balance only
+                            # =======
+                            logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
+                            logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
+                            
+                            # Call hold funds API and capture the timestamp it used
+                            hold_timestamp, is_hold_success = call_hold_funds_api(
+                                kvb_endpoint=kvb_endpoint,
+                                hold_fund_path=hold_fund_path,
+                                disputed_amount=net_balance_float,
+                                data=data,
+                                userid=userid,
+                                kvb_key=kvb_key,
+                                src_channel=src_channel,
+                                username=username,
+                                password=password
+                            )
+
+                            if is_hold_success:
+                                # =======
+                                # Call I4C response API after hold
+                                # =======
+                                logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+                                hold_amount = "{:.2f}".format(net_balance_float)
+                                payload_data = data.get("request", {})
+                                acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                                job_id = str(data.get("job_id", ""))
+                                # CASA STMT response fields
+                                pan_number = decrypted_obj.get("PAN", "") or "FORM60"
+                                ifsc_code = decrypted_obj.get("IFSCCode", "")
+                                net_balance = decrypted_obj.get("NetBalance", None)
+                                # Get payer_account_number and rrn from i4c request
+                                payer_account_number = ""
+                                rrn = ""
+                                rrn = incident.get("rrn", "")
+                                instrument_data = payload_data.get("instrument", {})
+                                payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                                # Use the same server timestamp for I4C response
+                                transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                                i4c_payload = {
+                                    "acknowledgement_no": acknowledgement_no,
+                                    "job_id": job_id,
+                                    "transactions": [
+                                        {
+                                            "txn_type": "Transaction Put on Hold",
+                                            "txn_type_id": "1",
+                                            "amount": hold_amount,
+                                            "transaction_datetime": transaction_datetime_val,
+                                            "phone_number": "1234567890",
+                                            "email": "testing@gmail.com",
+                                            "pan_number": pan_number,
+                                            "ifsc_code": ifsc_code,
+                                            "root_account_number": payer_account_number,
+                                            "root_rrn_transaction_id": rrn,
+                                            "root_bankid": "25",
+                                            "status_code": "00",
+                                            "root_effective_balance": str(net_balance),
+                                            "root_ifsc_code": ifsc_code,
+                                            "remarks": acknowledgement_no
+                                        }
+                                    ]
+                                }
+                                is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+
+                                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_hold_i4c_success else 'failure', 'is_valid': True})
+
+                                # =======
+                                # Calculate pending amount
+                                # =======
+                                pending_amount_float = disputed_amount_float - net_balance_float
+                                logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
 
                         # =======
                         # Use the already matched transaction from RRN validation

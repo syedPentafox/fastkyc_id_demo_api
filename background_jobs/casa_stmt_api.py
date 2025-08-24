@@ -48,10 +48,12 @@ def casa_stmt_api(payload, kvb_key, kvb_url, src_channel, username, password, us
             logger.info(f"======= [CASA_STMT_END] =======")
             return json.loads(decrypted)
         else:
+            # FIXME: error in KVB_ENDPOINT
             logger.error("[CASA_STMT_ERROR] No encrypted response found")
             logger.info(f"======= [CASA_STMT_END] =======")
             return None
     except Exception as exc:
+        # FIXME: error in KVB_ENDPOINT
         logger.error(f"[CASA_STMT_API_ERROR] {exc}")
         logger.info(f"======= [CASA_STMT_END] =======")
         return None

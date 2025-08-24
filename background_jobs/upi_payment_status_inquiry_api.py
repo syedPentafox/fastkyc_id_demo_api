@@ -2,6 +2,7 @@ import os
 import requests
 from utils.aes_encryption_decryption import AESUtil
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -19,23 +20,28 @@ def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src
     Returns:
         dict: Decrypted response or raw response if decryption not needed.
     """
-    headers = {
-        "Content-Type": "application/json",
-        "src_channel": src_channel,
-        "username": username,
-        "password": password
+    aes_util = AESUtil()
+    encrypted_upi_payload = aes_util.aes_encrypt(kvb_key, json.dumps(payload))
+    upi_post_payload = {
+        "in_msg": {
+            "Src_Channel": src_channel,
+            "UserName": username,
+            "Password": password,
+            "encryptReq": encrypted_upi_payload
+        }
     }
     try:
-        response = requests.post(upi_payment_status_url, json=payload, headers=headers, timeout=30)
+        logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Request: {json.dumps(upi_post_payload)}")
+        response = requests.post(upi_payment_status_url, json=upi_post_payload, timeout=30)
+        logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Response: {response.status_code} {response.text}")
         response.raise_for_status()
         resp_json = response.json()
-        logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Raw response: {resp_json}")
-        # Decrypt if 'data' key present
-        if isinstance(resp_json, dict) and resp_json.get('data'):
+        upi_encrypt_res = resp_json.get("out_msg", {}).get("encryptRes")
+        if upi_encrypt_res:
             try:
-                decrypted = AESUtil.decrypt(resp_json['data'], kvb_key)
+                decrypted = aes_util.aes_decrypt(kvb_key, upi_encrypt_res)
                 logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decrypted response: {decrypted}")
-                return decrypted
+                return json.loads(decrypted)
             except Exception as dec_exc:
                 logger.warning(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decryption failed: {dec_exc}")
                 return resp_json

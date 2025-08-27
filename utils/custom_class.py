@@ -262,7 +262,8 @@ class APIRouteWrapper(APIRoute):
                 "/api/refresh",
                 "/admin/login",
                 "/token",
-                "/api/i4c_request"
+                "/api/i4c_request",
+                "/ncrp/api/login"
             ]
 
             # Authorization logic for protected routes

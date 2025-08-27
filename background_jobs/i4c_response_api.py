@@ -11,43 +11,7 @@ add_background_jobs_file_handler(logger)
 from utils.db_connection import db
 
 def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, received_dt):
-    # payload_data = data.get("payload", {})
-    # acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
-    # job_id = str(data.get("job_id", ""))
-    # # CASA STMT response fields
-    # pan_number = casa_stmt_res.get("PAN", "")
-    # ifsc_code = casa_stmt_res.get("IFSCCode", "")
-    # net_balance = casa_stmt_res.get("NetBalance", None)
-    # # Get payer_account_number and rrn from i4c request
-    # payer_account_number = ""
-    # rrn = ""
-    # instrument_data = payload_data.get("instrument", {})
-    # payer_account_number = str(instrument_data.get("payer_account_number", ""))
-    # transaction_datetime_val = incident.get("transaction_date") + " " + incident.get("transaction_time")
-    # amount = hold_amount
-    # i4c_payload = {
-    #     "acknowledgement_no": acknowledgement_no,
-    #     "job_id": job_id,
-    #     "transactions": [
-    #         {
-    #             "txn_type": "Transaction Put on Hold",
-    #             "txn_type_id": "1",
-    #             "amount": amount,
-    #             "transaction_datetime": transaction_datetime_val,
-    #             "phone_number": "1234567890",
-    #             "email": "testing@gmail.com",
-    #             "pan_number": pan_number,
-    #             "ifsc_code": ifsc_code,
-    #             "root_account_number": payer_account_number,
-    #             "root_rrn_transaction_id": rrn,
-    #             "root_bankid": "25",
-    #             "status_code": "00",
-    #             "root_effective_balance": str(net_balance),
-    #             "root_ifsc_code": ifsc_code,
-    #             "remarks": acknowledgement_no
-    #         }
-    #     ]
-    # }
+    logger.info('')
     aes_util = AESUtil()
     encrypted_i4c_payload = aes_util.aes_encrypt(kvb_key, json.dumps(i4c_payload))
     src_channel = os.getenv("KVB_SRC_CHANNEL", "")
@@ -75,16 +39,14 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
             logger.info(f"[I4C_RESPONSE_DECRYPTED_RESPONSE] {decrypted_i4c}")
             try:
                 decrypted_obj = json.loads(decrypted_i4c)
-                error_code = decrypted_obj.get("ErrorCode")
-                error_message = decrypted_obj.get("ErrorMessage")
-                if str(error_code) == "0" and str(error_message).lower() == "success":
+                statuscode = decrypted_obj.get('statuscode')
+                status_message = decrypted_obj.get('status_message')
+                if str(statuscode) == "200" and str(status_message).lower() == "success":
                     successful_response = True
                     logger.info(f"[I4C_RESPONSE_SUCCESS] {json.dumps(decrypted_obj, indent=4)}")
                 else:
-                    # FIXME: error in KVB_ENDPOINT
                     logger.error(f"[I4C_RESPONSE_ERROR] {json.dumps(decrypted_obj, indent=4)}")
             except Exception as dec_exc:
-                # FIXME: error in KVB_ENDPOINT
                 logger.error(f"[I4C_RESPONSE_DECODE_ERROR] {dec_exc}")
             db.create_record_(
                 response_table,
@@ -98,10 +60,8 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
                 }
             )
         else:
-            # FIXME: error in KVB_ENDPOINT
             logger.error("[I4C_RESPONSE_ERROR] No encrypted response found in I4C response")
     except Exception as i4c_exc:
-        # FIXME: error in KVB_ENDPOINT
         logger.error(f"[I4C_RESPONSE_API_ERROR] {i4c_exc}")
 
     return successful_response

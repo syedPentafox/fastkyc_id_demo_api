@@ -4,11 +4,14 @@ from utils.aes_encryption_decryption import AESUtil
 import logging
 import json
 
+from .background_jobs_file_logger import add_background_jobs_file_handler
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+add_background_jobs_file_handler(logger)
 
 
 def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src_channel, username, password):
-    # ...existing code...
     """
     Calls the UPI Payment Status Inquiry API and returns the decrypted response if applicable.
     Args:
@@ -38,7 +41,9 @@ def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src
         response.raise_for_status()
         resp_json = response.json()
         upi_encrypt_res = resp_json.get("out_msg", {}).get("encryptRes")
-        if upi_encrypt_res:
+        status_error_code = resp_json.get("ErrorCode")
+        status_error_message = resp_json.get("ErrorMessage")
+        if (str(status_error_code) == "0" or str(status_error_message).lower() == "success"):
             try:
                 decrypted = aes_util.aes_decrypt(kvb_key, upi_encrypt_res)
                 logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decrypted response: {decrypted}")
@@ -47,7 +52,7 @@ def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src
                 # FIXME: error in KVB_ENDPOINT
                 logger.warning(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decryption failed: {dec_exc}")
                 return resp_json
-        return resp_json
+        return None
     except Exception as exc:
         # FIXME: error in KVB_ENDPOINT
         logger.error(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Error: {exc}")

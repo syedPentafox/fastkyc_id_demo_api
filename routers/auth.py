@@ -27,7 +27,7 @@ def convert_to_dict(data):
         return json.loads(data)
     return data
 
-@router.post("/api/login")
+@router.post("/ncrp/api/login")
 def user_login(payload: EncryptedPayload):
     plaintext = aes.decrypt_password_payload(payload.encrypted_payload)
     username = plaintext.get("user_name")
@@ -76,6 +76,6 @@ def user_login(payload: EncryptedPayload):
             "token_type": "bearer"
         }
         encrypted_response = aes.encrypt_password_payload(json.dumps(final_payload))
-        return {"encrypted_payload": encrypted_response}
+        return make_success_response(data=final_payload)
 
     return make_failure_response(message=decrypted.get("ErrorMessage"))

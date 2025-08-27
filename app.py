@@ -3,6 +3,7 @@ from fastapi import FastAPI
 import uvicorn
 from routers import (
     auth,
+    dashboard,
     main,
     masters,
     login,
@@ -20,7 +21,9 @@ from copy import deepcopy
 from dotenv import load_dotenv
 from utils.db_connection import db
 from orm_model.core_models import Base, engine, AbstractBase, bulk_insert_from_json_file
-
+import requests
+import time
+# from fastapi_utils.tasks import repeat_every
 load_dotenv()
 
 app = FastAPI()
@@ -54,13 +57,15 @@ app.add_middleware(
 )
 
 """adding routers to the app"""
-app.include_router(auth.router)
-app.include_router(main.router)
-app.include_router(masters.router)
-app.include_router(login.router)
-app.include_router(rbac.router)
-app.include_router(reports.router)
-app.include_router(i4c_request.router)
+# app.include_router(auth.router)
+# app.include_router(main.router)
+# app.include_router(main.router)
+# app.include_router(masters.router)
+# app.include_router(login.router)
+# app.include_router(rbac.router)
+# app.include_router(reports.router)
+# app.include_router(i4c_request.router)
+# app.include_router(dashboard.router)
 
 
 @app.on_event("startup")
@@ -79,6 +84,30 @@ def resolve_reference(ref, definitions):
     enum_name = ref_parts[-1]
     return definitions.get(enum_name, {})
 
+def call_fastapi_endpoint():
+    try:
+        response = requests.get("http://127.0.0.1:8000/api/i4c-request")
+        print(f"API call successful: {response.status_code}")
+        print(response.json())
+    except requests.exceptions.RequestException as e:
+        print(f"Error calling API: {e}")
+
+# scheduler = BackgroundScheduler()
+
+@app.on_event("startup")
+def start_scheduler():
+    scheduler.add_job(call_fastapi_endpoint, "interval", minutes=1)
+    scheduler.start()
+    print("Scheduler started")
+
+@app.on_event("shutdown")
+def shutdown_scheduler():
+    scheduler.shutdown()
+    print("Scheduler stopped")
+
+@app.get("/")
+def home():
+    return {"msg": "FastAPI running with APScheduler"}
 
 def flatten_schema(schema):
     flat_schema = deepcopy(schema)
@@ -209,6 +238,16 @@ app.openapi = custom_openapi
 def health_check():
     return {"message": "Application running sucessfully"}
 
+
+app.include_router(auth.router)
+app.include_router(main.router)
+app.include_router(main.router)
+app.include_router(masters.router)
+app.include_router(login.router)
+app.include_router(rbac.router)
+app.include_router(reports.router)
+app.include_router(i4c_request.router)
+app.include_router(dashboard.router)
 
 # Start the FastAPI application
 if __name__ == "__main__":

@@ -12,6 +12,13 @@ from sqlalchemy import text
 
 from background_jobs.i4c_request_job import i4c_request_job
 
+from fastapi_utilities import repeat_at
+
+@router.on_event("startup")
+@repeat_at(cron="0,15,30,45 * * * *")  # every 15 minutes
+def repeat_fn():
+    logger.info("log from repeat_fn")
+
 #@router.post("/api/i4c-request", tags=["I4C Request"])
 @router.get("/api/i4c-request")
 #async def i4c_request(request_data: I4CRequestModel, request: Request, background_tasks: BackgroundTasks):

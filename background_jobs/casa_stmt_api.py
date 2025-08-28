@@ -38,7 +38,7 @@ def casa_stmt_api(payload, kvb_key, kvb_url, src_channel, username, password, us
     }
     try:
         logger.info(f"[CASA_STMT_API_REQUEST] {json.dumps(post_payload, indent=4)}")
-        resp = requests.post(kvb_url, json=post_payload, timeout=30)
+        resp = requests.post(kvb_url, json=post_payload, timeout=300)
         logger.info(f"[CASA_STMT_API_RESPONSE] {resp.status_code} {resp.text}")
         resp_json = resp.json()
         encrypt_res = resp_json.get("out_msg", {}).get("encryptRes")

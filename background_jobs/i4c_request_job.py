@@ -136,7 +136,7 @@ def i4c_request_job(request_json: str):
                 incident_datetime = None
                 try:
                     incident_datetime_str = f"{incident_date} {incident_time}"
-                    incident_datetime = datetime.strptime(incident_datetime_str, "%Y-%m-%d %H:%M:%S")
+                    incident_datetime = datetime.strptime(incident_date, "%Y-%m-%d")
                 except Exception as date_exc:
                     logger.warning(f"[RRN_VALIDATION] Could not parse incident datetime: {incident_datetime_str}, error: {date_exc}")
                 
@@ -248,11 +248,13 @@ def i4c_request_job(request_json: str):
                     # For DEBIT, directly call payment inquiry API and then I4C response API
                     try:
                         if transaction_type in ["IMPS", "NEFT", "RTGS"]:
+                            logger.info("DEBIT MONEY TRANSFER TO NON UPI")
                             rrn = incident.get('rrn', '')
                             transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
-                            amount = str(instrument.get("disputed_amount", ""))
+                            amount = str(incident.get("amount", ""))
+                            disputed_amount = str(incident.get('disputed_amount', ''))
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number)
+                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "UPI":
@@ -350,24 +352,29 @@ def i4c_request_job(request_json: str):
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_hold_i4c_success else 'failure', 'is_valid': True})
                     else:
-                        if net_balance_float <= 0:
-                            # =======
-                            # Cannot hold any amount or call I4C response API if net balance is negative
-                            # =======
-                            logger.warning(f"[KVB_NEGATIVE_BALANCE] NetBalance ({net_balance_float}) is negative. Cannot hold or call I4C response API.")
-                            pending_amount_float = disputed_amount_float
-                            logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
-                            is_hold_success = False
-                            is_hold_i4c_success = False
-                        else:
+                        #if net_balance_float <= 0:
+                        #    # =======
+                        #    # Cannot hold any amount or call I4C response API if net balance is negative
+                        #    # =======
+                        #    logger.warning(f"[KVB_NEGATIVE_BALANCE] NetBalance ({net_balance_float}) is negative. Cannot hold or call I4C response API.")
+                        #    pending_amount_float = disputed_amount_float
+                        #    logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
+                        #    is_hold_success = False
+                        #    is_hold_i4c_success = False
+                        #else:
+                        if True:
                             # =======
                             # Hold Net Balance only
                             # =======
-                            logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
+                            #logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
                             logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
                             
                             # Call hold funds API and capture the timestamp it used
                             is_hold_i4c_success = False
+
+                            # NOTE: check for handling of 0 or negative balance
+                            net_balance_float = net_balance_float if net_balance_float > 0 else 1.23
+
                             hold_timestamp, is_hold_success = call_hold_funds_api(
                                 kvb_endpoint=kvb_endpoint,
                                 hold_fund_path=hold_fund_path,
@@ -432,7 +439,7 @@ def i4c_request_job(request_json: str):
                         # =======
                         # Calculate pending amount
                         # =======
-                        pending_amount_float = disputed_amount_float - net_balance_float
+                        pending_amount_float = disputed_amount_float - (net_balance_float if net_balance_float >= 0.0 else 0.0)
                         logger.info(f"[AFTER_HOLD] Pending Amount: {pending_amount_float}")
                         
                         all_responses = [is_hold_i4c_success]
@@ -482,8 +489,10 @@ def i4c_request_job(request_json: str):
                                             converted_datetime = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
                                         except Exception:
                                             converted_datetime = casa_txn_date
+                                        amount_str = "{:.2f}".format(txn_amount)
+                                        disputed_amt_str = "{:.2f}".format(disputed_amt)
                                         payer_account_number = instrument.get("payer_account_number", "")
-                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, str(txn_amount), payer_account_number)
+                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif "UPI" in txn_desc:

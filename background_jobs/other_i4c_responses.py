@@ -11,7 +11,7 @@ add_background_jobs_file_handler(logger)
 
 from datetime import datetime
 
-def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number):
+def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount):
   kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
   payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
   kvb_key = os.getenv("KVB_KEY_VALUE")
@@ -34,9 +34,10 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
       password
   )
   logger.info(f"[PAYMENT_STATUS_INQUIRY_DEBIT] Response: {payment_status_response}")
-  payee_account_number = ""
   if payment_status_response and isinstance(payment_status_response, dict):
       payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
+  if not payee_account_number:
+      payee_account_number = root_account_number
   
   i4c_payload = {
       "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
@@ -46,7 +47,7 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
               "txn_type": "Money Transfer To",
               "txn_type_id": "3",
               "amount": amount,
-              "disputed_amount": amount,
+              "disputed_amount": disputed_amount,
               "transaction_datetime": transaction_datetime,
               "phone_number": "1234567890",
               "email": "testing@gmail.com",
@@ -103,9 +104,13 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
       password
   )
   logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_DEBIT] Response: {upi_response}")
-  payee_account_number = ""
+  payee_account_number = "DEFAULT"
+  ifsc_code = "DEFAULT"
   if upi_response and isinstance(upi_response, dict):
       payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
+      rrn = upi_response.get('TransactionId')
+      amount = upi_response.get('Amount')
+      ifsc_code = upi_response('IFSC')
   i4c_payload = {
       "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
       "job_id": data.get("job_id", ""),
@@ -130,7 +135,7 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
               "status_code": "00",
               "remarks": data.get("request", {}).get("acknowledgement_no", ""),
               "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
-              "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
+              "root_ifsc_code": ifsc_code
           }
       ]
   }

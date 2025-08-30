@@ -3,7 +3,9 @@ from background_jobs.i4c_response_api import call_i4c_response_api
 import os
 import logging
 from .background_jobs_file_logger import add_background_jobs_file_handler
+
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
+import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -11,7 +13,7 @@ add_background_jobs_file_handler(logger)
 
 from datetime import datetime
 
-def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount):
+def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount, phone_number, email):
   kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
   payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
   kvb_key = os.getenv("KVB_KEY_VALUE")
@@ -49,8 +51,8 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
               "amount": amount,
               "disputed_amount": disputed_amount,
               "transaction_datetime": transaction_datetime,
-              "phone_number": "1234567890",
-              "email": "testing@gmail.com",
+              "phone_number": phone_number,
+              "email": email,
               "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
               "ifsc_code": decrypted_obj.get("IFSCCode", ""),
               "root_account_number": root_account_number,
@@ -70,7 +72,7 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
 
   return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
-def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table):
+def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email):
   kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
   upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
   upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
@@ -124,8 +126,8 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
               "payee_account_number": payee_account_number,
               "amount": str(amount),
               "transaction_datetime": transaction_datetime,
-              "phone_number": "1234567890",
-              "email": "testing@gmail.com",
+              "phone_number": phone_number,
+              "email": email,
               "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
               "disputed_amount": str(amount),
               "ifsc_code": decrypted_obj.get("IFSCCode", ""),
@@ -141,7 +143,7 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
   }
   return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
 
-def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime):
+def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email):
     kvb_key = os.getenv("KVB_KEY_VALUE")
     kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
 
@@ -158,8 +160,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
     remarks = acknowledgement_no
     root_effective_balance = str(decrypted_obj.get("NetBalance", ""))
     root_ifsc_code = decrypted_obj.get("IFSCCode", "")
-    phone_number = "1234567890"
-    email = "testing@gmail.com"
+
     # ATM
     if "ATM CSW" in txn_desc:
         # Parse ATM fields

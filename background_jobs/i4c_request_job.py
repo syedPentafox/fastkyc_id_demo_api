@@ -21,6 +21,8 @@ from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_in
 from background_jobs.casa_stmt_api import casa_stmt_api
 import uuid
 
+from background_jobs.account_address_fetch_api import call_account_address_fetch_api
+
 from utils.db_connection import db
 from background_jobs.utils import fraud_type_table_prefix
 
@@ -65,6 +67,16 @@ def i4c_request_job(request_json: str):
     })
 
     db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'R'})
+
+    # Fetch phone_number and email from account address API before RRN validation
+    address_info = None
+    try:
+        address_info = call_account_address_fetch_api(account_number)
+    except Exception as fetch_exc:
+        logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
+
+    phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
+    email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
 
     for idx, incident in enumerate(incidents):
             # Convert 'YYYY-MM-DD' to 'DD-Month-YYYY' (e.g., 2022-12-04 -> 04-December-2022)
@@ -158,8 +170,8 @@ def i4c_request_job(request_json: str):
                             "amount": amount_str,
                             "transaction_datetime": transaction_datetime_val,
                             "disputed_amount": disputed_amount_str,
-                            # "phone_number": "1234567890",
-                            # "email": "testing@gmail.com",
+                            # "phone_number": phone_number,
+                            # "email": email,
                             # "pan_number": pan_number,
                             # "ifsc_code": ifsc_code,
                             "root_account_number": payer_account_number,
@@ -282,8 +294,8 @@ def i4c_request_job(request_json: str):
                                 "amount": amount_str,
                                 "transaction_datetime": transaction_datetime_val,
                                 "disputed_amount": disputed_amount_str,
-                                # "phone_number": "1234567890",
-                                # "email": "testing@gmail.com",
+                                # "phone_number": phone_number,
+                                # "email": email,
                                 # "pan_number": pan_number,
                                 # "ifsc_code": ifsc_code,
                                 "root_account_number": payer_account_number,
@@ -320,7 +332,7 @@ def i4c_request_job(request_json: str):
                             amount = str(incident.get("amount", ""))
                             disputed_amount = str(incident.get('disputed_amount', ''))
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount)
+                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount, phone_number, email)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "UPI":
@@ -330,7 +342,7 @@ def i4c_request_job(request_json: str):
                             amount = str(instrument.get("disputed_amount", ""))
                             transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table)
+                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
@@ -339,7 +351,7 @@ def i4c_request_job(request_json: str):
                             transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             amount = str(instrument.get("amount", ""))
                             disputed_amount = str(instrument.get("disputed_amount", ""))
-                            is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime)
+                            is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                     except Exception as debit_exc:
@@ -399,8 +411,8 @@ def i4c_request_job(request_json: str):
                                         "txn_type_id": "1",
                                         "amount": hold_amount,
                                         "transaction_datetime": transaction_datetime_val,
-                                        "phone_number": "1234567890",
-                                        "email": "testing@gmail.com",
+                                        "phone_number": phone_number,
+                                        "email": email,
                                         "pan_number": pan_number,
                                         "ifsc_code": ifsc_code,
                                         "root_account_number": payer_account_number,
@@ -483,8 +495,8 @@ def i4c_request_job(request_json: str):
                                             "txn_type_id": "1",
                                             "amount": hold_amount,
                                             "transaction_datetime": transaction_datetime_val,
-                                            "phone_number": "1234567890",
-                                            "email": "testing@gmail.com",
+                                            "phone_number": phone_number,
+                                            "email": email,
                                             "pan_number": pan_number,
                                             "ifsc_code": ifsc_code,
                                             "root_account_number": payer_account_number,
@@ -558,7 +570,7 @@ def i4c_request_job(request_json: str):
                                         amount_str = "{:.2f}".format(txn_amount)
                                         disputed_amt_str = "{:.2f}".format(disputed_amt)
                                         payer_account_number = instrument.get("payer_account_number", "")
-                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str)
+                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif "UPI" in txn_desc:
@@ -589,7 +601,7 @@ def i4c_request_job(request_json: str):
 
                                         payer_account_number = instrument.get("payer_account_number", "")
 
-                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table)
+                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table, phone_number, email)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):
@@ -610,7 +622,7 @@ def i4c_request_job(request_json: str):
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         curr_rrn = txn.get('ChequeNumber', '')
-                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val)
+                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     else:

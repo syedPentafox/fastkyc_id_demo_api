@@ -120,6 +120,68 @@ def i4c_request_job(request_json: str):
                 userid
             )
 
+            if not decrypted_obj:
+                # =======
+                # Account not found - Send status code 01 response and skip balance logic
+                # =======
+                logger.warning(f"[RRN_VALIDATION] Statement not found - not found in CASA transactions: {rrn}")
+                
+                # Prepare status 02 response payload with all hold API fields
+                payload_data = data.get("request", {})
+                acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                job_id = str(data.get("job_id", ""))
+                instrument_data = payload_data.get("instrument", {})
+                payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                
+                # Get additional fields from CASA response (same as hold API)
+                pan_number = decrypted_obj.get("PAN", "") or "FORM60"
+                ifsc_code = decrypted_obj.get("IFSCCode", "")
+                net_balance = decrypted_obj.get("NetBalance", None)
+                disputed_amount = incident.get("disputed_amount", 0)
+                disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
+                amount = incident.get("amount", 0)
+                amount_float = float(amount) if amount else 0.0
+                
+                # Use current timestamp for invalid RRN
+                current_timestamp = datetime.now()
+                transaction_datetime_val = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                amount_str = "{:.2f}".format(amount_float)
+                disputed_amount_str = "{:.2f}".format(disputed_amount_float)
+                
+                invalid_rrn_payload = {
+                    "acknowledgement_no": acknowledgement_no,
+                    "job_id": job_id,
+                    "transactions": [
+                        {
+                            # "txn_type": "Transaction Put on Hold",
+                            # "txn_type_id": "1",
+                            "amount": amount_str,
+                            "transaction_datetime": transaction_datetime_val,
+                            "disputed_amount": disputed_amount_str,
+                            # "phone_number": "1234567890",
+                            # "email": "testing@gmail.com",
+                            # "pan_number": pan_number,
+                            # "ifsc_code": ifsc_code,
+                            "root_account_number": payer_account_number,
+                            "root_rrn_transaction_id": rrn,
+                            "root_bankid": "25",
+                            "status_code": "01",
+                            # "root_effective_balance": str(net_balance),
+                            # "root_ifsc_code": ifsc_code,
+                            "remarks": acknowledgement_no
+                        }
+                    ]
+                }
+                
+                call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
+
+                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'statement unavailable', 'is_valid': False})
+                
+                # Skip balance logic for this incident
+                continue
+
             # =======
             # If CASA API was successful, validate RRN before proceeding
             # =======
@@ -201,31 +263,35 @@ def i4c_request_job(request_json: str):
                     net_balance = decrypted_obj.get("NetBalance", None)
                     disputed_amount = incident.get("disputed_amount", 0)
                     disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
+                    amount = incident.get("amount", 0)
+                    amount_float = float(amount) if amount else 0.0
                     
                     # Use current timestamp for invalid RRN
                     current_timestamp = datetime.now()
                     transaction_datetime_val = current_timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                    amount = "{:.2f}".format(disputed_amount_float)
+                    amount_str = "{:.2f}".format(amount_float)
+                    disputed_amount_str = "{:.2f}".format(disputed_amount_float)
                     
                     invalid_rrn_payload = {
                         "acknowledgement_no": acknowledgement_no,
                         "job_id": job_id,
                         "transactions": [
                             {
-                                "txn_type": "Transaction Put on Hold",
-                                "txn_type_id": "1",
-                                "amount": amount,
+                                # "txn_type": "Transaction Put on Hold",
+                                # "txn_type_id": "1",
+                                "amount": amount_str,
                                 "transaction_datetime": transaction_datetime_val,
-                                "phone_number": "1234567890",
-                                "email": "testing@gmail.com",
-                                "pan_number": pan_number,
-                                "ifsc_code": ifsc_code,
+                                "disputed_amount": disputed_amount_str,
+                                # "phone_number": "1234567890",
+                                # "email": "testing@gmail.com",
+                                # "pan_number": pan_number,
+                                # "ifsc_code": ifsc_code,
                                 "root_account_number": payer_account_number,
                                 "root_rrn_transaction_id": rrn,
                                 "root_bankid": "25",
                                 "status_code": "02",
-                                "root_effective_balance": str(net_balance),
-                                "root_ifsc_code": ifsc_code,
+                                # "root_effective_balance": str(net_balance),
+                                # "root_ifsc_code": ifsc_code,
                                 "remarks": acknowledgement_no
                             }
                         ]
@@ -267,7 +333,7 @@ def i4c_request_job(request_json: str):
                             is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
-                        elif transaction_type in ["ATM CSW", "POS", "CHQ PAID", "AEPS"]:
+                        elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
                             logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                             payer_account_number = instrument.get("payer_account_number", "")
                             transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
@@ -526,7 +592,7 @@ def i4c_request_job(request_json: str):
                                         is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
-                                    elif any(x in txn_desc for x in ["ATM CSW", "POS", "CHQ PAID", "AEPS"]):
+                                    elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):
                                         selected_txns.append(txn)
                                         txn_amount_str = txn.get("TransactionAmount", "0")
                                         try:
@@ -543,8 +609,8 @@ def i4c_request_job(request_json: str):
                                         #total_selected_amount += txn_amount
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         payer_account_number = instrument.get("payer_account_number", "")
-                                        rrn = txn.get('ChequeNumber', '')
-                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val)
+                                        curr_rrn = txn.get('ChequeNumber', '')
+                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     else:

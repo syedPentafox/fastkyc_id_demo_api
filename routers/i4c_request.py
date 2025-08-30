@@ -27,8 +27,8 @@ async def i4c_request():
     out, _ = db.get_data_from_table(
         tbl_name="i4c_request",
         columns="*",
-        #filters={"status_eq": "N", "msg_type_eq": "REQ"},
-        filters={"msg_type_eq": "REQ", 'status_eq': 'N', "job_id_eq":"KVB-70925665-82e5-4730-93fb-c62ee3c6759f"},
+        filters={"status_eq": "N", "msg_type_eq": "REQ"},
+        #filters={"msg_type_eq": "REQ", 'status_eq': 'N', "job_id_eq":"KVB-0013bdd9-de22-43be-9ee6-a66b18c22533"},
         #filters={"job_id_eq": "KVB-5f7af92e-6dfb-4d56-974f-5e7685178c22"},
         #filters={"job_id_eq": "KVB-57272284-15ff-4aeb-ad8a-6caa70c69948"},
         #filters={"job_id_eq": "KVB-6b4e9b19-169e-4ff9-8d6d-385d3e7c8307"},

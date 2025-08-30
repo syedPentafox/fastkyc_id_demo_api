@@ -212,7 +212,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "txn_type_id": "11",
                     "amount": str(txn_amount),
                     "disputed_amount": str(disputed_amt),
-                    "transaction_datetime": transaction_datetime_val,
+                    "transaction_datetime": transaction_datetime,
                     "phone_number": phone_number,
                     "email": email,
                     "pan_number": pan_number,

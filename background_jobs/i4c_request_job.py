@@ -333,7 +333,7 @@ def i4c_request_job(request_json: str):
                             amount = str(incident.get("amount", ""))
                             disputed_amount = str(incident.get('disputed_amount', ''))
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount, phone_number, email)
+                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount, phone_number, email, rrn)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "UPI":
@@ -344,7 +344,7 @@ def i4c_request_job(request_json: str):
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email)
+                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
@@ -573,7 +573,8 @@ def i4c_request_job(request_json: str):
                                         amount_str = "{:.2f}".format(txn_amount)
                                         disputed_amt_str = "{:.2f}".format(disputed_amt)
                                         payer_account_number = instrument.get("payer_account_number", "")
-                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email)
+                                        rrn = rrn = incident.get('rrn', '')
+                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, rrn)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif "UPI" in txn_desc:
@@ -604,7 +605,8 @@ def i4c_request_job(request_json: str):
 
                                         payer_account_number = instrument.get("payer_account_number", "")
 
-                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table, phone_number, email)
+                                        rrn = rrn = incident.get('rrn', '')
+                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table, phone_number, email, rrn)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):

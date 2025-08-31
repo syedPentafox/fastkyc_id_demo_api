@@ -27,8 +27,8 @@ def call_account_address_fetch_api(account_number):
     """
     kvb_endpoint = os.environ.get("KVB_ENDPOINT", "")
     account_address_fetch_path = os.environ.get("ACCOUNT_ADDRESS_FETCH_PATH", "")
-    kvb_key = os.environ.get("KVB_KEY", "")
-    src_channel = os.environ.get("SRC_CHANNEL", "")
+    kvb_key = os.environ.get("KVB_KEY_VALUE", "")
+    src_channel = os.environ.get("KVB_SRC_CHANNEL", "")
     username = os.environ.get("KVB_USERNAME", "")
     password = os.environ.get("KVB_PASSWORD", "")
     api_url = kvb_endpoint.rstrip("/") + "/" + account_address_fetch_path.lstrip("/")
@@ -40,11 +40,13 @@ def call_account_address_fetch_api(account_number):
     }
     encrypted_payload = AESUtil().aes_encrypt(kvb_key, json.dumps(address_fetch_payload))
     post_payload = {
-        "in_msg": {
-            "Src_Channel": src_channel,
-            "UserName": username,
-            "Password": password,
-            "encryptReq": encrypted_payload
+        "inputVariables": {
+            "in_msg": {
+                "Src_Channel": src_channel,
+                "UserName": username,
+                "Password": password,
+                "encryptReq": encrypted_payload
+            }
         }
     }
 

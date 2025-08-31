@@ -35,7 +35,7 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
       username,
       password
   )
-  logger.info(f"[PAYMENT_STATUS_INQUIRY_DEBIT] Response: {payment_status_response}")
+  logger.info(f"[PAYMENT_STATUS_INQUIRY] Response: {payment_status_response}")
   if payment_status_response and isinstance(payment_status_response, dict):
       payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
   if not payee_account_number:

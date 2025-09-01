@@ -24,9 +24,9 @@ from typing import List
 # from json_repair import repair_json
 
 router = APIRouter(
-    route_class=APIRouteWrapper
+    route_class=APIRouteWrapper, dependencies=[Depends(verify_access_token)]
 )
-# router_no_auth = APIRouter(route_class=APIRouteWrapper)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -58,8 +58,9 @@ class ExampleResponse(BaseModel):
 security_scheme = [{"bearerAuth": []}]
 
 
-# router = APIRouter(
-#     route_class=APIRouteWrapper)
+router = APIRouter(
+    route_class=APIRouteWrapper, dependencies=[Depends(verify_access_token)]
+)
 
 
 class EncryptedPayload(BaseModel):
@@ -136,7 +137,7 @@ def change_datetime_for_oracle(filters: dict) -> dict:
 
 
 @router.get(
-    "/api/items/{collection}", response_model=ExampleResponse, tags=["Collection"]
+    "/ncrp/api/items/{collection}", response_model=ExampleResponse, tags=["Collection"]
 )
 def get_items(
     collection: str,
@@ -256,7 +257,7 @@ def get_items(
 
 
 @router.get(
-    "/api/items/{collection}/{record_id}",
+    "/ncrp/api/items/{collection}/{record_id}",
     response_model=ExampleResponse,
     tags=["Collection"],
 )
@@ -283,7 +284,7 @@ def get_item(collection: str, record_id: int, fields: str = "*.*"):
     )
 
 
-@router.post("/api/items/{collection}", tags=["Collection"])
+@router.post("/ncrp/api/items/{collection}", tags=["Collection"])
 def create_item(collection: str, item: dict, request: CustomRequest = None):
     """
     Create a new item in the specified collection.
@@ -337,7 +338,7 @@ def create_item(collection: str, item: dict, request: CustomRequest = None):
     )
 
 
-@router.patch("/api/items/{collection}/{record_id}", tags=["Collection"])
+@router.patch("/ncrp/api/items/{collection}/{record_id}", tags=["Collection"])
 def update_item(
     collection: str, record_id: int, item: dict, request: CustomRequest = None
 ):
@@ -396,7 +397,7 @@ def update_item(
     )
 
 
-@router.delete("/api/items/{collection}/{record_id}", tags=["Collection"])
+@router.delete("/ncrp/api/items/{collection}/{record_id}", tags=["Collection"])
 def delete_item(collection: str, record_id: int, request: CustomRequest = None):
     """
     Delete an item from the specified collection.
@@ -436,7 +437,7 @@ def delete_item(collection: str, record_id: int, request: CustomRequest = None):
     )
 
 
-@router.get("/api/fields/{collection}", tags=["Forms"])
+@router.get("/ncrp/api/fields/{collection}", tags=["Forms"])
 def get_field_by_field_name(collection: str):
     """
     Retrieve the fields for a specific collection.
@@ -480,7 +481,7 @@ def get_field_by_field_name(collection: str):
     )
 
 
-@router.get("/api/template/{collection}", tags=["Files"])
+@router.get("/ncrp/api/template/{collection}", tags=["Files"])
 def get_template_by_collection_name(collection: str, file_type: str = "csv"):
     """
     Retrieve a template for the specified collection.
@@ -510,7 +511,7 @@ def get_template_by_collection_name(collection: str, file_type: str = "csv"):
     return db.get_template_as_file(collection, file_type)
 
 
-@router.post("/api/upload/{collection}", tags=["Files"])
+@router.post("/ncrp/api/upload/{collection}", tags=["Files"])
 async def upload_file_and_import(
     collection: str,
     file: UploadFile = File(...),
@@ -619,7 +620,7 @@ async def upload_file_and_import(
     )
 
 
-@router.post("/api/hierarchical-insert", tags=["Dynamic Inserts"])
+@router.post("/ncrp/api/hierarchical-insert", tags=["Dynamic Inserts"])
 def hierarchical_insert(item: dict, request: CustomRequest = None):
     """
     Perform hierarchical dynamic inserts for complex data structures.
@@ -684,7 +685,7 @@ def hierarchical_insert(item: dict, request: CustomRequest = None):
     return make_success_response(message=f"{next(iter(item))} created successfully")
 
 
-@router.post("/api/bulk-upsert", tags=["Bulk Upserts"])
+@router.post("/ncrp/api/bulk-upsert", tags=["Bulk Upserts"])
 def bulk_upserts(item: dict, request: CustomRequest = None):
     """
     Perform bulk upsert operations for multiple records in a single request.
@@ -752,7 +753,7 @@ def bulk_upserts(item: dict, request: CustomRequest = None):
     return make_success_response(message="Bulk upsert successful")
 
 
-@router.post("/api/document-upload/{s3_folder_name}", tags=["Files"])
+@router.post("/ncrp/api/document-upload/{s3_folder_name}", tags=["Files"])
 def upload_document(
     s3_folder_name: str, file: UploadFile = File(...), request: CustomRequest = None
 ):
@@ -782,7 +783,7 @@ def upload_document(
     **Example Request:**
     ```bash
     curl --request POST \
-         --url http://127.0.0.1:8000/api/document-upload/my-folder \
+         --url http://127.0.0.1:8000/ncrp/api/document-upload/my-folder \
          --header 'Authorization: Bearer <JWT_TOKEN>' \
          --header 'Content-Type: multipart/form-data' \
          --form 'file=@example.pdf'
@@ -840,7 +841,7 @@ def upload_document(
     )
 
 
-@router.get("/api/query/{collection_name}", tags=["Using SQL"])
+@router.get("/ncrp/api/query/{collection_name}", tags=["Using SQL"])
 def query_collections(
     collection_name: str,
     page: int = 1,
@@ -949,7 +950,7 @@ def query_collections(
     )
 
 
-@router.get("/api/collection/tables/{table_name}", tags=["Collection"])
+@router.get("/ncrp/api/collection/tables/{table_name}", tags=["Collection"])
 def generate_tbale_collection_filed(table_name: str, request: CustomRequest):
     """
     Retrieve details about a specific database table and construct a JSON response

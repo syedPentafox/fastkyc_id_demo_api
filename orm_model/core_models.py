@@ -740,12 +740,36 @@ class VishingFraudResponse(Base):
     is_success = Column(Boolean, nullable=True, default=False)  
 
 
+class BranchManagerDetails(Base):
+    __tablename__ = "branch_manager_details"   # Oracle table name
+
+    branch_code = Column(String(20), nullable=False, primary_key=True)  # VARCHAR2(20) PK
+    branch_name = Column(String(100), nullable=False)  # VARCHAR2(100)
+    emp_name = Column(String(100), nullable=False)  # VARCHAR2(100)
+    designation = Column(String(100), nullable=False)  # VARCHAR2(100)
+    mobile = Column(String(15), nullable=False)  # VARCHAR2(15)
+    mail = Column(String(100), nullable=False)  # VARCHAR2(100)
+
+class BankMaster(Base):
+    __tablename__ = "bank_master"
+
+    bank_code = Column(Integer, primary_key=True, nullable=False)
+    bank_name = Column(String(200), nullable=False)
+    bank_type = Column(String(100), nullable=False)
+
+
+class StatusMaster(Base):
+    __tablename__ = "status_master"
+
+    status_code = Column(String(20), nullable=False, primary_key=True)  # VARCHAR2(20) PK
+    status_name = Column(String(100), nullable=False)  # VARCHAR2(100)
+    status_description = Column(Text, nullable=True)  # CLOB
+
 # Dictionary mapping models to their corresponding JSON files
 models_and_files = {
-    States: "states.json",
-    Role: "roles.json",
-    Branch: "branches.json",
-    User: "users.json",
+    BranchManagerDetails: "branch_manager_details.json",
+    BankMaster: "bank_master.json",
+    StatusMaster: "status_master.json",
     CollectionField: "collection_fields.json"
 }
 

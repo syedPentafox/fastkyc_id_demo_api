@@ -20,6 +20,7 @@
 7. 01-Sep-25 : 05-Sep-25
 * Branch code and Branch number to be taken from db
 * Bank master to be taken from db
+* Separate log files for each Job
 * Any other handling
 * Go Live
 

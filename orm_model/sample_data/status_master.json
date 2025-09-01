@@ -1,0 +1,71 @@
+[
+    {
+        "status_code": "0",
+        "status_name": "SUCCESS",
+        "status_description": "Transaction Data Found"
+    },
+    {
+        "status_code": "1",
+        "status_name": "Record not found",
+        "status_description": "Record missing for input parameters"
+    },
+    {
+        "status_code": "2",
+        "status_name": "Invalid RRN",
+        "status_description": "Invalid RRN, does not follow RRN logics"
+    },
+    {
+        "status_code": "3",
+        "status_name": "Invalid RRN range",
+        "status_description": "Input RRN is out of range"
+    },
+    {
+        "status_code": "4",
+        "status_name": "Invalid incidents count",
+        "status_description": "Incidents count more than 25"
+    },
+    {
+        "status_code": "11",
+        "status_name": "Structure Validation failed",
+        "status_description": "Invalid Json format"
+    },
+    {
+        "status_code": "12",
+        "status_name": "Invalid Input parameter <parameter1>, <<parameter2>",
+        "status_description": "Invalid Input Parameter\n1.\tWhen input JSON has\nmissing mandatory fields"
+    },
+    {
+        "status_code": "13",
+        "status_name": "Request Size greater than 10KB",
+        "status_description": "Request message size greater than 10 KB"
+    },
+    {
+        "status_code": "14",
+        "status_name": "Invalid incident input parameter <parameter1>, <<parameter2>",
+        "status_description": "Invalid Input Parameter\n1.\tWhen input JSON has\nmissing mandatory fields in the incidents"
+    },
+    {
+
+        "status_code": "15",
+        "status_name": "Multiple Records Found",
+        "status_description": "For the requested rrn number multiple records found."
+    },
+    {
+
+        "status_code": "31",
+        "status_name": "Pending",
+        "status_description": "Waiting for execution or unknown task id"
+    },
+    {
+
+        "status_code": "32",
+        "status_name": "Failure",
+        "status_description": "Task execution resulted in exception"
+    },
+    {
+
+        "status_code": "99",
+        "status_name": "Sorry We are not able to process your request. Kindly try after some time.",
+        "status_description": "Internal error"
+    }
+]

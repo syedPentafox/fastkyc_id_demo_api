@@ -235,8 +235,8 @@ class CollectionField(Base):
         DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
     )
     modified_date = Column(DateTime, nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     collection = Column(String(1000))
     field = Column(String(1000))
     label = Column(String(1000))
@@ -258,7 +258,7 @@ class CollectionField(Base):
     numeric_scale = Column(Integer, nullable=True)
     is_nullable = Column(Boolean)
     is_primary_key = Column(Boolean)
-    has_auto_increment = Column(Boolean)
+    has_auto_increment = Column(String(10))
     foreign_key_column = Column(String(1000))
     foreign_key_table = Column(String(1000))
     filters = Column(String(1000))
@@ -740,14 +740,38 @@ class VishingFraudResponse(Base):
     is_success = Column(Boolean, nullable=True, default=False)  
 
 
+class BranchManagerDetails(Base):
+    __tablename__ = "branch_manager_details"   # Oracle table name
+
+    branch_code = Column(String(20), nullable=False, primary_key=True)  # VARCHAR2(20) PK
+    branch_name = Column(String(100), nullable=False)  # VARCHAR2(100)
+    emp_name = Column(String(100), nullable=False)  # VARCHAR2(100)
+    designation = Column(String(100), nullable=False)  # VARCHAR2(100)
+    mobile = Column(String(15), nullable=False)  # VARCHAR2(15)
+    mail = Column(String(100), nullable=False)  # VARCHAR2(100)
+
+class BankMaster(Base):
+    __tablename__ = "bank_master"
+
+    bank_code = Column(Integer, primary_key=True, nullable=False)
+    bank_name = Column(String(200), nullable=False)
+    bank_type = Column(String(100), nullable=False)
+
+
+class StatusMaster(Base):
+    __tablename__ = "status_master"
+
+    status_code = Column(String(20), nullable=False, primary_key=True)  # VARCHAR2(20) PK
+    status_name = Column(String(100), nullable=False)  # VARCHAR2(100)
+    status_description = Column(Text, nullable=True)  # CLOB
+
 # Dictionary mapping models to their corresponding JSON files
 models_and_files = {
-    States: "states.json",
-    Role: "roles.json",
-    Branch: "branches.json",
-    User: "users.json",
-    CollectionField: "collection_fields.json"}
-models_and_files = {}
+    BranchManagerDetails: "branch_manager_details.json",
+    BankMaster: "bank_master.json",
+    StatusMaster: "status_master.json",
+    CollectionField: "collection_fields.json"
+}
 
 # Get a database session
 db = next(get_db())

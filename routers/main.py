@@ -21,11 +21,12 @@ from utils.authentication import verify_access_token
 
 from typing import List
 
+# from json_repair import repair_json
 
 router = APIRouter(
     route_class=APIRouteWrapper
 )
-router_no_auth = APIRouter(route_class=APIRouteWrapper)
+# router_no_auth = APIRouter(route_class=APIRouteWrapper)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -57,13 +58,81 @@ class ExampleResponse(BaseModel):
 security_scheme = [{"bearerAuth": []}]
 
 
-router = APIRouter(
-    route_class=APIRouteWrapper
-)
+# router = APIRouter(
+#     route_class=APIRouteWrapper)
 
 
 class EncryptedPayload(BaseModel):
     encrypted_payload: str
+
+
+from datetime import datetime, date
+from datetime import datetime, date
+
+def change_datetime_for_oracle(filters: dict) -> dict:
+    """
+    Convert string values in filters to Python date objects for Oracle.
+    Handles keys ending in _gt, _lt, _gte, _lte, and _between.
+    """
+    date_ops = ["gt", "lt", "gte", "lte", "between"]
+    new_filters = {}
+
+    for key, value in filters.items():
+        if any(key.endswith(f"_{op}") for op in date_ops):
+            if isinstance(value, str):
+                # ✅ Single date string
+                try:
+                    parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+                    new_filters[key] = parsed_date
+                except ValueError:
+                    new_filters[key] = value
+            elif isinstance(value, (list, tuple)) and key.endswith("_between"):
+                # ✅ Handle between as [start, end]
+                parsed_range = []
+                for v in value:
+                    if isinstance(v, str):
+                        try:
+                            parsed_range.append(datetime.strptime(v, "%Y-%m-%d").date())
+                        except ValueError:
+                            parsed_range.append(v)
+                    else:
+                        parsed_range.append(v)
+                new_filters[key] = tuple(parsed_range)
+            else:
+                new_filters[key] = value
+        else:
+            new_filters[key] = value
+
+    return new_filters
+
+
+# def change_datetime_for_oracle(filters: dict) -> dict:
+#     """
+#     Convert string values in filters to Python date objects
+#     if the key ends with _gt, _lt, _gte, _lte and the value looks like YYYY-MM-DD.
+#     """
+#     date_ops = ["gt", "lt", "gte", "lte"]
+#     new_filters = {}
+
+#     for key, value in filters.items():
+#         # check if key matches our date operations
+#         if any(key.endswith(f"_{op}") for op in date_ops):
+#             if isinstance(value, str):
+#                 try:
+#                     # try parsing as YYYY-MM-DD
+#                     parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+#                     new_filters[key] = parsed_date
+#                 except ValueError:
+#                     # if it’s not a valid date string, keep original
+#                     new_filters[key] = value
+#             else:
+#                 new_filters[key] = value
+#         else:
+#             new_filters[key] = value
+
+#     return new_filters
+
+
 
 
 @router.get(
@@ -147,15 +216,19 @@ def get_items(
 
     columns = fields.split(",") if fields else []
     sort_by = sort_by.split(",") if sort_by else []
+    print("previous line ########################", filters)
     filters_dict = json.loads(filters) if filters else {}
+    print("filters_dict########################", filters_dict)
     aggregate = json.loads(aggregate) if aggregate else {}
     group_by = json.loads(group_by) if group_by else {}
+
+    changed_filters = change_datetime_for_oracle(filters=filters_dict) if filters_dict else None
     if download_file_type:
         page = -1
         data, metadata = db.get_data_from_table(
             collection,
             columns,
-            filters_dict,
+            changed_filters,
             search,
             sort_by,
             page,
@@ -169,7 +242,7 @@ def get_items(
     data, metadata = db.get_data_from_table(
         collection,
         columns,
-        filters_dict,
+        changed_filters,
         search,
         sort_by,
         page,

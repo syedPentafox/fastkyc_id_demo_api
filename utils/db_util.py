@@ -114,6 +114,9 @@ class DatabaseHandler:
             "iends_with": lambda column, value: column.ilike(f"%{value}"),
             "nends_with": lambda column, value: ~column.endswith(value),
             "niends_with": lambda column, value: ~column.ilike(f"%{value}%"),
+            "between": lambda column, value: column.between(value[0], value[1]),
+            "nbetween": lambda column, value: ~column.between(value[0], value[1]),
+
         }
         self.FUNCTIONS = {
             "NOW": lambda column, value: datetime.now(),
@@ -468,13 +471,15 @@ class DatabaseHandler:
         return query
 
     def execute_query(self, query):
-        with self.Session() as session:
-            try:
+        try:
+            with self.Session() as session:
                 result = session.execute(query)
+                print("result>>>>", result)
+                # print("result.fetchall()>>>>", result.fetchall())
                 return result.fetchall()
-            except Exception as e:
-                logging.error("Error executing query: %s", e)
-                return None
+        except Exception as e:
+            logging.error("Error executing query: %s", e)
+            return [[None]]
 
     def generate_query_attributes(self, table_name, columns=None, json_object=True):
         """
@@ -1422,14 +1427,14 @@ class DatabaseHandler:
                     for relation_column in relation_columns:
                         or_conditions.append(
                             func.lower(
-                                func.cast(
-                                    getattr(relation_model, relation_column), String
+                                func.to_char(
+                                    getattr(relation_model, relation_column)
                                 )
                             ).like(f"%{search.lower()}%")
                         )
                 else:
                     or_conditions.append(
-                        func.lower(func.cast(getattr(model, field), String)).like(
+                        func.lower(func.to_char(getattr(model, field))).like(
                             f"%{search.lower()}%"
                         )
                     )
@@ -1561,15 +1566,17 @@ class DatabaseHandler:
             # Modify the query string to remove duplicate aliases dynamically
 
             query_str = self.remove_duplicate_aliases(compiled_query.string)
-            query_str = query_str.replace("', ", "' VALUE ")
+            # query_str = query_str.replace("', ", "' VALUE ")
 
             # Step 1: Remove ORDER BY for count
             countable_query = self.remove_order_by(query_str.strip().rstrip(";"))
 
             # Count total records before pagination
             count_query = text(
-                f"SELECT COUNT(*) AS total_count FROM ({countable_query}) t"
+                f"SELECT COUNT(*) AS total_count FROM ({countable_query})"
             )
+            print("count query ->>>> ",count_query)
+
 
             total_records = self.execute_query(count_query)[0][0]
 

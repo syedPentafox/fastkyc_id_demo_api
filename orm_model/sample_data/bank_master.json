@@ -1,0 +1,2457 @@
+[
+    {
+        "bank_code": 3,
+        "bank_name": "Axis Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 4,
+        "bank_name": "BANK OF BAHRAIN AND KUWAIT B.S.C",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 5,
+        "bank_name": "Bank of Baroda (Including Vijaya Bank and Dena Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 7,
+        "bank_name": "Bank of India",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 8,
+        "bank_name": "Bank of Maharashtra",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 9,
+        "bank_name": "Canara Bank (including Syndicate Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 10,
+        "bank_name": "Central Bank of India",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 11,
+        "bank_name": "City Union Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 13,
+        "bank_name": "Deutsche Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 14,
+        "bank_name": "DCB Bank (Development Credit Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 15,
+        "bank_name": "Dhanlaxmi Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 16,
+        "bank_name": "Federal Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 17,
+        "bank_name": "ICICI Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 18,
+        "bank_name": "IDBI Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 19,
+        "bank_name": "Indian Bank (including Allahabad Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 20,
+        "bank_name": "Indian Overseas Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 21,
+        "bank_name": "IndusInd Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 23,
+        "bank_name": "Jammu and Kashmir Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 24,
+        "bank_name": "Karnataka Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 25,
+        "bank_name": "Karur Vysya Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 27,
+        "bank_name": "DBS Bank (Including Lakshmi Vilas Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 29,
+        "bank_name": "Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 31,
+        "bank_name": "Punjab & Sind Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 33,
+        "bank_name": "South Indian Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 36,
+        "bank_name": "State Bank of India",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 41,
+        "bank_name": "Tamilnad Mercantile Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 42,
+        "bank_name": "UCO Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 43,
+        "bank_name": "Union Bank of India (including Andhra Bank and Corporation Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 46,
+        "bank_name": "Yes Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 52,
+        "bank_name": "Paytm Payment Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 53,
+        "bank_name": "Amazon Pay",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 54,
+        "bank_name": "Google Pay",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 55,
+        "bank_name": "PhonePe",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 56,
+        "bank_name": "Mobikwik",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 58,
+        "bank_name": "Citi MasterPass",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 62,
+        "bank_name": "Others",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 63,
+        "bank_name": "Flipkart",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 64,
+        "bank_name": "Catholic Syrian Bank LTD. (CSB)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 65,
+        "bank_name": "HDFC Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 66,
+        "bank_name": "IDFC First Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 67,
+        "bank_name": "Kotak Mahindra Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 68,
+        "bank_name": "Nainital Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 70,
+        "bank_name": "Fino Payments Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 74,
+        "bank_name": "mRupee",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 78,
+        "bank_name": "Freecharge",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 79,
+        "bank_name": "ItzCash",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 86,
+        "bank_name": "Chiller",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 87,
+        "bank_name": "Amazon India",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 88,
+        "bank_name": "Paytm",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 89,
+        "bank_name": "Snapdeal",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 91,
+        "bank_name": "Zivame",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 92,
+        "bank_name": "Jabong",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 93,
+        "bank_name": "ShopClues",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 94,
+        "bank_name": "Myntra",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 96,
+        "bank_name": "Bigbasket",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 97,
+        "bank_name": "Pepperfry",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 98,
+        "bank_name": "Limeroad",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 100,
+        "bank_name": "Clovia",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 102,
+        "bank_name": "Koovs",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 103,
+        "bank_name": "Yepme",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 104,
+        "bank_name": "Grofers",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 105,
+        "bank_name": "Rediff",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 106,
+        "bank_name": "ZopNow",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 107,
+        "bank_name": "HealthKart",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 108,
+        "bank_name": "Lenskart",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 111,
+        "bank_name": "ITC Portal",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 112,
+        "bank_name": "iBhejo",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 114,
+        "bank_name": "SriSriTattva",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 115,
+        "bank_name": "Croma",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 117,
+        "bank_name": "Naaptol India",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 118,
+        "bank_name": "Natures Basket",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 119,
+        "bank_name": "Giskaa",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 120,
+        "bank_name": "Homeshop18",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 121,
+        "bank_name": "Future Bazaar",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 122,
+        "bank_name": "Yebhi",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 124,
+        "bank_name": "Fabindia",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 125,
+        "bank_name": "The North East Store",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 126,
+        "bank_name": "Archies Online",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 127,
+        "bank_name": "Khadi Natural",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 129,
+        "bank_name": "Just Herbs",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 130,
+        "bank_name": "Shahnaz Husain Group",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 131,
+        "bank_name": "Brindco",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 132,
+        "bank_name": "Flavours Of My City",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 133,
+        "bank_name": "Firstcry",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 134,
+        "bank_name": "Netmeds",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 135,
+        "bank_name": "Payu",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 136,
+        "bank_name": "Citi Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 138,
+        "bank_name": "NSDL Payments Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 139,
+        "bank_name": "State Bank of India (Credit card)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 140,
+        "bank_name": "Others",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 141,
+        "bank_name": "Airtel Payments Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 142,
+        "bank_name": "Others",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 143,
+        "bank_name": "THE GUJARAT STATE COOPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 144,
+        "bank_name": "Ratnakar Bank Limited (RBL)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 145,
+        "bank_name": "Ujjivan Small Finance Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 146,
+        "bank_name": "Jio Payments Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 147,
+        "bank_name": "Equitas Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 148,
+        "bank_name": "AU Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 149,
+        "bank_name": "Razorpay",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 151,
+        "bank_name": "Standard Chartered Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 152,
+        "bank_name": "Nobroker Technologies Solution Private Ltd",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 153,
+        "bank_name": "Suryoday Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 154,
+        "bank_name": "CRED",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 155,
+        "bank_name": "Cashfree",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 156,
+        "bank_name": "India Post Payments Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 157,
+        "bank_name": "Chhattisgarh Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 158,
+        "bank_name": "Billdesk",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 159,
+        "bank_name": "Khata Book",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 160,
+        "bank_name": "Kerala Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 161,
+        "bank_name": "Puduvai Bharathiar Grama",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 162,
+        "bank_name": "Karnataka Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 163,
+        "bank_name": "Meghalaya Rural Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 164,
+        "bank_name": "Vidharbha Konkan Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 165,
+        "bank_name": "Tamil Nadu Grama Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 166,
+        "bank_name": "HP Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 167,
+        "bank_name": "Baroda U.P. Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 168,
+        "bank_name": "Baroda Gujarat Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 169,
+        "bank_name": "Telangana Grameena Bank (including DECCAN GRAMIN BANK)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 170,
+        "bank_name": "Andhra Pragathi Grameena Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 171,
+        "bank_name": "Andhra Pradesh Grameena Vikas Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 172,
+        "bank_name": "Bharat Pe",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 173,
+        "bank_name": "Dhani Pay",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 174,
+        "bank_name": "Ease Buzz",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 175,
+        "bank_name": "State Bank Of Mauritius (SBM)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 176,
+        "bank_name": "Paytm",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 177,
+        "bank_name": "Fincare Small Finance Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 178,
+        "bank_name": "POS ATM PURCH",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 179,
+        "bank_name": "Bandhan Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 180,
+        "bank_name": "ESAF Small Finance Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 181,
+        "bank_name": "ATOM",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 182,
+        "bank_name": "MagicBricks",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 183,
+        "bank_name": "Paulpay",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 184,
+        "bank_name": "Utkarsh Small Finance Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 185,
+        "bank_name": "Bharat Co-operative Bank (M) Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 186,
+        "bank_name": "American Express",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 187,
+        "bank_name": "The Kangra Central Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 188,
+        "bank_name": "Baroda Rajasthan Kshetriya Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 189,
+        "bank_name": "Midas Corporate Park",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 190,
+        "bank_name": "Maharashtra Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 191,
+        "bank_name": "The Nawanagar Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 192,
+        "bank_name": "The Gandhidham Mercantile Co-Op Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 193,
+        "bank_name": "Dharti Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 194,
+        "bank_name": "Uttarakhand Gramin Bank (including Uttaranchal Gramin Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 195,
+        "bank_name": "The Zoroastrian Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 196,
+        "bank_name": "Saurashtra Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 197,
+        "bank_name": "Navnirman Bank Bhavan",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 198,
+        "bank_name": "Adarsh Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 199,
+        "bank_name": "Sarva Haryana Gramin Bank (including Haryana Gramin Bank)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 200,
+        "bank_name": "THE BHAGYODAYA CO-OPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 201,
+        "bank_name": "The Mehsana Urban Co-Op. Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 202,
+        "bank_name": "Rajkot Peoples Co-Operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 203,
+        "bank_name": "The Anand Mercantile Co-Op.Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 204,
+        "bank_name": "Rajkot Nagrik Sahakari Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 205,
+        "bank_name": "The Karnavati Co-Op. Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 206,
+        "bank_name": "Rajasthan Marudhara Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 207,
+        "bank_name": "The Veraval Peoples Co Op Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 208,
+        "bank_name": "Bank of Baroda (Credit card)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 209,
+        "bank_name": "Qwikcilver Solutions",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 210,
+        "bank_name": "Saraswat Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 211,
+        "bank_name": "Jana Small Finance Bank - Jana Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 212,
+        "bank_name": "The Bhavnagar District Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 213,
+        "bank_name": "THE BHARUCH DISTRICT CENTRAL CO OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 214,
+        "bank_name": "The Banaskantha District Central Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 215,
+        "bank_name": "VALSAD DISTRICT CENTRAL CO. OP. BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 216,
+        "bank_name": "Dakshin Bihar Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 217,
+        "bank_name": "THE AHMEDABAD DISTRICT CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 218,
+        "bank_name": "Citizens Co operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 219,
+        "bank_name": "The Rajkot Commercial Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 220,
+        "bank_name": "Darussalam Co-operative Urban Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 221,
+        "bank_name": "Sterling Urban Co-op Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 222,
+        "bank_name": "The Kalupur Commercial Co-op. Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 223,
+        "bank_name": "The Navnirman co op Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 224,
+        "bank_name": "SBPP Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 225,
+        "bank_name": "Manappuram Finance Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 226,
+        "bank_name": "PRIME CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 227,
+        "bank_name": "Shivalik Small Finance Bank.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 228,
+        "bank_name": "The Sutex Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 229,
+        "bank_name": "Amreli Jilla Madhyastha Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 230,
+        "bank_name": "Sarvodaya commercial co-operative Bank Limited.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 231,
+        "bank_name": "KANKARIA MANINAGAR NAGRIK SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 232,
+        "bank_name": "Gujarat Ambuja Co-Op Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 233,
+        "bank_name": "Union Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 234,
+        "bank_name": "Deogiri Nagari Sahakari Bank Ltd. Aurangabad.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 236,
+        "bank_name": "Capital Small Finance Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 237,
+        "bank_name": "Nutan Nagarik Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 238,
+        "bank_name": "The Sarvodaya Sahakari Bank Ltd. modasa",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 239,
+        "bank_name": "Akhand Anand Co. Op. Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 240,
+        "bank_name": "THE MAHUDHA NAGRIK SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 241,
+        "bank_name": "THE VARACHHA CO.OP.BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 242,
+        "bank_name": "Bhatpara Naihati Co-Operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 243,
+        "bank_name": "Shri Rajkot District Co. Operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 244,
+        "bank_name": "MODEL COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 245,
+        "bank_name": "NKGSB CO-OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 246,
+        "bank_name": "The Financial Co-operative bank ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 247,
+        "bank_name": "The Co-Operative Bank Of Rajkot ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 248,
+        "bank_name": "THE VEPAR UDHYOG VIKAS SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 249,
+        "bank_name": "The Jalgaon Peoples Co-op. Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 250,
+        "bank_name": "Saraspur Nagarik Co.Operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 251,
+        "bank_name": "UMA COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 252,
+        "bank_name": "Punjab Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 253,
+        "bank_name": "Patan Nagarik Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 254,
+        "bank_name": "GP Parsik Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 255,
+        "bank_name": "BASSEIN CATHOLIC CO-OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 256,
+        "bank_name": "THE GODHRA URBAN CO-OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 257,
+        "bank_name": "Vasai Vikas Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 258,
+        "bank_name": "The Greater Bombay Co-operative Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 259,
+        "bank_name": "THE PANCHMAHAL DIST COOP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 260,
+        "bank_name": "Barclays Bank PLC",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 261,
+        "bank_name": "The Junagadh Jilla Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 262,
+        "bank_name": "The Dahod Urban Co. Op. bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 263,
+        "bank_name": "The Surat Peoples Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 264,
+        "bank_name": "Shree Mahuva Nagrik Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 265,
+        "bank_name": "HSBC Bank.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 266,
+        "bank_name": "The Gandevi People's Co-Op.Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 267,
+        "bank_name": "Bajaj Finance Ltd.",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 268,
+        "bank_name": "Spice Money.",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 269,
+        "bank_name": "Kallappanna Awade Ichalkaranji Janata Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 271,
+        "bank_name": "Nykaa",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 272,
+        "bank_name": "Housing.com",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 273,
+        "bank_name": "Pay1 (Mindsarray Network PVT LTD)",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 274,
+        "bank_name": "SVC Co-operative Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 275,
+        "bank_name": "Dhanera Mercantile Co Op Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 276,
+        "bank_name": "THE JAMNAGAR MAHILA SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 277,
+        "bank_name": "SHREE KADI NAGARIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 278,
+        "bank_name": "THE CO-OPERATIVE BANK OF MEHSANA LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 280,
+        "bank_name": "THE KUKARWADA NAGARIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 281,
+        "bank_name": "SURAT NATIONAL CO-OP. BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 282,
+        "bank_name": "THE BAVLA NAGRIK SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 283,
+        "bank_name": "THE MEHSANA DISTRICT CENTRAL CO-OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 284,
+        "bank_name": "THE MALPUR NAGARIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 285,
+        "bank_name": "SHREE BOTAD MERCANTILE COOP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 286,
+        "bank_name": "THE BOTAD PEOPLES CO OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 287,
+        "bank_name": "M S CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 288,
+        "bank_name": "THE SURAT DISTRICT CO. OP. BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 289,
+        "bank_name": "PRAGATI SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 290,
+        "bank_name": "SABARKANTHA DISTRICT COOPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 291,
+        "bank_name": "THE BHUJ COMMERCIAL CO OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 292,
+        "bank_name": "JIVAN COMMERCIAL CO OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 293,
+        "bank_name": "THE BARDOLI NAGRIK SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 294,
+        "bank_name": "THE UDAIPUR MAHILA SAMRIDHI URBAN CO OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 295,
+        "bank_name": "APNA SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 296,
+        "bank_name": "SHRI MAHILA SEWA SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 297,
+        "bank_name": "THE VERAVAL MERCANTILE CO-OP BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 298,
+        "bank_name": "THE SABARKANTHA DISTRICT CENTRAL COOPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 299,
+        "bank_name": "HIMATNAGAR NAGRIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 300,
+        "bank_name": "BHILWARA URBAN COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 301,
+        "bank_name": "PORBANDAR COMMERCIAL CO OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 302,
+        "bank_name": "BHAVNAGAR MAHILA NAGRIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 303,
+        "bank_name": "THE KAIRA DISTRICT CENTRAL CO-OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 304,
+        "bank_name": "THE MODASA NAGARIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 305,
+        "bank_name": "SANMITRA MAHILA NAGARI SAHAKARI BANK MARYADIT, CHANDRAPUR",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 306,
+        "bank_name": "ANDAMAN & NICOBAR STATE COOPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 307,
+        "bank_name": "BAJAJ ALLIANZ GENERAL INSURANCE",
+        "bank_type": "INS"
+    },
+    {
+        "bank_code": 308,
+        "bank_name": "MAX LIFE INSURANCE",
+        "bank_type": "INS"
+    },
+    {
+        "bank_code": 309,
+        "bank_name": "THE AKOLA JANATA COMM. CO-OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 310,
+        "bank_name": "INDRAPRASTHA SEHKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 311,
+        "bank_name": "MARATHA CO-OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 312,
+        "bank_name": "PALI URBAN CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 313,
+        "bank_name": "SARDAR SINGH NAGRIK SAHKARI BANK MARYADIT",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 314,
+        "bank_name": "TAMIL NADU STATE APEX COOP BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 315,
+        "bank_name": "NEW INDIA CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 316,
+        "bank_name": "RELIANCE PAYMENT SOLUTIONS LIMITED",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 317,
+        "bank_name": "TIRUNELVELI DISTRICT CENTRAL COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 318,
+        "bank_name": "SHREE MAHAYOGI LAKSHMAMMA CO-OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 319,
+        "bank_name": "MAHESH SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 320,
+        "bank_name": "BUSINESS CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 321,
+        "bank_name": "LIFE INSURANCE CORPORATION",
+        "bank_type": "INS"
+    },
+    {
+        "bank_code": 322,
+        "bank_name": "THE VELLORE DISTRICT CENTRAL COOPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 323,
+        "bank_name": "VIJAY COMMERCIAL CO. OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 324,
+        "bank_name": "THE SAURASHTRA CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 325,
+        "bank_name": "BALASINOR NAGARIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 326,
+        "bank_name": "THE KANCHEEPURAM CENTRAL COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 327,
+        "bank_name": "TRI O TECH SOLUTIONS PRIVATE LIMITED",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 328,
+        "bank_name": "CHENNAI CENTRAL CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 329,
+        "bank_name": "THE AHMEDABAD MERCANTILE CO-OPERATIVE. BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 331,
+        "bank_name": "THE BARODA CENTRAL CO OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 332,
+        "bank_name": "UTTARKASHI ZILA SAHKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 333,
+        "bank_name": "SHIVA SAHAKARI BANK NIYAMITA",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 335,
+        "bank_name": "ASSOCIATE CO OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 336,
+        "bank_name": "POCHAMPALLY CO-OP URBAN BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 337,
+        "bank_name": "THE MATTANCHERRY SARVAJANIK CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 338,
+        "bank_name": "GODAVARI URBAN CO. OP. BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 339,
+        "bank_name": "OPEN",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 340,
+        "bank_name": "AIRPAY",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 341,
+        "bank_name": "COMPUTER AGE MANAGEMENT SERVICES LTD.",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 342,
+        "bank_name": "PAYSHARP PRIVATE LIMITED",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 343,
+        "bank_name": "EPAYNOW",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 344,
+        "bank_name": "MPURSE",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 345,
+        "bank_name": "TATA PAYMENTS LIMITED",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 346,
+        "bank_name": "THE GANDHIDHAM CO-OPERTIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 347,
+        "bank_name": "PINE LABS",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 348,
+        "bank_name": "TELANGANA STATE CO-OP APEX BANK(SPO-IDBI)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 349,
+        "bank_name": "TRI O TECH SOLUTIONS PRIVATE LIMITED",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 350,
+        "bank_name": "Prathama UP Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 351,
+        "bank_name": "Eroute Technologies Private LIMITED",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 352,
+        "bank_name": "Sumitomo Mitsui Banking Corporation (SMBC)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 353,
+        "bank_name": "Giottus",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 354,
+        "bank_name": "CHATTISGARH GRAMIN BANK)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 355,
+        "bank_name": "UNITY SMALL FINANCE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 356,
+        "bank_name": "UNOCOIN",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 357,
+        "bank_name": "ZEBPAY",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 358,
+        "bank_name": "WAZIRX",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 359,
+        "bank_name": "BITBNS",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 360,
+        "bank_name": "Madhyanchal Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 361,
+        "bank_name": "JANATA SAHAKARI BANK PUNE",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 362,
+        "bank_name": "Sri Guru Raghavendra Sahakara Bank Niyamitha",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 363,
+        "bank_name": "Navi Mumbai Co-Operative Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 364,
+        "bank_name": "The Akola District Central Co-op. Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 365,
+        "bank_name": "The Chandigarh State Cooperative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 366,
+        "bank_name": "COINDCX",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 367,
+        "bank_name": "BUYUCOIN",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 368,
+        "bank_name": "THE COSMOS CO-OP.  BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 369,
+        "bank_name": "JAMMU and KASHMIR Grameen bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 370,
+        "bank_name": "Mangalore catholic Co Operative bank Ltd (M.C.C)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 372,
+        "bank_name": "TJSB Sahakari Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 373,
+        "bank_name": "Jharkhand Rajya Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 374,
+        "bank_name": "THE KHAMGAON URBAN COOP BANK LTD KHAMGAON",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 375,
+        "bank_name": "The Baramati Sahakari Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 376,
+        "bank_name": "RESILIENT INNOVATIONS PVT LTD",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 377,
+        "bank_name": "OPEN FINANCIAL TECHNOLOGY",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 378,
+        "bank_name": "DREAMPLUG PAYTECH SOLUTIONS PVT LTD",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 379,
+        "bank_name": "Shri Shivayogi Murughendra Swami Urban Co-Op. Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 380,
+        "bank_name": "Sri Chatrapati Shivaji Maharaj Sahakari Bank Niyamith",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 381,
+        "bank_name": "SAPTAGIRI GRAMEENA BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 382,
+        "bank_name": "Thane Bharat Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 383,
+        "bank_name": "Suvarnayug Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 384,
+        "bank_name": "Contai Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 385,
+        "bank_name": "Madhya Bihar Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 386,
+        "bank_name": "MAHAVEER CO-OPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 387,
+        "bank_name": "The Suvikas Peoples Co Operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 388,
+        "bank_name": "Coastal Local Area Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 389,
+        "bank_name": "The Himachal Pradesh State Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 390,
+        "bank_name": "Associate Co-Operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 391,
+        "bank_name": "Samarth Sahakari Bank (Solapur)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 392,
+        "bank_name": "PRAGATHI KRISHNA GRAMIN BANK(DIRECT)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 393,
+        "bank_name": "The Gayatri Co-operative Urban Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 394,
+        "bank_name": "Himachal Pradesh Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 395,
+        "bank_name": "AMBARNATH JAIHIND CO OP BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 396,
+        "bank_name": "MIZORAM RURAL BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 397,
+        "bank_name": "Aryavart Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 398,
+        "bank_name": "KODINAR TALUKA CO-OP. BANKING UNION LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 399,
+        "bank_name": "TRANSCORP INTERNATIONAL LIMITED",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 400,
+        "bank_name": "Pittoragarh Zila Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 401,
+        "bank_name": "The Adarsh Co-operative Urban Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 402,
+        "bank_name": "ADARSH MAHILA NAGARI SAHAKARI BANK LTD AURANGABAD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 403,
+        "bank_name": "PRIYADARSHANI NAGARI SAHAKARI BANK MARYADIT JALNA",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 404,
+        "bank_name": "VISHWESHAR SAHKARI BANK LTD PUNE",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 405,
+        "bank_name": "Rajadhani Co-op. Urban Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 406,
+        "bank_name": "THE GADCHIROLI DISTRICT CENTRAL COOP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 407,
+        "bank_name": "DOMBIVILI NAGARIK SAHAKARI BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 408,
+        "bank_name": "TRANSERV PRIVATE LIMITED-Prepaid Bank-PPI",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 409,
+        "bank_name": "SAMRUDHI CO-OP BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 410,
+        "bank_name": "The Tirupati Urban Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 411,
+        "bank_name": "THE AHMEDNAGAR DISTRICT CENTRAL CO-OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 412,
+        "bank_name": "The Vijay Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 413,
+        "bank_name": "Janaseva Sahakari Bank ltd,Pune",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 414,
+        "bank_name": "JANASEVA SAHAKARI BANK BORIVALI LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 415,
+        "bank_name": "THE SARANGPUR CO OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 416,
+        "bank_name": "KERALA STATE CO-OPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 417,
+        "bank_name": "BHARAT PETROLEUM CORPORATION LIMITED",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 418,
+        "bank_name": "THE BARODA CITY CO. OPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 419,
+        "bank_name": "INFIBEAM AVENUES LIMITED (CCAVENUE)",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 420,
+        "bank_name": "THE VAISH COOPERATIVE ADARSH BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 421,
+        "bank_name": "Abhyudaya Co-operative Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 422,
+        "bank_name": "The Agrasen Co-Operative Urban Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 423,
+        "bank_name": "Amreli Nagrik Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 424,
+        "bank_name": "AMRELI JILLA MADHYASTHA SAHKARI BANK.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 425,
+        "bank_name": "The Andhra Pradesh Mahesh Co-operative Urban Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 426,
+        "bank_name": "Arvind Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 427,
+        "bank_name": "The Bundi Urban Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 428,
+        "bank_name": "Baran Nagarik Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 429,
+        "bank_name": "CHAITANYA GODAVARI GRAMEENA BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 430,
+        "bank_name": "CITIBANK CORPORATE",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 431,
+        "bank_name": "Shri Chhatrapati Rajarshi Shahu Urban Co-op.Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 432,
+        "bank_name": "Garagepreneurs Internet Private Limited",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 433,
+        "bank_name": "GS Mahanagar Coop bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 434,
+        "bank_name": "The Andhra Pradesh State Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 435,
+        "bank_name": "The Kanakamahalakshmi Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 436,
+        "bank_name": "The Kangra Co-operative Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 437,
+        "bank_name": "Kolhapur Dist. Central Co-Op. Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 438,
+        "bank_name": "Kalyan Janata Sahakari Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 439,
+        "bank_name": "Kolhapur Urban Co-operative Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 440,
+        "bank_name": "MANIPUR RURAL BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 441,
+        "bank_name": "MALVIYA URBAN COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 442,
+        "bank_name": "Mizoram Urban Co-Operative Development Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 443,
+        "bank_name": "NORTH EAST SMALL FINANCE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 444,
+        "bank_name": "THE NASIK MERCHANTS CO OPERATIVE BANK LTD NASHIK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 445,
+        "bank_name": "PASCHIM BANGA GRAMIN BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 446,
+        "bank_name": "Pune Peoples Co-Op. Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 447,
+        "bank_name": "RAJARSHI SHAHU SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 448,
+        "bank_name": "SUCO SOUHARDA SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 449,
+        "bank_name": "SUNDARLAL SAWJI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 450,
+        "bank_name": "SHREE WARANA SAHAKARIK BANK LTD WARANANAGAR",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 451,
+        "bank_name": "The Tirur Urban Cooperative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 452,
+        "bank_name": "Uttar Pradesh Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 453,
+        "bank_name": "The Visakhapatnam Cooperative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 454,
+        "bank_name": "BALANCEHERO INDIA PRIVATE LIMITED",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 455,
+        "bank_name": "Assam Gramin Vikash Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 456,
+        "bank_name": "THE VAISH COOPERATIVE NEW BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 457,
+        "bank_name": "JPMORGAN",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 458,
+        "bank_name": "COINSWITCH",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 459,
+        "bank_name": "Bank of America",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 460,
+        "bank_name": "Textile Traders Co-operative Bank LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 461,
+        "bank_name": "Vallabh Vidyanagar Commercial CO-OPERATIVE BANK Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 462,
+        "bank_name": "Gondal Nagrik Sahkari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 463,
+        "bank_name": "The Chhapi Nagrik Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 464,
+        "bank_name": "The Social Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 465,
+        "bank_name": "Ghoghamba Vibhag Nagrik Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 466,
+        "bank_name": "Unjha Nagarik Sahakari Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 467,
+        "bank_name": "The Godhra City Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 468,
+        "bank_name": "Shree Bharat Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 469,
+        "bank_name": "Gujarat Mercantile Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 470,
+        "bank_name": "Navsarjan Industrial Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 471,
+        "bank_name": "Amarnath Co-operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 472,
+        "bank_name": "Progressive Mercantile Co-op Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 473,
+        "bank_name": "SARVODAY NAGARIK SAHAKARI BANK LTD.,HIMMATNAGAR",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 474,
+        "bank_name": "THE KARAD URBAN CO-OP. BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 475,
+        "bank_name": "SARDAR VALLABHBHAI SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 476,
+        "bank_name": "Ypay Card",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 477,
+        "bank_name": "THE MUNICIPAL CO-OP BANK LTD, MUMBAI.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 478,
+        "bank_name": "THE IDAR NAGRIK SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 479,
+        "bank_name": "BHOPAL CO-OPERATIVE CENTRAL BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 480,
+        "bank_name": "Agroha Cooperative urban Bank Limited",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 481,
+        "bank_name": "AMBAJOGAI PEOPLES CO OP BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 482,
+        "bank_name": "THE BAGHAT URBAN CO-OP. BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 483,
+        "bank_name": "BALITIKURI CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 484,
+        "bank_name": "ADARNIYA P. D. PATILSAHEB SAHAKARI BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 485,
+        "bank_name": "SHREE VARDHAMAN SAHAKARI BANK LIMITED",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 486,
+        "bank_name": "AHMEDNAGAR SHAHAR SAHAKARI BANK MARYADIT, AHMEDNAGAR",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 487,
+        "bank_name": "THE BHAWANIPATNA CENTRAL COOPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 488,
+        "bank_name": "RapiPay Fintech Pvt. Ltd",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 489,
+        "bank_name": "Shree Bhavnagar Nagrik Sahakari Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 490,
+        "bank_name": "THE GOA STATE COOPERATIVE BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 491,
+        "bank_name": "BHADRADRI CO OPERATIVE URBAN BANK LTD",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 492,
+        "bank_name": "BALOTRA URBAN CO OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 493,
+        "bank_name": "The Kachchh District Central Co-Operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 494,
+        "bank_name": "The Banaskantha Mercantile Co. Operative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 495,
+        "bank_name": "The Surat Mercantile Co-op. Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 496,
+        "bank_name": "The Bhuj Mercantile Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 497,
+        "bank_name": "The Karnataka State Co-Operative Apex Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 498,
+        "bank_name": "Decfin Tech Private Limited ( Decentro)",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 499,
+        "bank_name": "Bombay Mercantile Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 500,
+        "bank_name": "The Nilambur Co operative Urban Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 501,
+        "bank_name": "1Pay Mobileware Private Ltd.",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 502,
+        "bank_name": "The Maharashtra State Co-op. Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 503,
+        "bank_name": "KEB Hana Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 504,
+        "bank_name": "THE SARVODAYA SAHAKARI BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 505,
+        "bank_name": "THE WEST BENGAL STATE CO. OPERATIVE BANK",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 506,
+        "bank_name": "LivQuik Technology (lndia) Pvt. Ltd",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 507,
+        "bank_name": "I Money Pay Pvt. Ltd.(EMeditek Global Pvt. Ltd.)",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 508,
+        "bank_name": "Manjeri Co-Operative Urban Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 509,
+        "bank_name": "The Wardha District Central Co-operative Bank Ltd.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 510,
+        "bank_name": "Western Union Financial Services",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 511,
+        "bank_name": "THE DAMAN AND DIU STATE CO-OPERATIVE BANK LTD.",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 512,
+        "bank_name": "Jogindra Central Cooperative Bank Ltd",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 513,
+        "bank_name": "Slice ( GaragePreneurs Internet Pvt Ltd )",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 514,
+        "bank_name": "Tripura Gramin Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 515,
+        "bank_name": "Jamia Co-operative Bank",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 516,
+        "bank_name": "PPIW0881822 One Mobikwik Systems Pvt Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 517,
+        "bank_name": "PPIW0882027 PhonePe Pvt. Ltd",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 518,
+        "bank_name": "PPIW0882111 Spice Money Pvt Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 519,
+        "bank_name": "PPIW0884005 IDFC First Bank Pvt Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 520,
+        "bank_name": "PPIW0884102 Livquik Technology Pvt. Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 521,
+        "bank_name": "PPIW0886232 Garagepreneur Internet Pvt ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 522,
+        "bank_name": "ICIC0PABCDE ICICI Bank",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 523,
+        "bank_name": "PPIW0884308 Hip Bar Private Limited (CRED)",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 524,
+        "bank_name": "PPIW0884207 Amazon Pay (India) Pvt. Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 525,
+        "bank_name": "PPIW0884713 Pine Labs Private Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 526,
+        "bank_name": "PPIW0884915 Eroute Technologies Pvt. Ltd.",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 527,
+        "bank_name": "PPIW0885526 Axis Bank Freecharge",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 528,
+        "bank_name": "YESB0PPIUPI Yes Bank Ltd",
+        "bank_type": "PPI"
+    },
+    {
+        "bank_code": 529,
+        "bank_name": "State Bank of India (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 530,
+        "bank_name": "ICICI Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 531,
+        "bank_name": "IDFC First Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 532,
+        "bank_name": "Yes Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 533,
+        "bank_name": "HDFC Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 534,
+        "bank_name": "Union Bank of India (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 535,
+        "bank_name": "Bank of Baroda (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 536,
+        "bank_name": "Kotak Mahindra Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 537,
+        "bank_name": "Canara Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 538,
+        "bank_name": "Axis Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 539,
+        "bank_name": "IndusInd Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 540,
+        "bank_name": "Punjab National Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 541,
+        "bank_name": "Federal Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 542,
+        "bank_name": "Karnataka Bank Ltd (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 543,
+        "bank_name": "Indian Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 544,
+        "bank_name": "IDBI Bank (CBDC)",
+        "bank_type": "CBD"
+    },
+    {
+        "bank_code": 545,
+        "bank_name": "PayPoint India Network Pvt. Ltd.",
+        "bank_type": "WLT"
+    },
+    {
+        "bank_code": 546,
+        "bank_name": "Krumvruddhi Technologies Pvt. Ltd.",
+        "bank_type": "MER"
+    },
+    {
+        "bank_code": 547,
+        "bank_name": "NATIONAL BANK FOR AGRICULTURE AND RURAL DEVELOPMENT (NABARD)",
+        "bank_type": "BNK"
+    },
+    {
+        "bank_code": 548,
+        "bank_name": "The Assam Co-Operative Apex Bank Ltd. (APEX BANK)",
+        "bank_type": "BNK"
+    }
+]

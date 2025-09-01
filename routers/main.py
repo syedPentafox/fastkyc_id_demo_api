@@ -23,7 +23,7 @@ from typing import List
 
 
 router = APIRouter(
-    route_class=APIRouteWrapper, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper
 )
 router_no_auth = APIRouter(route_class=APIRouteWrapper)
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ security_scheme = [{"bearerAuth": []}]
 
 
 router = APIRouter(
-    route_class=APIRouteWrapper, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper
 )
 
 
@@ -992,7 +992,7 @@ def generate_tbale_collection_filed(table_name: str, request: CustomRequest):
             "collection_fields",
             column_data,
             ["field", "collection"],
-            user_id=request.logged_in_user_id,
+            # user_id=request.logged_in_user_id,
         )
 
     return make_success_response(data=columns)

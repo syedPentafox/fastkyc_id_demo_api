@@ -235,8 +235,8 @@ class CollectionField(Base):
         DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
     )
     modified_date = Column(DateTime, nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     collection = Column(String(1000))
     field = Column(String(1000))
     label = Column(String(1000))
@@ -258,7 +258,7 @@ class CollectionField(Base):
     numeric_scale = Column(Integer, nullable=True)
     is_nullable = Column(Boolean)
     is_primary_key = Column(Boolean)
-    has_auto_increment = Column(Boolean)
+    has_auto_increment = Column(String(10))
     foreign_key_column = Column(String(1000))
     foreign_key_table = Column(String(1000))
     filters = Column(String(1000))
@@ -746,8 +746,8 @@ models_and_files = {
     Role: "roles.json",
     Branch: "branches.json",
     User: "users.json",
-    CollectionField: "collection_fields.json"}
-models_and_files = {}
+    CollectionField: "collection_fields.json"
+}
 
 # Get a database session
 db = next(get_db())

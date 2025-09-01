@@ -263,7 +263,9 @@ class APIRouteWrapper(APIRoute):
                 "/admin/login",
                 "/token",
                 "/api/i4c_request",
-                "/ncrp/api/login"
+                "/ncrp/api/login",
+                "/api/collection/tables/{table_name}",
+                "/api/items/{collection}"
             ]
 
             # Authorization logic for protected routes

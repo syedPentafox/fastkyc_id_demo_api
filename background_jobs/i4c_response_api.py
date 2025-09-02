@@ -53,7 +53,7 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
                 {
                     'job_id': i4c_payload['job_id'],
                     'ack_no': i4c_payload['acknowledgement_no'],
-                    'rrn': i4c_payload['transactions'][0].get('root_rrn_transaction_id', ''),
+                    'rrn': i4c_payload['transactions'][0].get('rrn_transaction_id', ''),
                     'incident_response': decrypted_i4c,
                     'received_dt': received_dt,
                     'is_success': successful_response

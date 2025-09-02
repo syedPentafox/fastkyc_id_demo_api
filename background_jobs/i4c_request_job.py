@@ -76,7 +76,8 @@ def i4c_request_job(request_json: str):
         logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
 
     phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
-    email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
+    # email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
+    email = address_info.get("EmailId", "") if address_info else ""
 
     for idx, incident in enumerate(incidents):
             # Convert 'YYYY-MM-DD' to 'DD-Month-YYYY' (e.g., 2022-12-04 -> 04-December-2022)
@@ -453,13 +454,13 @@ def i4c_request_job(request_json: str):
                             # Call hold funds API and capture the timestamp it used
                             is_hold_i4c_success = False
 
-                            # NOTE: check for handling of 0 or negative balance
-                            net_balance_float = net_balance_float if net_balance_float > 0 else 1.23
+                            # # NOTE: check for handling of 0 or negative balance
+                            # net_balance_float = net_balance_float if net_balance_float > 0 else 1.23
 
                             hold_timestamp, is_hold_success = call_hold_funds_api(
                                 kvb_endpoint=kvb_endpoint,
                                 hold_fund_path=hold_fund_path,
-                                disputed_amount=net_balance_float,
+                                disputed_amount=disputed_amount_float,
                                 data=data,
                                 userid=userid,
                                 kvb_key=kvb_key,
@@ -473,7 +474,7 @@ def i4c_request_job(request_json: str):
                                 # Call I4C response API after hold
                                 # =======
                                 logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                                hold_amount = "{:.2f}".format(net_balance_float)
+                                # hold_amount = "{:.2f}".format(net_balance_float)
                                 payload_data = data.get("request", {})
                                 acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
                                 job_id = str(data.get("job_id", ""))
@@ -496,7 +497,7 @@ def i4c_request_job(request_json: str):
                                         {
                                             "txn_type": "Transaction Put on Hold",
                                             "txn_type_id": "1",
-                                            "amount": hold_amount,
+                                            "amount": disputed_amount,
                                             "transaction_datetime": transaction_datetime_val,
                                             "phone_number": phone_number,
                                             "email": email,

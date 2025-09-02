@@ -7,9 +7,9 @@ from .background_jobs_file_logger import add_background_jobs_file_handler
 from utils.aes_encryption_decryption import AESUtil
 from .utils import is_response_success
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-add_background_jobs_file_handler(logger)
+logger = logging.getLogger("JOB_RRN_LOGGER")
+# logger.setLevel(logging.INFO)
+# add_background_jobs_file_handler(logger)
 
 def call_account_address_fetch_api(account_number):
     """

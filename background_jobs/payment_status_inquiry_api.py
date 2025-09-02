@@ -5,9 +5,9 @@ import os
 from utils.aes_encryption_decryption import AESUtil
 import requests
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-add_background_jobs_file_handler(logger)
+logger = logging.getLogger("JOB_RRN_LOGGER")
+# logger.setLevel(logging.INFO)
+# add_background_jobs_file_handler(logger)
 
 def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url, src_channel, username, password):
     logger.info(f"======= [PAYMENT_STATUS_INQUIRY_START] =======")

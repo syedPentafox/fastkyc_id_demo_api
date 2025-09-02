@@ -7,9 +7,9 @@ from .i4c_response_api import call_i4c_response_api
 from background_jobs.other_i4c_responses import money_transfer_to_non_upi, money_transfer_to_upi, non_money_transfer_to
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-add_background_jobs_file_handler(logger)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+# add_background_jobs_file_handler(logger)
 
 
 
@@ -29,9 +29,9 @@ from background_jobs.utils import fraud_type_table_prefix
 def i4c_request_job(request_json: str):
     data = request_json
     #logger.info(json.dumps(data, indent=4))
-    logger.info('i4c_request_job request_json start')
-    logger.info(data)
-    logger.info('i4c_request_job request_json end')
+    # logger.info('i4c_request_job request_json start')
+    # logger.info(data)
+    # logger.info('i4c_request_job request_json end')
     request = request_json.get('request')
     instrument = request_json.get('request').get('instrument')#data.get("request", {}).get("instrument", {})
     account_number = instrument.get("payer_account_number", "")
@@ -68,16 +68,16 @@ def i4c_request_job(request_json: str):
 
     db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'R'})
 
-    # Fetch phone_number and email from account address API before RRN validation
-    address_info = None
-    try:
-        address_info = call_account_address_fetch_api(account_number)
-    except Exception as fetch_exc:
-        logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
+    # # Fetch phone_number and email from account address API before RRN validation
+    # address_info = None
+    # try:
+    #     address_info = call_account_address_fetch_api(account_number)
+    # except Exception as fetch_exc:
+    #     logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
 
-    phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
-    # email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
-    email = address_info.get("EmailId", "") if address_info else ""
+    # phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
+    # # email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
+    # email = address_info.get("EmailId", "") if address_info else ""
 
     for idx, incident in enumerate(incidents):
             # Convert 'YYYY-MM-DD' to 'DD-Month-YYYY' (e.g., 2022-12-04 -> 04-December-2022)
@@ -100,6 +100,30 @@ def i4c_request_job(request_json: str):
                 'received_dt': data['received_dt'],
                 'mode_of_payment': instrument['mode_of_payment'],
             })
+            
+            logger = logging.getLogger("JOB_RRN_LOGGER")
+            logger.setLevel(logging.INFO)
+            LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '../logs', f'{data["job_id"]}--{incident["rrn"]}.log')
+            file_handler = logging.FileHandler(LOG_FILE_PATH)
+            file_handler.setLevel(logging.INFO)
+            formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+            logger.info('i4c_request_job request_json start')
+            logger.info(data)
+            logger.info('i4c_request_job request_json end')
+
+            # Fetch phone_number and email from account address API before RRN validation
+            address_info = None
+            try:
+                address_info = call_account_address_fetch_api(account_number)
+            except Exception as fetch_exc:
+                logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
+
+            phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
+            # email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
+            email = address_info.get("EmailId", "") if address_info else ""
 
             # =======
             # CASA STMT Inquiry API

@@ -7,9 +7,9 @@ from .background_jobs_file_logger import add_background_jobs_file_handler
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 import re
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-add_background_jobs_file_handler(logger)
+logger = logging.getLogger("JOB_RRN_LOGGER")
+# logger.setLevel(logging.INFO)
+# add_background_jobs_file_handler(logger)
 
 from datetime import datetime
 

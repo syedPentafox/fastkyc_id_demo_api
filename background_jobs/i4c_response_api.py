@@ -5,9 +5,9 @@ import json
 from utils.aes_encryption_decryption import AESUtil
 import requests
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-add_background_jobs_file_handler(logger)
+logger = logging.getLogger("JOB_RRN_LOGGER")
+# logger.setLevel(logging.INFO)
+# add_background_jobs_file_handler(logger)
 from utils.db_connection import db
 
 def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, received_dt):

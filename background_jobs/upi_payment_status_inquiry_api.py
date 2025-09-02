@@ -6,9 +6,9 @@ import json
 
 from .background_jobs_file_logger import add_background_jobs_file_handler
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("JOB_RRN_LOGGER")
 logger.setLevel(logging.INFO)
-add_background_jobs_file_handler(logger)
+# add_background_jobs_file_handler(logger)
 
 
 def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src_channel, username, password):

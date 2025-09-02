@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, BackgroundTasks
 import logging
+import os
 from response_models.i4c_request_models import I4CRequestModel
 from utils.db_connection import db
 router = APIRouter()
@@ -7,6 +8,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 import json
 from sqlalchemy import text
+from fastapi.responses import FileResponse
 
 
 
@@ -62,3 +64,11 @@ async def i4c_request():
     logger.info(f"Received data from db : {str(out)}")
     #background_tasks.add_task(i4c_request_job,out)
     return out
+
+@router.get("/ncrp/api/download-log")
+async def download_log(filename: str):
+    logs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
+    file_path = os.path.join(logs_dir, filename)
+    if not os.path.isfile(file_path):
+        return {"error": "File not found"}
+    return FileResponse(path=file_path, filename=filename, media_type='application/octet-stream')

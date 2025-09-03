@@ -393,7 +393,8 @@ def i4c_request_job(request_json: str):
                         # =======
                         # Hold Funds API
                         # =======
-                        logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
+                        # logger.info(f"[KVB_HOLD] NetBalance ({net_balance_float}) > DisputedAmount ({disputed_amount}): hold disputed amount")
+                        logger.info(f"[KVB_HOLD] ({disputed_amount}): hold disputed amount")
                         
                         # Call hold funds API and capture the timestamp it used
                         is_hold_i4c_success = False
@@ -473,7 +474,9 @@ def i4c_request_job(request_json: str):
                             # Hold Net Balance only
                             # =======
                             #logger.info(f"[KVB_CANT_HOLD] NetBalance ({net_balance_float}) <= DisputedAmount ({disputed_amount}): can't hold disputed amount")
-                            logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
+                            # logger.info(f"[KVB_CANT_HOLD] Holding {net_balance_float} Net Balance only")
+                            logger.info(f"[KVB_HOLD] ({disputed_amount}): hold disputed amount")
+
                             
                             # Call hold funds API and capture the timestamp it used
                             is_hold_i4c_success = False

@@ -5,12 +5,10 @@ import json
 from datetime import datetime
 from utils.aes_encryption_decryption import AESUtil
 import requests
-logger = logging.getLogger("JOB_RRN_LOGGER")
-# logger.setLevel(logging.INFO)
-# add_background_jobs_file_handler(logger)
 
-def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, userid, kvb_key, src_channel, username, password):
+def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, userid, kvb_key, src_channel, username, password, log_file_name):
     # hold_fund_path = os.getenv("HOLD_FUND_PATH", "/ESB/ForceHoldMaintenance")
+    logger = logging.getLogger(log_file_name)
     logger.info(f"======= [HOLD_FUNDS_START] =======")
     hold_fund_url = kvb_endpoint.rstrip("/") + "/" + hold_fund_path.lstrip("/")
     # Capture timestamp to return to caller

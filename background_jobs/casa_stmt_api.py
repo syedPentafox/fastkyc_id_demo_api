@@ -5,11 +5,8 @@ from utils.aes_encryption_decryption import AESUtil
 import requests
 from background_jobs.utils import is_response_success
 
-logger = logging.getLogger("JOB_RRN_LOGGER")
-# logger.setLevel(logging.INFO)
-# add_background_jobs_file_handler(logger)
-
-def casa_stmt_api(payload, kvb_key, kvb_url, src_channel, username, password, userid):
+def casa_stmt_api(payload, kvb_key, kvb_url, src_channel, username, password, userid, log_file_name):
+    logger = logging.getLogger(log_file_name)
     logger.info('')
     logger.info(f"======= [CASA_STMT_START] =======")
     logger.info(f"[CASA_STMT_DICT] {json.dumps(payload, indent=4)}")

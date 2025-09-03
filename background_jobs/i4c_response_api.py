@@ -5,12 +5,10 @@ import json
 from utils.aes_encryption_decryption import AESUtil
 import requests
 
-logger = logging.getLogger("JOB_RRN_LOGGER")
-# logger.setLevel(logging.INFO)
-# add_background_jobs_file_handler(logger)
 from utils.db_connection import db
 
-def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, received_dt):
+def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, received_dt, log_file_name):
+    logger = logging.getLogger(log_file_name)
     logger.info('')
     aes_util = AESUtil()
     encrypted_i4c_payload = aes_util.aes_encrypt(kvb_key, json.dumps(i4c_payload))
@@ -53,7 +51,7 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
                 {
                     'job_id': i4c_payload['job_id'],
                     'ack_no': i4c_payload['acknowledgement_no'],
-                    'rrn': i4c_payload['transactions'][0].get('rrn_transaction_id', ''),
+                    'rrn': i4c_payload['transactions'][0].get('rrn_transaction_id', '') or i4c_payload['transactions'][0].get('root_rrn_transaction_id', ''),
                     'incident_response': decrypted_i4c,
                     'received_dt': received_dt,
                     'is_success': successful_response

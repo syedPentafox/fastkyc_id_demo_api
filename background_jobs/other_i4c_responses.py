@@ -6,14 +6,10 @@ from .background_jobs_file_logger import add_background_jobs_file_handler
 
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 import re
-
-logger = logging.getLogger("JOB_RRN_LOGGER")
-# logger.setLevel(logging.INFO)
-# add_background_jobs_file_handler(logger)
-
 from datetime import datetime
 
-def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount, phone_number, email, root_rrn):
+def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount, phone_number, email, root_rrn, log_file_name):
+  logger = logging.getLogger(log_file_name)
   kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
   payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
   kvb_key = os.getenv("KVB_KEY_VALUE")
@@ -33,7 +29,8 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
       payment_status_url,
       src_channel,
       username,
-      password
+      password,
+      log_file_name
   )
   logger.info(f"[PAYMENT_STATUS_INQUIRY] Response: {payment_status_response}")
   if payment_status_response and isinstance(payment_status_response, dict):
@@ -72,9 +69,10 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
       ]
   }
 
-  return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+  return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
 
-def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, root_rrn):
+def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, root_rrn, log_file_name):
+  logger = logging.getLogger(log_file_name)
   kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
   upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
   upi_payment_status_url = kvb_endpoint.rstrip("/") + "/" + upi_payment_status_path.lstrip("/")
@@ -105,7 +103,8 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
       upi_payment_status_url,
       src_channel,
       username,
-      password
+      password,
+      log_file_name
   )
   logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_DEBIT] Response: {upi_response}")
   payee_account_number = payer_account_number
@@ -141,9 +140,10 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
           }
       ]
   }
-  return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+  return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
 
-def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email):
+def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email, log_file_name):
+    logger = logging.getLogger(log_file_name)
     kvb_key = os.getenv("KVB_KEY_VALUE")
     kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
 
@@ -299,4 +299,4 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
             ]
         }
 
-    return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+    return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)

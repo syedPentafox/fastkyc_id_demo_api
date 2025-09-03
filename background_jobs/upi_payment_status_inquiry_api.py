@@ -6,12 +6,7 @@ import json
 
 from .background_jobs_file_logger import add_background_jobs_file_handler
 
-logger = logging.getLogger("JOB_RRN_LOGGER")
-logger.setLevel(logging.INFO)
-# add_background_jobs_file_handler(logger)
-
-
-def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src_channel, username, password):
+def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src_channel, username, password, log_file_name):
     """
     Calls the UPI Payment Status Inquiry API and returns the decrypted response if applicable.
     Args:
@@ -24,6 +19,7 @@ def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src
     Returns:
         dict: Decrypted response or raw response if decryption not needed.
     """
+    logger = logging.getLogger(log_file_name)
     aes_util = AESUtil()
     encrypted_upi_payload = aes_util.aes_encrypt(kvb_key, json.dumps(payload))
     upi_post_payload = {

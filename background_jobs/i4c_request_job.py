@@ -101,9 +101,10 @@ def i4c_request_job(request_json: str):
                 'mode_of_payment': instrument['mode_of_payment'],
             })
             
-            logger = logging.getLogger("JOB_RRN_LOGGER")
+            log_file_name = f'{data["job_id"]}--{incident["rrn"]}'
+            logger = logging.getLogger(log_file_name)
             logger.setLevel(logging.INFO)
-            LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '../logs', f'{data["job_id"]}--{incident["rrn"]}.log')
+            LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '../logs', f'{log_file_name}.log')
             file_handler = logging.FileHandler(LOG_FILE_PATH)
             file_handler.setLevel(logging.INFO)
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -117,7 +118,7 @@ def i4c_request_job(request_json: str):
             # Fetch phone_number and email from account address API before RRN validation
             address_info = None
             try:
-                address_info = call_account_address_fetch_api(account_number)
+                address_info = call_account_address_fetch_api(account_number, log_file_name)
             except Exception as fetch_exc:
                 logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
 
@@ -154,7 +155,8 @@ def i4c_request_job(request_json: str):
                 src_channel,
                 username,
                 password,
-                userid
+                userid,
+                log_file_name
             )
 
             if not decrypted_obj:
@@ -210,7 +212,7 @@ def i4c_request_job(request_json: str):
                     ]
                 }
                 
-                call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
                 logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
 
                 db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
@@ -334,7 +336,7 @@ def i4c_request_job(request_json: str):
                         ]
                     }
                     
-                    call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                    call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
                     logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
 
                     db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
@@ -358,7 +360,7 @@ def i4c_request_job(request_json: str):
                             amount = str(incident.get("amount", ""))
                             disputed_amount = str(incident.get('disputed_amount', ''))
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount, phone_number, email, rrn)
+                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount, phone_number, email, rrn, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "UPI":
@@ -369,7 +371,7 @@ def i4c_request_job(request_json: str):
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn)
+                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
@@ -379,7 +381,7 @@ def i4c_request_job(request_json: str):
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             amount = str(instrument.get("amount", ""))
                             disputed_amount = str(instrument.get("disputed_amount", ""))
-                            is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email)
+                            is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                     except Exception as debit_exc:
@@ -407,7 +409,8 @@ def i4c_request_job(request_json: str):
                             kvb_key=kvb_key,
                             src_channel=src_channel,
                             username=username,
-                            password=password
+                            password=password,
+                            log_file_name=log_file_name
                         )
 
                         if is_hold_success:
@@ -454,7 +457,7 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
-                            is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                            is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_hold_i4c_success else 'failure', 'is_valid': True})
@@ -493,7 +496,8 @@ def i4c_request_job(request_json: str):
                                 kvb_key=kvb_key,
                                 src_channel=src_channel,
                                 username=username,
-                                password=password
+                                password=password,
+                                log_file_name=log_file_name
                             )
 
                             if is_hold_success:
@@ -540,7 +544,7 @@ def i4c_request_job(request_json: str):
                                         }
                                     ]
                                 }
-                                is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'])
+                                is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
 
                                 # db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                                 # db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_hold_i4c_success else 'failure', 'is_valid': True})
@@ -602,7 +606,7 @@ def i4c_request_job(request_json: str):
                                         disputed_amt_str = "{:.2f}".format(disputed_amt)
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         rrn = rrn = incident.get('rrn', '')
-                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, rrn)
+                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, rrn, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif "UPI" in txn_desc:
@@ -634,7 +638,7 @@ def i4c_request_job(request_json: str):
                                         payer_account_number = instrument.get("payer_account_number", "")
 
                                         rrn = rrn = incident.get('rrn', '')
-                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table, phone_number, email, rrn)
+                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):
@@ -655,7 +659,7 @@ def i4c_request_job(request_json: str):
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         curr_rrn = txn.get('ChequeNumber', '')
-                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email)
+                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     else:

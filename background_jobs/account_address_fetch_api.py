@@ -7,11 +7,7 @@ from .background_jobs_file_logger import add_background_jobs_file_handler
 from utils.aes_encryption_decryption import AESUtil
 from .utils import is_response_success
 
-logger = logging.getLogger("JOB_RRN_LOGGER")
-# logger.setLevel(logging.INFO)
-# add_background_jobs_file_handler(logger)
-
-def call_account_address_fetch_api(account_number):
+def call_account_address_fetch_api(account_number, log_file_name):
     """
     Calls the KVB Account Address Fetch API.
 
@@ -32,6 +28,8 @@ def call_account_address_fetch_api(account_number):
     username = os.environ.get("KVB_USERNAME", "")
     password = os.environ.get("KVB_PASSWORD", "")
     api_url = kvb_endpoint.rstrip("/") + "/" + account_address_fetch_path.lstrip("/")
+
+    logger = logging.getLogger(log_file_name)
 
     logger.info("======= [ACCOUNT_ADDRESS_FETCH_START] =======")
 

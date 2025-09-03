@@ -24,7 +24,7 @@ from typing import List
 # from json_repair import repair_json
 
 router = APIRouter(
-    route_class=APIRouteWrapper, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper #, dependencies=[Depends(verify_access_token)]
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ security_scheme = [{"bearerAuth": []}]
 
 
 router = APIRouter(
-    route_class=APIRouteWrapper, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper #, dependencies=[Depends(verify_access_token)]
 )
 
 
@@ -75,20 +75,20 @@ def change_datetime_for_oracle(filters: dict) -> dict:
     Convert string values in filters to Python date objects for Oracle.
     Handles keys ending in _gt, _lt, _gte, _lte, and _between.
     """
-    date_ops = ["gt", "lt", "gte", "lte", "between"]
+    date_ops = ["gt", "lt", "gte", "lte", "between","eq"]
     new_filters = {}
 
     for key, value in filters.items():
         if any(key.endswith(f"_{op}") for op in date_ops):
             if isinstance(value, str):
-                # ✅ Single date string
+                # âœ… Single date string
                 try:
                     parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
                     new_filters[key] = parsed_date
                 except ValueError:
                     new_filters[key] = value
             elif isinstance(value, (list, tuple)) and key.endswith("_between"):
-                # ✅ Handle between as [start, end]
+                # âœ… Handle between as [start, end]
                 parsed_range = []
                 for v in value:
                     if isinstance(v, str):
@@ -124,7 +124,7 @@ def change_datetime_for_oracle(filters: dict) -> dict:
 #                     parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
 #                     new_filters[key] = parsed_date
 #                 except ValueError:
-#                     # if it’s not a valid date string, keep original
+#                     # if itâ€™s not a valid date string, keep original
 #                     new_filters[key] = value
 #             else:
 #                 new_filters[key] = value
@@ -1070,3 +1070,55 @@ def generate_tbale_collection_filed(table_name: str, request: CustomRequest):
         )
 
     return make_success_response(data=columns)
+
+@router.get("/ncrp/api/download/{collection}")
+def download_file(
+    collection: str,
+    page: int = -1,
+    per_page: int = Query(10, ge=1),
+    fields: str = "*.*",
+    filters: str = Query(None),
+    search: str = None,
+    sort_by: str = None,
+    group_by: str = None,
+    aggregate: str = None,
+    file_type: str = "xlsx",
+    base64_download: bool = False,   # <---- new flag
+):
+    columns = fields.split(",") if fields else ["*.*"]
+    sort_by = sort_by.split(",") if sort_by else []
+    filters_dict = json.loads(filters) if filters else {}
+    aggregate = json.loads(aggregate) if aggregate else {}
+    group_by = json.loads(group_by) if group_by else {}
+
+    data, _ = db.get_data_from_table(
+        collection,
+        columns,
+        filters_dict,
+        search,
+        sort_by,
+        page,
+        per_page,
+        aggregate,
+        group_by,
+    )
+    """Format date fields"""
+    date_records, _ = db.get_data_from_table(
+        "collection_fields",
+        ["field"],
+        {"collection_eq": collection, "type_eq": "date"},
+        sort_by=["sort"],
+        page=-1,
+    )
+    date_fields: list = [item["field"] for item in date_records if item["field"]]
+    for record in data:
+        for key, value in record.items():
+            if key in date_fields and value:
+                record[key] = value.strftime("%d-%b-%y")
+
+    return db.export_as_file(
+        data=data,
+        file_type=file_type,
+        file_name=collection,
+        base64_download=base64_download,
+    )

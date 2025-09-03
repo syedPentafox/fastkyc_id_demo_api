@@ -1,7 +1,9 @@
 from sqlalchemy import (
     Column,
     DateTime,
+    Identity,
     Integer,
+    PrimaryKeyConstraint,
     text,
     create_engine,
     Date,
@@ -367,16 +369,22 @@ class I4CRequest(Base):
     
     request = Column(Text, nullable=True)  # CLOB
     ack_no = Column(String(30), nullable=True)  # VARCHAR2(30)
-    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    job_id = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
     status = Column(String(20), nullable=True)  # VARCHAR2(6)
-    msg_type = Column(String(15), nullable=True)  # VARCHAR2(15)
+    msg_type = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
     received_dt = Column(DateTime, nullable=True)  # TIMESTAMP(6)
-    created_date = Column(DateTime, nullable=True)  # TIMESTAMP(6)
-    modified_date = Column(DateTime, nullable=True)  # TIMESTAMP(6)
-    created_by = Column(Numeric, nullable=True)  # NUMBER
-    modified_by = Column(Numeric, nullable=True)  # NUMBER
 
+    __table_args__ = (
+        PrimaryKeyConstraint("job_id", "msg_type", name="PK_I4C_REQUEST"),
+    )
 
+class FraudulentMaster(Base):
+    __tablename__ = "fraudulent_master"
+
+    id = Column(Integer, Identity(start=1, always=True), primary_key=True)  # Oracle identity
+    fraud_type = Column(String(50), nullable=False)
+    fraud_value = Column(String(100), nullable=False)
+    
 class UpiFraudTransactions(Base):
     __tablename__ = "upi_fraud_transactions"
     
@@ -408,7 +416,7 @@ class UpiFraudIncidents(Base):
     received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
     mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
     is_valid = Column(Boolean, nullable=True, default=False)
-    status = Column(String(20), nullable=True)  # VARCHAR2(6)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
 
 class UpiFraudResponse(Base):
     __tablename__ = "upi_fraud_responses"
@@ -543,7 +551,7 @@ class CreditCardFraudIncident(Base):
     received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
     mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
     is_valid = Column(Boolean, nullable=True, default=False)
-    status = Column(String(20), nullable=True)  # VARCHAR2(6)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
 
 class CreditCardFraudResponse(Base):
     __tablename__ = "credit_card_fraud_responses"
@@ -589,7 +597,7 @@ class DematFraudIncident(Base):
     received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
     mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
     is_valid = Column(Boolean, nullable=True, default=False)
-    status = Column(String(20), nullable=True)  # VARCHAR2(6)
+    status = Column(String(30), nullable=True)  # VARCHAR2(30) NOT NULL
 
 class DematFraudResponse(Base):
     __tablename__ = "demat_fraud_responses"
@@ -681,7 +689,7 @@ class InternetBankingFraudIncident(Base):
     received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
     mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
     is_valid = Column(Boolean, nullable=True, default=False)
-    status = Column(String(20), nullable=True)  # VARCHAR2(6)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
 
 class InternetBankingFraudResponse(Base):
     __tablename__ = "internet_banking_fraud_responses"
@@ -727,7 +735,7 @@ class VishingFraudIncident(Base):
     received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
     mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
     is_valid = Column(Boolean, nullable=True, default=False)
-    status = Column(String(20), nullable=True)  # VARCHAR2(6)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
 
 class VishingFraudResponse(Base):
     __tablename__ = "vishing_fraud_responses"

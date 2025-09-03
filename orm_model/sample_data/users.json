@@ -1,0 +1,14 @@
+[{
+    "id": 1,
+    "created_date": "2025-01-27T10:44:02.823738",
+    "modified_date": "2025-01-27T10:44:02.818752",
+    "branch_code": "1109",
+    "emp_code": "PENTA009",
+    "emp_name": "Gnana",
+    "role": 1,
+    "mobile": "7867913618",
+    "email": "penta009@kvbmail.com",
+    "emp_grade": "A1",
+    "is_active": true
+}
+]

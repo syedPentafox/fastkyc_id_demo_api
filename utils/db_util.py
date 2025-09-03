@@ -470,6 +470,25 @@ class DatabaseHandler:
             query = query.filter(or_(*or_conditions))
         return query
 
+    # // if anything facing datetime query doesn't work please comment this below  lines
+    
+    # def execute_query(self, query):
+    #     try:
+    #         with self.Session() as session:
+    #             result = session.execute(query)
+    #             # Oracle returns rows differently - need to convert to dict
+    #             rows = result.fetchall()
+    #             if not rows:
+    #                 return []
+                
+    #             # Convert Oracle result to list of dictionaries
+    #             columns = result.keys()
+    #             return [dict(zip(columns, row)) for row in rows]
+                
+    #     except Exception as e:
+    #         logging.error("Error executing query: %s", e)
+    #         return []
+
     def execute_query(self, query):
         try:
             with self.Session() as session:
@@ -1371,21 +1390,99 @@ class DatabaseHandler:
                 headers=headers,
             )
 
+    # def generate_search_attributes(
+    #     self,
+    #     table_name,
+    #     columns=None,
+    #     or_conditions=None,
+    #     json_object=True,
+    #     search=None,
+    # ):
+    #     if or_conditions is None:
+    #         or_conditions = []
+    #     model = self.get_model(table_name)
+    #     base_columns, _ = self.get_data_from_table(
+    #         "collection_fields", ["*.*"], {"collection_eq": table_name}, page=-1
+    #     )
+
+    #     foreign_keys = self.inspector.get_foreign_keys(table_name)
+    #     relation_column_name = {}
+    #     foreign_key_table = {}
+    #     for fk in foreign_keys:
+    #         referred_table_name = fk["referred_table"]
+    #         foreign_key_table[referred_table_name] = (
+    #             foreign_key_table.get(referred_table_name, 0) + 1
+    #         )
+    #         relation_column_name[fk["constrained_columns"][0]] = foreign_key_table[
+    #             referred_table_name
+    #         ]
+
+    #     attribute_table_count = {}
+    #     for column in base_columns:
+    #         field = column.get("field")
+    #         foreign_table_name = column.get("foreign_key_table")
+    #         if foreign_table_name:
+    #             attribute_table_count[foreign_table_name] = (
+    #                 attribute_table_count.get(foreign_table_name, 0) + 1
+    #             )
+    #         if not column.get("hidden"):
+    #             if (
+    #                 column.get("interface") == "FORM_SEARCH"
+    #                 and field in relation_column_name
+    #             ):
+    #                 alias_name = (
+    #                     f"{foreign_table_name}_{relation_column_name[field]}"
+    #                     if relation_column_name[field] > 1
+    #                     else foreign_table_name
+    #                 )
+    #                 relation_model = (
+    #                     aliased(self.get_model(foreign_table_name), name=alias_name)
+    #                     if relation_column_name[field] > 1
+    #                     else self.get_model(foreign_table_name)
+    #                 )
+
+    #                 relation_columns = [json.loads(column.get("display_options"))[0]]
+    #                 relation_columns.append(column.get("return_value"))
+    #                 for relation_column in relation_columns:
+    #                     or_conditions.append(
+    #                         func.lower(
+    #                             func.to_char(
+    #                                 getattr(relation_model, relation_column)
+    #                             )
+    #                         ).like(f"%{search.lower()}%")
+    #                     )
+    #             else:
+    #                 or_conditions.append(
+    #                     func.lower(func.to_char(getattr(model, field))).like(
+    #                         f"%{search.lower()}%"
+    #                     )
+    #                 )
+    #     return or_conditions
+
+
+    def remove_order_by(self, query: str) -> str:
+    # More robust ORDER BY removal for Oracle
+        return re.sub(r"ORDER BY.*?(?=OFFSET|\Z)", "", query, flags=re.IGNORECASE | re.DOTALL).strip()
+
     def generate_search_attributes(
-        self,
-        table_name,
-        columns=None,
-        or_conditions=None,
-        json_object=True,
-        search=None,
+    self,
+    table_name,
+    columns=None,
+    or_conditions=None,
+    json_object=True,
+    search=None,
     ):
         if or_conditions is None:
             or_conditions = []
+
         model = self.get_model(table_name)
+
+        # Get all columns metadata for search
         base_columns, _ = self.get_data_from_table(
             "collection_fields", ["*.*"], {"collection_eq": table_name}, page=-1
         )
 
+        # Get foreign key relationships
         foreign_keys = self.inspector.get_foreign_keys(table_name)
         relation_column_name = {}
         foreign_key_table = {}
@@ -1398,47 +1495,64 @@ class DatabaseHandler:
                 referred_table_name
             ]
 
-        attribute_table_count = {}
+        # Build search conditions
         for column in base_columns:
             field = column.get("field")
             foreign_table_name = column.get("foreign_key_table")
             if foreign_table_name:
-                attribute_table_count[foreign_table_name] = (
-                    attribute_table_count.get(foreign_table_name, 0) + 1
+                relation_count = (
+                    relation_column_name.get(field, 1)
                 )
-            if not column.get("hidden"):
-                if (
-                    column.get("interface") == "FORM_SEARCH"
-                    and field in relation_column_name
-                ):
-                    alias_name = (
-                        f"{foreign_table_name}_{relation_column_name[field]}"
-                        if relation_column_name[field] > 1
-                        else foreign_table_name
-                    )
-                    relation_model = (
-                        aliased(self.get_model(foreign_table_name), name=alias_name)
-                        if relation_column_name[field] > 1
-                        else self.get_model(foreign_table_name)
-                    )
+                alias_name = (
+                    f"{foreign_table_name}_{relation_count}"
+                    if relation_count > 1
+                    else foreign_table_name
+                )
+                relation_model = (
+                    aliased(self.get_model(foreign_table_name), name=alias_name)
+                    if relation_count > 1
+                    else self.get_model(foreign_table_name)
+                )
 
+            if not column.get("hidden") and column.get("interface") == "FORM_SEARCH":
+                # If foreign table, search in related columns
+                if foreign_table_name:
                     relation_columns = [json.loads(column.get("display_options"))[0]]
                     relation_columns.append(column.get("return_value"))
                     for relation_column in relation_columns:
                         or_conditions.append(
                             func.lower(
-                                func.to_char(
-                                    getattr(relation_model, relation_column)
-                                )
+                                func.to_char(getattr(relation_model, relation_column))
                             ).like(f"%{search.lower()}%")
                         )
                 else:
+                    # Local table column search
+                    # or_conditions.append(
+                    #     func.lower(func.to_char(getattr(model, field))).like(
+                    #         f"%{search.lower()}%"
+                    #     )
+                    # )
+
                     or_conditions.append(
                         func.lower(func.to_char(getattr(model, field))).like(
                             f"%{search.lower()}%"
                         )
+                        )
+            elif not column.get("hidden"):
+                # Local column search for non-FORM_SEARCH fields
+                # or_conditions.append(
+                #     func.lower(func.to_char(getattr(model, field))).like(
+                #         f"%{search.lower()}%"
+                #     )
+                # )
+
+                or_conditions.append(
+                    func.lower(func.to_char(getattr(model, field))).like(
+                        f"%{search.lower()}%"
                     )
+                )
         return or_conditions
+
 
     # def remove_duplicate_aliases(self, query_str):
     #     # Regular expression to find alias definitions like 'users AS users_2'
@@ -1483,8 +1597,8 @@ class DatabaseHandler:
 
         return query_str.strip()
 
-    def remove_order_by(self, query: str) -> str:
-        return re.sub(r"ORDER BY[\s\S]*$", "", query, flags=re.IGNORECASE)
+    # def remove_order_by(self, query: str) -> str:
+    #     return re.sub(r"ORDER BY[\s\S]*$", "", query, flags=re.IGNORECASE)
 
     def get_data_from_table(
         self,
@@ -1566,7 +1680,12 @@ class DatabaseHandler:
             # Modify the query string to remove duplicate aliases dynamically
 
             query_str = self.remove_duplicate_aliases(compiled_query.string)
-            # query_str = query_str.replace("', ", "' VALUE ")
+
+            # // if anything facing datetime query doesn't work please comment this below two lines
+
+            if not "TO_DATE" in query_str:
+                query_str = query_str.replace("', ", "' VALUE ")
+            print("final query>>>>", query_str)
 
             # Step 1: Remove ORDER BY for count
             countable_query = self.remove_order_by(query_str.strip().rstrip(";"))
@@ -1577,22 +1696,39 @@ class DatabaseHandler:
             )
             print("count query ->>>> ",count_query)
 
-
+            print("count query result ->>>> ", self.execute_query(count_query))
             total_records = self.execute_query(count_query)[0][0]
-
-            # Calculate pagination
             total_pages = ceil(total_records / per_page)
             offset = (page - 1) * per_page
 
-            result = (
-                self.execute_query(
-                    text(
-                        f"{query_str} OFFSET {offset} ROWS FETCH NEXT {per_page} ROWS ONLY"
-                    )
-                )
-                if page > 0
-                else self.execute_query(text(query_str))
-            )
+            # Oracle-specific pagination
+            if page > 0:
+                # Using ROWNUM for Oracle pagination
+                query_str = f"""
+                SELECT * FROM (
+                    SELECT a.*, ROWNUM rnum FROM (
+                        {query_str}
+                    ) a WHERE ROWNUM <= {offset + per_page}
+                ) WHERE rnum > {offset}
+                """
+                result = self.execute_query(text(query_str))
+            else:
+                result = self.execute_query(text(query_str))
+
+
+            # # Calculate pagination
+            # total_pages = ceil(total_records / per_page)
+            # offset = (page - 1) * per_page
+
+            # result = (
+            #     self.execute_query(
+            #         text(
+            #             f"{query_str} OFFSET {offset} ROWS FETCH NEXT {per_page} ROWS ONLY"
+            #         )
+            #     )
+            #     if page > 0
+            #     else self.execute_query(text(query_str))
+            # )
             # Convert the result to JSON format
             result_as_json = (
                 [
@@ -2116,74 +2252,85 @@ class DatabaseHandler:
         return collection_data, headers, boolean_keys
 
     def export_as_file(
-        self, data, file_type, file_name, summary=None, custom_headers=None
+        self,
+        data,
+        file_type,
+        file_name,
+        summary=None,
+        custom_headers=None,
+        ignore_columns: list = None,
+        base64_download: bool = False,   # <---- added
     ):
         flattened_data, headers, boolean_keys = self.get_flatten_data(
             data, table_name=file_name
         )
         df = pd.DataFrame(flattened_data)
-        """get the columns to delete"""
+
         items, _ = self.get_data_from_table(
             "collection_fields",
-            ["field"],
-            {"collection_eq": file_name, "export_eligible_eq": False},
+            ["field", "export_eligible", "sort"],
+            {"collection_eq": file_name},
             sort_by=["sort"],
             page=-1,
         )
-        delete_columns: list = [item["field"] for item in items if item["field"]]
+        delete_columns: list = [item["field"] for item in items if item["field"] and item["export_eligible"] == False]
+
+        if not custom_headers:
+            new_header_order = [item['field'] for item in sorted(
+                [item for item in items if item['export_eligible']],
+                key=lambda x: (x['sort'] is None, x['sort'])
+            )]
+            df = df[new_header_order]
+
+        if ignore_columns:
+            delete_columns.extend(ignore_columns)
         df = df.drop(columns=delete_columns, errors="ignore")
+
         for bool_key in boolean_keys:
             df[bool_key] = df[bool_key].replace({True: "Yes", False: "No"})
+
         df = df.rename(columns=headers if not custom_headers else custom_headers)
         current_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename_base = f"{file_name}_{current_timestamp}"
 
+        # ----- CSV -----
         if file_type == "csv":
             output = io.StringIO()
             df.to_csv(output, index=False)
-            output.seek(0)
-            csv_content = output.getvalue()
+            content = output.getvalue().encode()
             output.close()
-            s3_key = f"downloads/{filename_base}.csv"
-            if locally_save_file:
-                df.to_csv(s3_key, index=False)
-            else:
-                self.s3_client.put_object(
-                    Bucket=self.s3_bucket, Key=s3_key, Body=csv_content
-                )
 
+        # ----- XLSX -----
         elif file_type == "xlsx":
             output = io.BytesIO()
             start_row_index = 0
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 if summary:
                     summary_df = pd.DataFrame(summary, index=[0])
-                    summary_df.to_excel(
-                        writer,
-                        index=False,
-                        sheet_name=file_name,
-                        startrow=start_row_index,
-                    )
+                    summary_df.to_excel(writer, index=False, sheet_name=file_name, startrow=start_row_index)
                     start_row_index = len(summary_df) + 2
-                df.to_excel(
-                    writer, index=False, sheet_name=file_name, startrow=start_row_index
-                )
+                df.to_excel(writer, index=False, sheet_name=file_name, startrow=start_row_index)
             output.seek(0)
-            xlsx_content = output.getvalue()
+            content = output.getvalue()
             output.close()
-            s3_key = f"downloads/{filename_base}.xlsx"
+
+        # ----- Return as base64 or upload -----
+        if base64_download:
+            base64_content = base64.b64encode(content).decode()
+            filename = f"{filename_base}.{file_type}"
+            headers = {"Content-Disposition": f"attachment; filename={filename}"}
+            return Response(content=base64_content, media_type="application/octet-stream", headers=headers)
+        else:
+            s3_key = f"downloads/{filename_base}.{file_type}"
             if locally_save_file:
                 with open(s3_key, "wb") as f:
-                    f.write(xlsx_content)
+                    f.write(content)
             else:
-                self.s3_client.put_object(
-                    Bucket=self.s3_bucket, Key=s3_key, Body=xlsx_content
-                )
-
-        upload_url = s3_key if locally_save_file else f"{docs_url}/{s3_key}"
-        return make_success_response(
-            data=[{"url": upload_url}], message="File Download successfully"
-        )
+                self.s3_client.put_object(Bucket=self.s3_bucket, Key=s3_key, Body=content)
+            upload_url = s3_key if locally_save_file else f"{docs_url}/{s3_key}"
+            return make_success_response(
+                data=[{"url": upload_url}], message="File Download successfully"
+            )
 
     def get_role_by_user_id(self, user_id):
         result = self.get_record_by_id("users", user_id, ["role.name"])

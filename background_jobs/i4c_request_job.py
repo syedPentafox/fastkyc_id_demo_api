@@ -76,8 +76,8 @@ def i4c_request_job(request_json: str):
     #     logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
 
     # phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
-    # # email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
-    # email = address_info.get("EmailId", "") if address_info else ""
+    # # email = address_info.get("Email", "testing@gmail.com") if address_info else "testing@gmail.com"
+    # email = address_info.get("Email", "") if address_info else ""
 
     for idx, incident in enumerate(incidents):
             # Convert 'YYYY-MM-DD' to 'DD-Month-YYYY' (e.g., 2022-12-04 -> 04-December-2022)
@@ -123,8 +123,8 @@ def i4c_request_job(request_json: str):
                 logger.error(f"[ACCOUNT_ADDRESS_FETCH_API_ERROR] {fetch_exc}")
 
             phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
-            # email = address_info.get("EmailId", "testing@gmail.com") if address_info else "testing@gmail.com"
-            email = address_info.get("EmailId", "") if address_info else ""
+            # email = address_info.get("Email", "testing@gmail.com") if address_info else "testing@gmail.com"
+            email = address_info.get("Email", "") if address_info else ""
 
             # =======
             # CASA STMT Inquiry API

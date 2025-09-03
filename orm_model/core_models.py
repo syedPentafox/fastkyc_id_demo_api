@@ -381,7 +381,7 @@ class I4CRequest(Base):
 class FraudulentMaster(Base):
     __tablename__ = "fraudulent_master"
 
-    id = Column(Integer, Identity(start=1, always=True), primary_key=True)  # Oracle identity
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     fraud_type = Column(String(50), nullable=False)
     fraud_value = Column(String(100), nullable=False)
     
@@ -778,7 +778,8 @@ models_and_files = {
     BranchManagerDetails: "branch_manager_details.json",
     BankMaster: "bank_master.json",
     StatusMaster: "status_master.json",
-    CollectionField: "collection_fields.json"
+    CollectionField: "collection_fields.json",
+    FraudulentMaster: "fraudulent_master.json",
 }
 
 # Get a database session

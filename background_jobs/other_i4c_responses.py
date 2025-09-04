@@ -171,7 +171,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         atm_of_bank = ""
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through ATM",
@@ -206,7 +206,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         pos_transaction_id = txn.get("ChequeNumber", "")
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through POS",
@@ -221,7 +221,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "tid": tid,
                     "approval_code": approval_code,
                     "merchant_name": merchant_name,
-                    "Pos_transaction_id": pos_transaction_id,
+                    "pos_transaction_id": pos_transaction_id,
                     "root_account_number": payer_account_number,
                     "root_rrn_transaction_id": root_rrn_transaction_id,
                     "root_bankid": root_bankid,
@@ -241,7 +241,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         managernumber = "9876543210"
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through Cheque",
@@ -277,7 +277,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
             rrn_val = match.group(1)
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through AEPS",

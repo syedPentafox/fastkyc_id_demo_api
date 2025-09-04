@@ -162,16 +162,16 @@ class Role(Base):
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    created_date = Column(
-        DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
-    )
-    modified_date = Column(DateTime, nullable=False)
-    branch_code = Column(
-        String(255),
-        ForeignKey("branches.branch_code"),
-        nullable=False,
-        comment="Unique code identifying the branch, linked to the 'branches' table.",
-    )
+    # created_date = Column(
+    #     DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
+    # )
+    # modified_date = Column(DateTime, nullable=False)
+    # branch_code = Column(
+    #     String(255),
+    #     ForeignKey("branches.branch_code"),
+    #     nullable=False,
+    #     comment="Unique code identifying the branch, linked to the 'branches' table.",
+    # )
     emp_code = Column(
         String(255),
         nullable=False,
@@ -184,50 +184,50 @@ class User(Base):
         ForeignKey("roles.id"),
         comment="Role ID linked to the 'roles' table, specifying the user's role.",
     )
-    mobile = Column(
-        String(255),
-        nullable=True,
-        unique=True,
-        comment="Mobile phone number of the employee, must be unique if provided.",
-    )
-    email = Column(
-        String(255),
-        nullable=True,
-        unique=True,
-        comment="Email address of the employee, must be unique if provided.",
-    )
-    emp_grade = Column(
-        String(255),
-        nullable=False,
-        comment="Grade or level of the employee in the organization.",
-    )
-    is_active = Column(
-        Boolean,
-        server_default=text("1"),
-        comment="Indicates whether the employee is currently active.",
-    )
-    failed_attempts = Column(
-        Integer,
-        server_default=text("0"),
-        nullable=True,
-        comment="Tracks the number of failed login attempts.",
-    )
-    lockout_until = Column(
-        DateTime,
-        nullable=True,
-        comment="Datetime until which the account is locked due to multiple failed attempts.",
-    )
-    lockout_count = Column(
-        Integer,
-        server_default=text("0"),
-        nullable=True,
-        comment="Tracks the number of times the account has been locked.",
-    )
-    is_locked = Column(
-        Boolean,
-        server_default=text("0"),
-        comment="Indicates whether the account is currently locked.",
-    )
+    # mobile = Column(
+    #     String(255),
+    #     nullable=True,
+    #     unique=True,
+    #     comment="Mobile phone number of the employee, must be unique if provided.",
+    # )
+    # email = Column(
+    #     String(255),
+    #     nullable=True,
+    #     unique=True,
+    #     comment="Email address of the employee, must be unique if provided.",
+    # )
+    # emp_grade = Column(
+    #     String(255),
+    #     nullable=False,
+    #     comment="Grade or level of the employee in the organization.",
+    # )
+    # is_active = Column(
+    #     Boolean,
+    #     server_default=text("1"),
+    #     comment="Indicates whether the employee is currently active.",
+    # )
+    # failed_attempts = Column(
+    #     Integer,
+    #     server_default=text("0"),
+    #     nullable=True,
+    #     comment="Tracks the number of failed login attempts.",
+    # )
+    # lockout_until = Column(
+    #     DateTime,
+    #     nullable=True,
+    #     comment="Datetime until which the account is locked due to multiple failed attempts.",
+    # )
+    # lockout_count = Column(
+    #     Integer,
+    #     server_default=text("0"),
+    #     nullable=True,
+    #     comment="Tracks the number of times the account has been locked.",
+    # )
+    # is_locked = Column(
+    #     Boolean,
+    #     server_default=text("0"),
+    #     comment="Indicates whether the account is currently locked.",
+    # )
 
 
 class CollectionField(Base):
@@ -457,6 +457,10 @@ class EwalletFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)
+    mode_of_payment = Column(String(50), nullable=False)
+    received_dt = Column(DateTime, nullable=False)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
+    is_valid = Column(Boolean, nullable=True, default=False)
 
 
 class EwalletFraudResponse(Base):
@@ -501,6 +505,10 @@ class AepsFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)
+    received_dt = Column(DateTime, nullable=False)
+    mode_of_payment = Column(String(50), nullable=False)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
+    is_valid = Column(Boolean, nullable=True, default=False)
 
 
 class AepsFraudResponse(Base):
@@ -642,6 +650,10 @@ class EmailFraudIncident(Base):
     transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
     disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
     layer = Column(Numeric, nullable=False)
+    received_dt = Column(DateTime, nullable=False)
+    mode_of_payment = Column(String(50), nullable=False)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
+    is_valid = Column(Boolean, nullable=True, default=False)
 
 
 class EmailFraudResponse(Base):
@@ -763,7 +775,7 @@ class BankMaster(Base):
 
     bank_code = Column(Integer, primary_key=True, nullable=False)
     bank_name = Column(String(200), nullable=False)
-    bank_type = Column(String(100), nullable=False)
+    ifsc_code = Column(String(20), nullable=True)
 
 
 class StatusMaster(Base):
@@ -780,6 +792,7 @@ models_and_files = {
     StatusMaster: "status_master.json",
     CollectionField: "collection_fields.json",
     FraudulentMaster: "fraudulent_master.json",
+    User: "users.json",
 }
 
 # Get a database session

@@ -1,24 +1,31 @@
 from datetime import datetime, timedelta
+from importlib import metadata
+from typing import Optional
 from unittest import result
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 import logging
 
 from fastapi.params import Depends, Query
+from numpy import select
 from requests import Session
 from orm_model.core_models import AepsFraudIncident, CreditCardFraudIncident, DematFraudIncident, EmailFraudIncident, EwalletFraudIncident, I4CRequest, InternetBankingFraudIncident, UpiFraudIncidents, VishingFraudIncident, get_db
 from response_models.i4c_request_models import I4CRequestModel
 from response_models.response_models import make_success_response
+from routers import i4c_request
 from utils.authentication import verify_access_token
 from utils.custom_class import APIRouteWrapper
 from utils.db_connection import db
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 import json
-from sqlalchemy import case, func, literal_column, text
 
+from sqlalchemy import Table, MetaData, select, and_
+from sqlalchemy import Date, MetaData, Numeric, String, Table, and_, case, cast, func, literal, literal_column, text, union_all
+
+metadata = MetaData()
 
 router = APIRouter(
-    route_class=APIRouteWrapper#,dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper #,dependencies=[Depends(verify_access_token)]
 )
 
 
@@ -190,4 +197,137 @@ def get_i4c_request_sub_total(db: Session = Depends(get_db)):
     return make_success_response(
         data=[{"sub_category": row.sub_category, "count": row.count} for row in result],
         message="Sub-category totals fetched successfully"
+    )
+
+# List of fraud tables
+INCIDENT_TABLES = [
+    "upi_fraud_incidents",
+    "aeps_fraud_incidents",
+    "credit_card_fraud_incidents",
+    "internet_banking_fraud_incidents",
+    "demat_fraud_incidents",
+    "email_fraud_incidents",
+    "vishing_fraud_incidents",
+    "ewallet_fraud_incidents",
+]
+
+FIELDS = [
+    "ack_no",
+    "job_id",
+    "amount",
+    "rrn",
+    "transaction_date",
+    "transaction_time",
+    "disputed_amount",
+    "layer",
+    "received_dt",
+    "mode_of_payment",
+    "is_valid",
+    "status",
+]
+
+def get_all_complaints_from_db(db: Session):
+    results = []
+
+    # --- 1) Fetch from fraud incident tables ---
+    for table_name in INCIDENT_TABLES:
+        table = Table(table_name, metadata, autoload_with=db.bind)
+        cols = [getattr(table.c, f) for f in FIELDS if f in table.c]
+
+        if not cols:
+            continue  # skip tables with no matching columns
+
+        stmt = select(*cols)
+        rows = db.execute(stmt).fetchall()
+
+        for row in rows:
+            row_dict = {f: row._mapping.get(f) for f in FIELDS}
+            results.append(row_dict)
+
+    # --- 2) Fetch from i4c_request table ---
+    i4c_table = Table("i4c_request", metadata, autoload_with=db.bind)
+    stmt = select(i4c_table).where(
+        and_(
+            i4c_table.c.msg_type == "REQ",
+            i4c_table.c.status == "N"
+        )
+    )
+    rows = db.execute(stmt).fetchall()
+
+    for row in rows:
+        try:
+            req_json = json.loads(row.request)
+            incident = req_json.get("instrument", {}).get("incidents", [{}])[0]
+
+            row_dict = {
+                "ack_no": row.ack_no or req_json.get("acknowledgement_no"),
+                "job_id": row.job_id,
+                "amount": incident.get("amount"),
+                "rrn": incident.get("rrn"),
+                "transaction_date": incident.get("transaction_date"),
+                "transaction_time": incident.get("transaction_time"),
+                "disputed_amount": incident.get("disputed_amount"),
+                "layer": incident.get("layer"),
+                "received_dt": row.received_dt,
+                "mode_of_payment": req_json.get("instrument", {}).get("mode_of_payment"),
+                "is_valid": None,
+                "status": "pending"
+            }
+        except Exception:
+            # fallback if JSON is malformed
+            row_dict = {f: None for f in FIELDS}
+            row_dict["ack_no"] = row.ack_no
+            row_dict["job_id"] = row.job_id
+            row_dict["status"] = "pending"
+
+        results.append(row_dict)
+
+    return results
+
+
+@router.get("/ncrp/api/complaints/all", tags=["Dashboard"])
+def get_all_complaints(
+    search: Optional[str] = Query(None),
+    from_date: Optional[datetime] = Query(None),
+    to_date: Optional[datetime] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    results = get_all_complaints_from_db(db)
+
+    # --- Apply search filter ---
+    if search:
+        search_lower = search.lower()
+        results = [
+            row for row in results
+            if any(
+                search_lower in str(value).lower()
+                for value in row.values() if value is not None
+            )
+        ]
+
+    # --- Apply date filter ---
+    if from_date or to_date:
+        results = [
+            row for row in results
+            if row.get("received_dt")
+            and ((from_date is None or row["received_dt"] >= from_date)
+                 and (to_date is None or row["received_dt"] <= to_date))
+        ]
+
+    # --- Pagination ---
+    total = len(results)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated_results = results[start:end]
+
+    return make_success_response(
+        data=paginated_results,
+        metadata={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "pages": (total + page_size - 1) // page_size,
+        }
     )

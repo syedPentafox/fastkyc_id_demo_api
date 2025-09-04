@@ -28,7 +28,7 @@ def call_hold_funds_api(kvb_endpoint, hold_fund_path, disputed_amount, data, use
         "HoldAmount": hold_amount,
         "EarMarkType": "32",
         "Reason": "7",
-        "Narration": acknowledgement_no,
+        "Narration": f"CC {acknowledgement_no}",
         "ExpiryDate": "20991231",
         "TransactionType": "A",
         "HoldNumber": "",

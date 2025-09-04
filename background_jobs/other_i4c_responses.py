@@ -71,7 +71,7 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
 
   return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
 
-def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, root_rrn, log_file_name):
+def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, disputed_amount, transaction_datetime, payer_account_number, response_table, phone_number, email, root_rrn, log_file_name):
   logger = logging.getLogger(log_file_name)
   kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
   upi_payment_status_path = os.getenv("UPI_PAYMENT_STATUS_INQUIRY_PATH", "/ESB/UPITransactionEnquiry")
@@ -128,7 +128,7 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
               "phone_number": phone_number,
               "email": email,
               "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
-              "disputed_amount": str(amount),
+              "disputed_amount": str(disputed_amount),
               "ifsc_code": decrypted_obj.get("IFSCCode", ""),
               "root_account_number": payer_account_number,
               "root_rrn_transaction_id": root_rrn,

@@ -367,15 +367,15 @@ def i4c_request_job(request_json: str):
                             txn_date_str = instrument.get("transaction_date", "")
                             txn_date_obj = datetime.strptime(txn_date_str, "%Y-%m-%d")
                             txn_date_formatted = txn_date_obj.strftime("%d-%b-%Y")
-                            amount = str(instrument.get("disputed_amount", ""))
+                            amount = str(instrument.get("amount", ""))
+                            disputed_amount = str(instrument.get("disputed_amount", ""))
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
+                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, disputed_amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
-                            logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                             payer_account_number = instrument.get("payer_account_number", "")
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
@@ -611,6 +611,7 @@ def i4c_request_job(request_json: str):
                                         all_responses.append(is_success)
                                     elif "UPI" in txn_desc:
                                         selected_txns.append(txn)
+                                        logger.info(f"[CASA_SELECTED_TXN] Adding UPI transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         txn_amount_str = txn.get("TransactionAmount", "0")
                                         try:
                                             txn_amount = float(txn_amount_str)
@@ -638,7 +639,7 @@ def i4c_request_job(request_json: str):
                                         payer_account_number = instrument.get("payer_account_number", "")
 
                                         rrn = rrn = incident.get('rrn', '')
-                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
+                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, disputed_amt, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):

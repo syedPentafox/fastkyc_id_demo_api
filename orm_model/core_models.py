@@ -763,7 +763,7 @@ class BankMaster(Base):
 
     bank_code = Column(Integer, primary_key=True, nullable=False)
     bank_name = Column(String(200), nullable=False)
-    bank_type = Column(String(100), nullable=False)
+    ifsc_code = Column(String(20), nullable=True)
 
 
 class StatusMaster(Base):

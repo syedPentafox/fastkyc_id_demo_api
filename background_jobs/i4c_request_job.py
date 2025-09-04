@@ -124,7 +124,7 @@ def i4c_request_job(request_json: str):
 
             phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
             # email = address_info.get("Email", "testing@gmail.com") if address_info else "testing@gmail.com"
-            email = address_info.get("Email", "") if address_info else ""
+            email = (address_info.get("Email") if  address_info and address_info.get("Email") else "") or ""
 
             # =======
             # CASA STMT Inquiry API

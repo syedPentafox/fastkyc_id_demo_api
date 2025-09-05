@@ -24,7 +24,7 @@ from typing import List
 # from json_repair import repair_json
 
 router = APIRouter(
-    route_class=APIRouteWrapper #, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper  , dependencies=[Depends(verify_access_token)]
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ security_scheme = [{"bearerAuth": []}]
 
 
 router = APIRouter(
-    route_class=APIRouteWrapper #, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper  , dependencies=[Depends(verify_access_token)]
 )
 
 
@@ -223,13 +223,13 @@ def get_items(
     aggregate = json.loads(aggregate) if aggregate else {}
     group_by = json.loads(group_by) if group_by else {}
 
-    changed_filters = change_datetime_for_oracle(filters=filters_dict) if filters_dict else None
+    # changed_filters = change_datetime_for_oracle(filters=filters_dict) if filters_dict else None
     if download_file_type:
         page = -1
         data, metadata = db.get_data_from_table(
             collection,
             columns,
-            changed_filters,
+            filters_dict,
             search,
             sort_by,
             page,
@@ -243,7 +243,7 @@ def get_items(
     data, metadata = db.get_data_from_table(
         collection,
         columns,
-        changed_filters,
+        filters_dict,
         search,
         sort_by,
         page,
@@ -1090,11 +1090,11 @@ def download_file(
     filters_dict = json.loads(filters) if filters else {}
     aggregate = json.loads(aggregate) if aggregate else {}
     group_by = json.loads(group_by) if group_by else {}
-
+    changed_filters = change_datetime_for_oracle(filters=filters_dict) if filters_dict else None
     data, _ = db.get_data_from_table(
         collection,
         columns,
-        filters_dict,
+        changed_filters,
         search,
         sort_by,
         page,

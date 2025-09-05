@@ -29,6 +29,7 @@ import pandas as pd
 
 from sqlalchemy import event, update
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from utils.query_helper import convert_postgres_to_oracle
 from utils.query_profiler import SqlProfiler
 import boto3
 from datetime import datetime, timedelta
@@ -1674,62 +1675,128 @@ class DatabaseHandler:
                 query = query.group_by(*query_attributes)
 
             # Compile the query statement
-            compiled_query = query.statement.compile(
-                dialect=self.engine.dialect, compile_kwargs={"literal_binds": True}
-            )
-            # Modify the query string to remove duplicate aliases dynamically
+            # compiled_query = query.statement.compile(
+            #     dialect=self.engine.dialect, compile_kwargs={"literal_binds": True}
+            # )
+            # # Modify the query string to remove duplicate aliases dynamically
 
-            query_str = self.remove_duplicate_aliases(compiled_query.string)
+            # query_str = self.remove_duplicate_aliases(compiled_query.string)
 
-            # // if anything facing datetime query doesn't work please comment this below two lines
+            # # // if anything facing datetime query doesn't work please comment this below two lines
 
-            if not "TO_DATE" in query_str:
-                query_str = query_str.replace("', ", "' VALUE ")
-            print("final query>>>>", query_str)
+            # if not "TO_DATE" in query_str:
+            #     query_str = query_str.replace("', ", "' VALUE ")
+            # print("final query>>>>", query_str)
 
-            # Step 1: Remove ORDER BY for count
-            countable_query = self.remove_order_by(query_str.strip().rstrip(";"))
+            # # Step 1: Remove ORDER BY for count
+            # countable_query = self.remove_order_by(query_str.strip().rstrip(";"))
 
-            # Count total records before pagination
-            count_query = text(
-                f"SELECT COUNT(*) AS total_count FROM ({countable_query})"
-            )
-            print("count query ->>>> ",count_query)
+            # # Count total records before pagination
+            # count_query = text(
+            #     f"SELECT COUNT(*) AS total_count FROM ({countable_query})"
+            # )
+            # print("count query ->>>> ",count_query)
 
-            print("count query result ->>>> ", self.execute_query(count_query))
-            total_records = self.execute_query(count_query)[0][0]
-            total_pages = ceil(total_records / per_page)
-            offset = (page - 1) * per_page
-
-            # Oracle-specific pagination
-            if page > 0:
-                # Using ROWNUM for Oracle pagination
-                query_str = f"""
-                SELECT * FROM (
-                    SELECT a.*, ROWNUM rnum FROM (
-                        {query_str}
-                    ) a WHERE ROWNUM <= {offset + per_page}
-                ) WHERE rnum > {offset}
-                """
-                result = self.execute_query(text(query_str))
-            else:
-                result = self.execute_query(text(query_str))
-
-
-            # # Calculate pagination
+            # print("count query result ->>>> ", self.execute_query(count_query))
+            # total_records = self.execute_query(count_query)[0][0]
             # total_pages = ceil(total_records / per_page)
             # offset = (page - 1) * per_page
 
-            # result = (
-            #     self.execute_query(
-            #         text(
-            #             f"{query_str} OFFSET {offset} ROWS FETCH NEXT {per_page} ROWS ONLY"
-            #         )
-            #     )
-            #     if page > 0
-            #     else self.execute_query(text(query_str))
-            # )
-            # Convert the result to JSON format
+            # # Oracle-specific pagination
+            # if page > 0:
+            #     # Using ROWNUM for Oracle pagination
+            #     query_str = f"""
+            #     SELECT * FROM (
+            #         SELECT a.*, ROWNUM rnum FROM (
+            #             {query_str}
+            #         ) a WHERE ROWNUM <= {offset + per_page}
+            #     ) WHERE rnum > {offset}
+            #     """
+            #     result = self.execute_query(text(query_str))
+            # else:
+            #     result = self.execute_query(text(query_str))
+
+
+            # # # Calculate pagination
+            # # total_pages = ceil(total_records / per_page)
+            # # offset = (page - 1) * per_page
+
+            # # result = (
+            # #     self.execute_query(
+            # #         text(
+            # #             f"{query_str} OFFSET {offset} ROWS FETCH NEXT {per_page} ROWS ONLY"
+            # #         )
+            # #     )
+            # #     if page > 0
+            # #     else self.execute_query(text(query_str))
+            # # )
+            # # Convert the result to JSON format
+            compiled_query = query.statement.compile(
+                dialect=self.engine.dialect, compile_kwargs={"literal_binds": True}
+            )
+            
+            # Modify the query string to remove duplicate aliases dynamically
+            query_str = self.remove_duplicate_aliases(compiled_query.string)
+            
+            print("postgresql query  ->>> ", query_str)
+            
+            # Step 1: Remove ORDER BY for count
+            countable_query = self.remove_order_by(query_str.strip().rstrip(";"))
+
+            print(f"countable query ->>> {countable_query}")
+            
+            # Convert to Oracle syntax
+            coverted_countable_query = convert_postgres_to_oracle(countable_query)
+            
+            print(f"converted countable query ->>> {coverted_countable_query}")
+            
+            # Convert the main query to Oracle syntax
+            raw_postgresql_query = convert_postgres_to_oracle(query=query_str.rstrip(";"))
+            
+            print("raw postgresql query ->>> ", raw_postgresql_query)
+            
+            # Count total records before pagination
+            # Remove any trailing semicolon from the converted query
+            coverted_countable_query = coverted_countable_query.rstrip(";")
+            
+            count_query = text(
+                f"SELECT COUNT(*) FROM ({coverted_countable_query}) total_count"
+            )
+            
+            print("count query ->>>> ", count_query)
+            
+            try:
+                total_records = self.execute_query(count_query)[0][0]
+                print("total records ->> ", total_records)
+            except Exception as e:
+                print(f"Error executing count query: {e}")
+                # Fallback: use a simpler count query
+                count_query_fallback = text(
+                    f'SELECT COUNT(*) FROM "{tbl_name.upper()}"'
+                )
+                total_records = self.execute_query(count_query_fallback)[0][0]
+            
+            # Calculate pagination
+            total_pages = ceil(total_records / per_page)
+            offset = (page - 1) * per_page
+            
+            # Remove any trailing semicolon from the main query
+            raw_postgresql_query = raw_postgresql_query.rstrip(";")
+            
+            # Add Oracle pagination
+            final_query = f"{raw_postgresql_query} OFFSET {offset} ROWS FETCH NEXT {per_page} ROWS ONLY"
+            
+            print("final query ->>> ", final_query)
+            
+            try:
+                result = (
+                    self.execute_query(text(final_query))
+                    if page > 0
+                    else self.execute_query(text(raw_postgresql_query))
+                )
+            except Exception as e:
+                print(f"Error executing main query: {e}")
+
             result_as_json = (
                 [
                     {

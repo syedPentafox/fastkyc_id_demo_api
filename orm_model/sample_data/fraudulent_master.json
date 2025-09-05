@@ -1,9 +1,5 @@
 [
-		{
-			"id": 6,
-			"fraud_type": "Debit/Credit Card Fraud",
-			"fraud_value": "credit_card_fraud_incidents"
-		},
+		
 		{
 			"id": 5,
 			"fraud_type": "Debit/Credit Card Fraud/Sim Swap Fraud",

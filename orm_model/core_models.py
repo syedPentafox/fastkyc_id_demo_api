@@ -152,10 +152,6 @@ class Branch(Base):
 class Role(Base):
     __tablename__ = "roles"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    created_date = Column(
-        DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
-    )
-    modified_date = Column(DateTime, nullable=False)
     name = Column(String(255), nullable=False)
 
 
@@ -232,13 +228,14 @@ class User(Base):
 
 class CollectionField(Base):
     __tablename__ = "collection_fields"
+
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     created_date = Column(
         DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
     )
     modified_date = Column(DateTime, nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    modified_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     collection = Column(String(1000))
     field = Column(String(1000))
     label = Column(String(1000))
@@ -789,10 +786,12 @@ class StatusMaster(Base):
 models_and_files = {
     BranchManagerDetails: "branch_manager_details.json",
     BankMaster: "bank_master.json",
+    Role: "roles.json",
+    User: "users.json",
     StatusMaster: "status_master.json",
     CollectionField: "collection_fields.json",
-    FraudulentMaster: "fraudulent_master.json",
-    User: "users.json",
+    FraudulentMaster: "fraudulent_master.json"
+    
 }
 
 # Get a database session

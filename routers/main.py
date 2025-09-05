@@ -24,7 +24,7 @@ from typing import List
 # from json_repair import repair_json
 
 router = APIRouter(
-    route_class=APIRouteWrapper  #, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper  , dependencies=[Depends(verify_access_token)]
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ security_scheme = [{"bearerAuth": []}]
 
 
 router = APIRouter(
-    route_class=APIRouteWrapper  #, dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper  , dependencies=[Depends(verify_access_token)]
 )
 
 

@@ -26,7 +26,7 @@ from sqlalchemy import Date, MetaData, Numeric, String, Table, and_, case, cast,
 metadata = MetaData()
 
 router = APIRouter(
-    route_class=APIRouteWrapper #,dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper ,dependencies=[Depends(verify_access_token)]
 )
 
 

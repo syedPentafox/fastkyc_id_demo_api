@@ -64,8 +64,8 @@ def user_login(payload: EncryptedPayload):
             return make_failure_response(message="User credentials invalid.")
 
     if decrypted.get("ErrorMessage") == "Success":
-        if decrypted.get("Department") not in ["ITD", "OD", "1260"]:
-            return make_failure_response(message="Unauthorized Department")
+        # if decrypted.get("Department") not in ["ITD", "OD", "1260"]:
+        #     return make_failure_response(message="Unauthorized Department")
         user_id = decrypted.get("EmployeeCode")
         access_token = create_access_token_ncrp({"user_id": user_id})
         refresh_token = create_refresh_token_ncrp({"user_id": user_id})

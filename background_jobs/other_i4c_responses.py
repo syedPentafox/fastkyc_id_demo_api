@@ -48,6 +48,8 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
       log_file_name
   )
   logger.info(f"[PAYMENT_STATUS_INQUIRY] Response: {payment_status_response}")
+  payee_bank = "KVB"
+  payee_bank_code = "25"
   if payment_status_response and isinstance(payment_status_response, dict):
       payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
       ifsc_code = payment_status_response.get("IFSC", "")
@@ -64,7 +66,6 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
       ifsc_code = decrypted_obj.get("IFSCCode", "")
   
   payee_account_number = sanitize_account_number(payee_account_number)
-  root_account_number = sanitize_account_number(root_account_number)
   i4c_payload = {
       "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
       "job_id": data.get("job_id", ""),
@@ -134,6 +135,8 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
   logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_DEBIT] Response: {upi_response}")
   payee_account_number = payer_account_number
   ifsc_code = decrypted_obj.get("IFSCCode", "")
+  payee_bank = "KVB"
+  payee_bank_code = "25"
   if upi_response and isinstance(upi_response, dict):
       payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
       ifsc_code = upi_response('IFSC')
@@ -147,7 +150,6 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
             payee_bank_code = "25"
             
   payee_account_number = sanitize_account_number(payee_account_number)
-  root_account_number = sanitize_account_number(root_account_number)
   i4c_payload = {
       "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
       "job_id": data.get("job_id", ""),

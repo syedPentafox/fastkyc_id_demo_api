@@ -594,7 +594,7 @@ def i4c_request_job(request_json: str):
                                         {
                                             "txn_type": "Transaction Put on Hold",
                                             "txn_type_id": "1",
-                                            "amount": disputed_amount,
+                                            "amount": final_amount,
                                             "transaction_datetime": transaction_datetime_val,
                                             "phone_number": phone_number,
                                             "email": email,

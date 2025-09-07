@@ -505,6 +505,31 @@ def i4c_request_job(request_json: str):
                                 # Call I4C response API after hold
                                 # =======
                                 logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+
+                                # Convert balances to float safely
+                                try:
+                                    net_balance_float = float(decrypted_obj.get("NetBalance", 0.0))
+                                except Exception:
+                                    net_balance_float = 0.0
+
+                                try:
+                                    disputed_amount_float = float(disputed_amount)
+                                except Exception:
+                                    disputed_amount_float = 0.0
+
+                                # ======= Condition for I4C "amount" =======
+                                if net_balance_float <= 0:
+                                    final_amount = 0.0
+                                elif net_balance_float < disputed_amount_float:
+                                    final_amount = net_balance_float
+                                else:
+                                    final_amount = disputed_amount_float
+
+                                logger.info(f"[I4C_HOLD_AMOUNT] NetBalance={net_balance_float}, "
+                                            f"DisputedAmount={disputed_amount_float}, "
+                                            f"FinalAmount={final_amount}")
+
+                                logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
                                 # hold_amount = "{:.2f}".format(net_balance_float)
                                 payload_data = data.get("request", {})
                                 acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
@@ -528,7 +553,7 @@ def i4c_request_job(request_json: str):
                                         {
                                             "txn_type": "Transaction Put on Hold",
                                             "txn_type_id": "1",
-                                            "amount": disputed_amount,
+                                            "amount": final_amount,
                                             "transaction_datetime": transaction_datetime_val,
                                             "phone_number": phone_number,
                                             "email": email,

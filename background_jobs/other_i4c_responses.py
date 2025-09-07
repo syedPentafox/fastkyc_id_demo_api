@@ -1,12 +1,27 @@
+from requests import Session
 from background_jobs.payment_status_inquiry_api import payment_status_inquiry_api
 from background_jobs.i4c_response_api import call_i4c_response_api
 import os
 import logging
+
+from orm_model.core_models import BankMaster
 from .background_jobs_file_logger import add_background_jobs_file_handler
 
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 import re
+from utils.db_connection import db
 from datetime import datetime
+
+def sanitize_account_number(account_no: str) -> str:
+    if not account_no:
+        return ""
+    # keep only digits, remove spaces/special chars
+    return re.sub(r"\D", "", account_no)
+
+def get_bank_details_by_ifsc(db: Session, ifsc_code: str):
+    if not ifsc_code:
+        return None
+    return db.query(BankMaster).filter(BankMaster.ifsc_code == ifsc_code).first()
 
 def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount, phone_number, email, root_rrn, log_file_name):
   logger = logging.getLogger(log_file_name)
@@ -36,10 +51,20 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
   if payment_status_response and isinstance(payment_status_response, dict):
       payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else ""
       ifsc_code = payment_status_response.get("IFSC", "")
+      if ifsc_code:
+          bank_record = get_bank_details_by_ifsc(db, ifsc_code)
+          if bank_record:
+            payee_bank = bank_record.bank_name
+            payee_bank_code = str(bank_record.bank_code)
+          else:
+            payee_bank = "KVB"
+            payee_bank_code = "25"        
   if not payee_account_number:
       payee_account_number = root_account_number
       ifsc_code = decrypted_obj.get("IFSCCode", "")
   
+  payee_account_number = sanitize_account_number(payee_account_number)
+  root_account_number = sanitize_account_number(root_account_number)
   i4c_payload = {
       "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
       "job_id": data.get("job_id", ""),
@@ -62,8 +87,8 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
               "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
               "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
               "remarks": data.get("request", {}).get("acknowledgement_no", ""),
-              "payee_bank": "KVB",
-              "payee_bank_code": "25",
+              "payee_bank": payee_bank,
+              "payee_bank_code": payee_bank_code,
               "payee_account_number": payee_account_number
           }
       ]
@@ -112,6 +137,17 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
   if upi_response and isinstance(upi_response, dict):
       payee_account_number = upi_response.get("PayeeAccountNumber", "") if upi_response else ""
       ifsc_code = upi_response('IFSC')
+      if ifsc_code:
+          bank_record = get_bank_details_by_ifsc(db, ifsc_code)
+          if bank_record:
+            payee_bank = bank_record.bank_name
+            payee_bank_code = str(bank_record.bank_code)
+          else:
+            payee_bank = "KVB"
+            payee_bank_code = "25"
+            
+  payee_account_number = sanitize_account_number(payee_account_number)
+  root_account_number = sanitize_account_number(root_account_number)
   i4c_payload = {
       "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
       "job_id": data.get("job_id", ""),
@@ -120,8 +156,8 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
               "txn_type": "Money Transfer To",
               "txn_type_id": "3",
               "rrn_transaction_id": rrn,
-              "payee_bank": "KVB",
-              "payee_bank_code": "25",
+              "payee_bank": payee_bank,
+              "payee_bank_code": payee_bank_code,
               "payee_account_number": payee_account_number,
               "amount": str(amount),
               "transaction_datetime": transaction_datetime,

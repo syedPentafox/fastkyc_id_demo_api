@@ -124,7 +124,7 @@ def i4c_request_job(request_json: str):
 
             phone_number = address_info.get("MobileNo", "1234567890") if address_info else "1234567890"
             # email = address_info.get("Email", "testing@gmail.com") if address_info else "testing@gmail.com"
-            email = (address_info.get("Email") if  address_info and address_info.get("Email") else "") or ""
+            email = address_info.get("Email", "") if address_info else ""
 
             # =======
             # CASA STMT Inquiry API
@@ -249,40 +249,81 @@ def i4c_request_job(request_json: str):
                 
                 logger.info(f"[RRN_VALIDATION] Validating RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
                 
-                for idx, casa_txn in enumerate(casa_txn_details):
-                    txn_desc = casa_txn.get("TransactionDescription", "")
-                    txn_amount_str = casa_txn.get("TransactionAmount", "0")
-                    txn_date_str = casa_txn.get("TransactionDate", "")
-                    
-                    # Check RRN match using string matching
-                    if rrn and rrn in txn_desc:
-                        # Check amount match (convert both to float)
-                        try:
-                            casa_amount = float(txn_amount_str)
-                            incident_amount_float = float(incident_amount)
-                            
-                            if casa_amount == incident_amount_float:
-                                # Check datetime match
-                                try:
-                                    # Parse CASA datetime format: "18-02-2025 14:58:22"
-                                    casa_datetime = datetime.strptime(txn_date_str, "%d-%m-%Y %H:%M:%S")
-                                    
-                                    if incident_datetime and casa_datetime.date() == incident_datetime.date():
-                                        # All three conditions match (only date, ignoring time)
-                                        rrn_valid = True
-                                        matched_casa_txn = casa_txn
-                                        matched_index = idx
-                                        logger.info(f"[RRN_VALIDATION] Valid RRN found - RRN: {rrn}, Amount: {casa_amount}, Date: {casa_datetime.date()}")
-                                        break
-                                    else:
-                                        logger.info(f"[RRN_VALIDATION] RRN and amount match but date mismatch - Casa: {casa_datetime.date()}, Incident: {incident_datetime.date()}")
-                                except Exception as casa_date_exc:
-                                    logger.warning(f"[RRN_VALIDATION] Could not parse CASA datetime: {txn_date_str}, error: {casa_date_exc}")
-                            else:
-                                logger.info(f"[RRN_VALIDATION] RRN match but amount mismatch - Casa: {casa_amount}, Incident: {incident_amount_float}")
-                        except Exception as amount_exc:
-                            logger.warning(f"[RRN_VALIDATION] Could not parse amounts for comparison: {amount_exc}")
-                
+                if transaction_type == "NEFT":
+                    logger.info(f"[RRN_VALIDATION][NEFT] Applying NEFT-specific validation for RRN: {rrn}")
+
+                    if len(rrn) >= 5 and rrn[4].upper() == "N":
+                        logger.info(f"[RRN_VALIDATION][NEFT] 5th character is 'N'. Proceeding with payment inquiry API.")
+
+                        payment_status_dict = {
+                            "Transaction_Ref_Number": rrn,
+                            "Mode_Of_Payment": transaction_type,
+                        }
+                        payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+
+                        payment_status_response = payment_status_inquiry_api(
+                            payment_status_dict,
+                            kvb_key,
+                            payment_status_url,
+                            src_channel,
+                            username,
+                            password,
+                            log_file_name,
+                        )
+                        logger.info(f"[RRN_VALIDATION][NEFT] Payment inquiry response: {payment_status_response}")
+
+                        if (payment_status_response and isinstance(payment_status_response, dict)):
+                            logger.info(f"[RRN_VALIDATION][NEFT] Valid RRN (Payment Inquiry success): {rrn}")
+                            rrn_valid = True
+                        else:
+                            logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN (Payment Inquiry failed): {rrn}")
+                            rrn_valid = False
+                    else:
+                        logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
+                        rrn_valid = False
+                if not rrn_valid and transaction_type != "NEFT":
+                    for idx, casa_txn in enumerate(casa_txn_details):
+                        txn_desc = casa_txn.get("TransactionDescription", "")
+                        txn_amount_str = casa_txn.get("TransactionAmount", "0")
+                        txn_date_str = casa_txn.get("TransactionDate", "")
+
+                        # Check RRN match using string matching
+                        if rrn and rrn in txn_desc:
+                            # Check amount match (convert both to float)
+                            try:
+                                casa_amount = float(txn_amount_str)
+                                incident_amount_float = float(incident_amount)
+
+                                if casa_amount == incident_amount_float:
+                                    # Check datetime match
+                                    try:
+                                        # Parse CASA datetime format: "18-02-2025 14:58:22"
+                                        casa_datetime = datetime.strptime(txn_date_str, "%d-%m-%Y %H:%M:%S")
+
+                                        if incident_datetime and casa_datetime.date() == incident_datetime.date():
+                                            # All three conditions match (only date, ignoring time)
+                                            rrn_valid = True
+                                            matched_casa_txn = casa_txn
+                                            matched_index = idx
+                                            logger.info(
+                                                f"[RRN_VALIDATION] Valid RRN found - RRN: {rrn}, Amount: {casa_amount}, Date: {casa_datetime.date()}"
+                                            )
+                                            break
+                                        else:
+                                            logger.info(
+                                                f"[RRN_VALIDATION] RRN and amount match but date mismatch - Casa: {casa_datetime.date()}, Incident: {incident_datetime.date()}"
+                                            )
+                                    except Exception as casa_date_exc:
+                                        logger.warning(
+                                            f"[RRN_VALIDATION] Could not parse CASA datetime: {txn_date_str}, error: {casa_date_exc}"
+                                        )
+                                else:
+                                    logger.info(
+                                        f"[RRN_VALIDATION] RRN match but amount mismatch - Casa: {casa_amount}, Incident: {incident_amount_float}"
+                                    )
+                            except Exception as amount_exc:
+                                logger.warning(f"[RRN_VALIDATION] Could not parse amounts for comparison: {amount_exc}")
+
                 if not rrn_valid:
                     # =======
                     # RRN Invalid - Send status code 02 response and skip balance logic
@@ -553,7 +594,7 @@ def i4c_request_job(request_json: str):
                                         {
                                             "txn_type": "Transaction Put on Hold",
                                             "txn_type_id": "1",
-                                            "amount": final_amount,
+                                            "amount": disputed_amount,
                                             "transaction_datetime": transaction_datetime_val,
                                             "phone_number": phone_number,
                                             "email": email,

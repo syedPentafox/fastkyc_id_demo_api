@@ -250,39 +250,37 @@ def i4c_request_job(request_json: str):
                 
                 logger.info(f"[RRN_VALIDATION] Validating RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
                 
-                if transaction_type == "NEFT":
+                if len(rrn) >= 5 and rrn[4].upper() == "N":
                     logger.info(f"[RRN_VALIDATION][NEFT] Applying NEFT-specific validation for RRN: {rrn}")
 
-                    if len(rrn) >= 5 and rrn[4].upper() == "N":
-                        logger.info(f"[RRN_VALIDATION][NEFT] 5th character is 'N'. Proceeding with payment inquiry API.")
+                    payment_status_dict = {
+                        "Transaction_Ref_Number": rrn,
+                        "Mode_Of_Payment": transaction_type,
+                    }
+                    payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
 
-                        payment_status_dict = {
-                            "Transaction_Ref_Number": rrn,
-                            "Mode_Of_Payment": transaction_type,
-                        }
-                        payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+                    payment_status_response = payment_status_inquiry_api(
+                        payment_status_dict,
+                        kvb_key,
+                        payment_status_url,
+                        src_channel,
+                        username,
+                        password,
+                        log_file_name,
+                    )
+                    logger.info(f"[RRN_VALIDATION][NEFT] Payment inquiry response: {payment_status_response}")
 
-                        payment_status_response = payment_status_inquiry_api(
-                            payment_status_dict,
-                            kvb_key,
-                            payment_status_url,
-                            src_channel,
-                            username,
-                            password,
-                            log_file_name,
-                        )
-                        logger.info(f"[RRN_VALIDATION][NEFT] Payment inquiry response: {payment_status_response}")
-
-                        if (payment_status_response and isinstance(payment_status_response, dict)):
-                            logger.info(f"[RRN_VALIDATION][NEFT] Valid RRN (Payment Inquiry success): {rrn}")
-                            rrn_valid = True
-                        else:
-                            logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN (Payment Inquiry failed): {rrn}")
-                            rrn_valid = False
+                    if (payment_status_response and isinstance(payment_status_response, dict)):
+                        logger.info(f"[RRN_VALIDATION][NEFT] Valid RRN (Payment Inquiry success): {rrn}")
+                        rrn_valid = True
                     else:
-                        logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
+                        logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN (Payment Inquiry failed): {rrn}")
                         rrn_valid = False
-                if not rrn_valid and transaction_type != "NEFT":
+                else:
+                    logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
+                    rrn_valid = False
+                    
+                if not rrn_valid :
                     for idx, casa_txn in enumerate(casa_txn_details):
                         txn_desc = casa_txn.get("TransactionDescription", "")
                         txn_amount_str = casa_txn.get("TransactionAmount", "0")

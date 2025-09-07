@@ -9,7 +9,7 @@ from .background_jobs_file_logger import add_background_jobs_file_handler
 
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 import re
-from utils.db_connection import db
+from routers.main import db
 from datetime import datetime
 
 def sanitize_account_number(account_no: str) -> str:

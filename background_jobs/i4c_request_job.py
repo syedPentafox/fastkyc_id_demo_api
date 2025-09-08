@@ -624,7 +624,7 @@ def i4c_request_job(request_json: str):
                                 # ======= Condition for I4C "amount" =======
                                 if net_balance_float <= 0.0:
                                     logger.warning(f"[I4C_SKIP] NetBalance={net_balance_float} is zero/negative. Skipping I4C response.")
-                                    is_hold_i4c_success = False
+                                    is_hold_i4c_success = True
                                 else:
                                     if net_balance_float < disputed_amount_float:
                                         final_amount = net_balance_float

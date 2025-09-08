@@ -540,76 +540,142 @@ def i4c_request_job(request_json: str):
                                 log_file_name=log_file_name
                             )
 
+                            # if is_hold_success:
+                            #     # =======
+                            #     # Call I4C response API after hold
+                            #     # =======
+                            #     logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+
+                            #     # Convert balances to float safely
+                            #     try:
+                            #         net_balance_float = float(decrypted_obj.get("NetBalance", 0.0))
+                            #     except Exception:
+                            #         net_balance_float = 0.0
+
+                            #     try:
+                            #         disputed_amount_float = float(disputed_amount)
+                            #     except Exception:
+                            #         disputed_amount_float = 0.0
+
+                            #     # ======= Condition for I4C "amount" =======
+                            #     if net_balance_float <= 0:
+                            #         final_amount = "0.0"
+                            #     elif net_balance_float < disputed_amount_float:
+                            #         final_amount = net_balance_float
+                            #     else:
+                            #         final_amount = disputed_amount_float
+
+                            #     logger.info(f"[I4C_HOLD_AMOUNT] NetBalance={net_balance_float}, "
+                            #                 f"DisputedAmount={disputed_amount_float}, "
+                            #                 f"FinalAmount={final_amount}")
+
+                            #     logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
+                            #     # hold_amount = "{:.2f}".format(net_balance_float)
+                            #     payload_data = data.get("request", {})
+                            #     acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                            #     job_id = str(data.get("job_id", ""))
+                            #     # CASA STMT response fields
+                            #     pan_number = decrypted_obj.get("PAN", "") or "FORM60"
+                            #     ifsc_code = decrypted_obj.get("IFSCCode", "")
+                            #     net_balance = decrypted_obj.get("NetBalance", None)
+                            #     # Get payer_account_number and rrn from i4c request
+                            #     payer_account_number = ""
+                            #     rrn = ""
+                            #     rrn = incident.get("rrn", "")
+                            #     instrument_data = payload_data.get("instrument", {})
+                            #     payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                            #     # Use the same server timestamp for I4C response
+                            #     transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                            #     i4c_payload = {
+                            #         "acknowledgement_no": acknowledgement_no,
+                            #         "job_id": job_id,
+                            #         "transactions": [
+                            #             {
+                            #                 "txn_type": "Transaction Put on Hold",
+                            #                 "txn_type_id": "1",
+                            #                 "amount": final_amount,
+                            #                 "transaction_datetime": transaction_datetime_val,
+                            #                 "phone_number": phone_number,
+                            #                 "email": email,
+                            #                 "pan_number": pan_number,
+                            #                 "ifsc_code": ifsc_code,
+                            #                 "root_account_number": payer_account_number,
+                            #                 "root_rrn_transaction_id": rrn,
+                            #                 "root_bankid": "25",
+                            #                 "status_code": "00",
+                            #                 "root_effective_balance": str(net_balance),
+                            #                 "root_ifsc_code": ifsc_code,
+                            #                 "remarks": acknowledgement_no
+                            #             }
+                            #         ]
+                            #     }
+                            #     is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
                             if is_hold_success:
-                                # =======
-                                # Call I4C response API after hold
-                                # =======
+                            # =======
+                            # Call I4C response API after hold
+                            # =======
                                 logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
 
-                                # Convert balances to float safely
-                                try:
-                                    net_balance_float = float(decrypted_obj.get("NetBalance", 0.0))
-                                except Exception:
-                                    net_balance_float = 0.0
-
-                                try:
-                                    disputed_amount_float = float(disputed_amount)
-                                except Exception:
-                                    disputed_amount_float = 0.0
+                                # Convert balances safely
+                                
+                                net_balance_float = float(decrypted_obj.get("NetBalance", 0.0))
+                                disputed_amount_float = float(disputed_amount)
 
                                 # ======= Condition for I4C "amount" =======
-                                if net_balance_float <= 0:
-                                    final_amount = "0.0"
-                                elif net_balance_float < disputed_amount_float:
-                                    final_amount = net_balance_float
+                                if net_balance_float <= 0.0:
+                                    logger.warning(f"[I4C_SKIP] NetBalance={net_balance_float} is zero/negative. Skipping I4C response.")
+                                    is_hold_i4c_success = False
                                 else:
-                                    final_amount = disputed_amount_float
+                                    if net_balance_float < disputed_amount_float:
+                                        final_amount = net_balance_float
+                                    else:
+                                        final_amount = disputed_amount_float
 
-                                logger.info(f"[I4C_HOLD_AMOUNT] NetBalance={net_balance_float}, "
-                                            f"DisputedAmount={disputed_amount_float}, "
-                                            f"FinalAmount={final_amount}")
+                                    logger.info(f"[I4C_HOLD_AMOUNT] NetBalance={net_balance_float}, "
+                                                f"DisputedAmount={disputed_amount_float}, "
+                                                f"FinalAmount={final_amount}")
 
-                                logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
-                                # hold_amount = "{:.2f}".format(net_balance_float)
-                                payload_data = data.get("request", {})
-                                acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
-                                job_id = str(data.get("job_id", ""))
-                                # CASA STMT response fields
-                                pan_number = decrypted_obj.get("PAN", "") or "FORM60"
-                                ifsc_code = decrypted_obj.get("IFSCCode", "")
-                                net_balance = decrypted_obj.get("NetBalance", None)
-                                # Get payer_account_number and rrn from i4c request
-                                payer_account_number = ""
-                                rrn = ""
-                                rrn = incident.get("rrn", "")
-                                instrument_data = payload_data.get("instrument", {})
-                                payer_account_number = str(instrument_data.get("payer_account_number", ""))
-                                # Use the same server timestamp for I4C response
-                                transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                                i4c_payload = {
-                                    "acknowledgement_no": acknowledgement_no,
-                                    "job_id": job_id,
-                                    "transactions": [
-                                        {
-                                            "txn_type": "Transaction Put on Hold",
-                                            "txn_type_id": "1",
-                                            "amount": final_amount,
-                                            "transaction_datetime": transaction_datetime_val,
-                                            "phone_number": phone_number,
-                                            "email": email,
-                                            "pan_number": pan_number,
-                                            "ifsc_code": ifsc_code,
-                                            "root_account_number": payer_account_number,
-                                            "root_rrn_transaction_id": rrn,
-                                            "root_bankid": "25",
-                                            "status_code": "00",
-                                            "root_effective_balance": str(net_balance),
-                                            "root_ifsc_code": ifsc_code,
-                                            "remarks": acknowledgement_no
-                                        }
-                                    ]
-                                }
-                                is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
+                                    payload_data = data.get("request", {})
+                                    acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                                    job_id = str(data.get("job_id", ""))
+                                    pan_number = decrypted_obj.get("PAN", "") or "FORM60"
+                                    ifsc_code = decrypted_obj.get("IFSCCode", "")
+                                    net_balance = decrypted_obj.get("NetBalance", None)
+
+                                    rrn = incident.get("rrn", "")
+                                    instrument_data = payload_data.get("instrument", {})
+                                    payer_account_number = str(instrument_data.get("payer_account_number", ""))
+
+                                    transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                                    i4c_payload = {
+                                        "acknowledgement_no": acknowledgement_no,
+                                        "job_id": job_id,
+                                        "transactions": [
+                                            {
+                                                "txn_type": "Transaction Put on Hold",
+                                                "txn_type_id": "1",
+                                                "amount": final_amount,
+                                                "transaction_datetime": transaction_datetime_val,
+                                                "phone_number": phone_number,
+                                                "email": email,
+                                                "pan_number": pan_number,
+                                                "ifsc_code": ifsc_code,
+                                                "root_account_number": payer_account_number,
+                                                "root_rrn_transaction_id": rrn,
+                                                "root_bankid": "25",
+                                                "status_code": "00",
+                                                "root_effective_balance": str(net_balance),
+                                                "root_ifsc_code": ifsc_code,
+                                                "remarks": acknowledgement_no
+                                            }
+                                        ]
+                                    }
+
+                                    is_hold_i4c_success = call_i4c_response_api(
+                                        i4c_payload, kvb_key, kvb_endpoint,
+                                        response_table, data['received_dt'], log_file_name
+                                    )
+
 
                                 # db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                                 # db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_hold_i4c_success else 'failure', 'is_valid': True})

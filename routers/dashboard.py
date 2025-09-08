@@ -1,10 +1,11 @@
+from ast import Dict
 from datetime import datetime, timedelta
 from importlib import metadata
 from typing import Any, List, Optional
 from unittest import result
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 import logging
-
+from utils.db_connection import db
 from fastapi.params import Depends, Query
 from httpx import QueryParams
 from numpy import select
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 import json
 
-from sqlalchemy import Table, MetaData, select, and_
+from sqlalchemy import Table, MetaData, select, and_, update
 from sqlalchemy import Date, MetaData, Numeric, String, Table, and_, case, cast, func, literal, literal_column, text, union_all
 
 metadata = MetaData()
@@ -396,4 +397,34 @@ def get_all_complaints(
             "page_size": page_size,
             "pages": (total + page_size - 1) // page_size,
         }
+    )
+
+@router.patch("/ncrp/api/complaints/{collection}/{ack_no}/status", tags=["Dashboard"])
+def update_complaint_status(
+    collection: str,
+    ack_no: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Update the status of a complaint record using update() query.
+    """
+    model = FRAUD_MODELS.get(collection)
+    if not model:
+        raise HTTPException(status_code=400, detail=f"Unknown collection {collection}")
+
+    # perform update
+    rows_updated = (
+        db.query(model)
+        .filter(model.ack_no == ack_no)
+        .update({"status": "manually_resolved"}, synchronize_session=False)
+    )
+
+    if rows_updated == 0:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    db.commit()
+
+    return make_success_response(
+        data={"ack_no": ack_no, "collection": collection, "new_status": "manually_resolved"},
+        message="Record updated successfully",
     )

@@ -173,7 +173,7 @@ def money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, 
     }
     return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data["received_dt"], log_file_name)
 
-def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email, log_file_name):
+def non_money_transfer_to(ack_rrn,decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email, log_file_name):
     logger = logging.getLogger(log_file_name)
     kvb_key = os.getenv("KVB_KEY_VALUE")
     kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
@@ -185,7 +185,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
     ifsc_code = decrypted_obj.get("IFSCCode", "")
     net_balance = decrypted_obj.get("NetBalance", None)
     
-    root_rrn_transaction_id = rrn
+    root_rrn_transaction_id = ack_rrn
     root_bankid = "25"
     status_code = "00"
     remarks = acknowledgement_no

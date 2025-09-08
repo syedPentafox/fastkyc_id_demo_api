@@ -250,35 +250,6 @@ def i4c_request_job(request_json: str):
                 
                 logger.info(f"[RRN_VALIDATION] Validating RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
                 
-                if len(rrn) >= 5 and rrn[4].upper() == "N":
-                    logger.info(f"[RRN_VALIDATION][NEFT] Applying NEFT-specific validation for RRN: {rrn}")
-
-                    payment_status_dict = {
-                        "Transaction_Ref_Number": rrn,
-                        "Mode_Of_Payment": "NEFT",
-                    }
-                    payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
-
-                    payment_status_response = payment_status_inquiry_api(
-                        payment_status_dict,
-                        kvb_key,
-                        payment_status_url,
-                        src_channel,
-                        username,
-                        password,
-                        log_file_name,
-                    )
-                    logger.info(f"[RRN_VALIDATION][NEFT] Payment inquiry response: {payment_status_response}")
-
-                    if (payment_status_response and isinstance(payment_status_response, dict)):
-                        logger.info(f"[RRN_VALIDATION][NEFT] Valid RRN (Payment Inquiry success): {rrn}")
-                        rrn_valid = True
-                    else:
-                        logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN (Payment Inquiry failed): {rrn}")
-                        rrn_valid = False
-                else:
-                    logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
-                    rrn_valid = False
 
                 if not rrn_valid :
                     for idx, casa_txn in enumerate(casa_txn_details):
@@ -322,7 +293,40 @@ def i4c_request_job(request_json: str):
                                     )
                             except Exception as amount_exc:
                                 logger.warning(f"[RRN_VALIDATION] Could not parse amounts for comparison: {amount_exc}")
+    
+                
+                if not rrn_valid:
+                    if len(rrn) >= 5 and rrn[4].upper() == "N":
+                        logger.info(f"[RRN_VALIDATION][NEFT] Applying NEFT-specific validation for RRN: {rrn}")
 
+                        payment_status_dict = {
+                            "Transaction_Ref_Number": rrn,
+                            "Mode_Of_Payment": "NEFT",
+                        }
+                        payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
+
+                        payment_status_response = payment_status_inquiry_api(
+                            payment_status_dict,
+                            kvb_key,
+                            payment_status_url,
+                            src_channel,
+                            username,
+                            password,
+                            log_file_name,
+                        )
+                        logger.info(f"[RRN_VALIDATION][NEFT] Payment inquiry response: {payment_status_response}")
+
+                        if (payment_status_response and isinstance(payment_status_response, dict)):
+                            logger.info(f"[RRN_VALIDATION][NEFT] Valid RRN (Payment Inquiry success): {rrn}")
+                            rrn_valid = True
+                        else:
+                            logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN (Payment Inquiry failed): {rrn}")
+                            rrn_valid = False
+
+                    else:
+                        logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
+                        rrn_valid = False
+                
                 if not rrn_valid:
                     # =======
                     # RRN Invalid - Send status code 02 response and skip balance logic
@@ -791,7 +795,7 @@ def i4c_request_job(request_json: str):
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         curr_rrn = txn.get('ChequeNumber', '')
-                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email, log_file_name)
+                                        is_success = non_money_transfer_to(rrn,decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     else:

@@ -7,7 +7,7 @@ import os
 import logging
 import re
 from utils.db_connection import db
-from orm_model.core_models import BankMaster
+from orm_model.core_models import BankMaster, BranchManagerDetails
 from background_jobs.payment_status_inquiry_api import payment_status_inquiry_api
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 from background_jobs.i4c_response_api import call_i4c_response_api
@@ -18,7 +18,15 @@ def sanitize_account_number(account_no: str) -> str:
         return ""
     return re.sub(r"\D", "", account_no)
 
-
+def get_branch_manager(db, branch_code: str):
+    if not branch_code:
+        return None
+    session = db.get_db_session()
+    return (
+        session.query(BranchManagerDetails)
+        .filter(BranchManagerDetails.branch_code == branch_code)
+        .first()
+    )
 def get_bank_details_by_ifsc(db, ifsc_code: str):
     if not ifsc_code:
         return None
@@ -28,6 +36,7 @@ def get_bank_details_by_ifsc(db, ifsc_code: str):
         BankMaster.ifsc_code.like(f"{prefix}%")
     ).first()
 
+
 def resolve_payee_bank(db, ifsc_code: str):
     bank_record = get_bank_details_by_ifsc(db, ifsc_code)
     if bank_record:
@@ -36,9 +45,9 @@ def resolve_payee_bank(db, ifsc_code: str):
 
 
 
-def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime,
+def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, ack_rrn, transaction_datetime,
                               amount, root_account_number, disputed_amount, phone_number, email,
-                              root_rrn, log_file_name):
+                              log_file_name):
     logger = logging.getLogger(log_file_name)
     kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
     payment_status_path = os.getenv("PAYMENT_STATUS_INQUIRY_PATH", "/ESB/PaymentStatusInquiry")
@@ -63,11 +72,13 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
     )
     logger.info(f"[PAYMENT_STATUS_INQUIRY] Response: {payment_status_response}")
 
+    txn_id = ""
     payee_account_number = ""
     ifsc_code = ""
     if payment_status_response and isinstance(payment_status_response, dict):
         payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") or ""
         ifsc_code = payment_status_response.get("IFSC", "") or ""
+        txn_id = payment_status_response.get("Transaction_Id", "") if payment_status_response else ""
 
     if not payee_account_number:
         payee_account_number = root_account_number
@@ -91,8 +102,8 @@ def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_ta
                 "pan_number": decrypted_obj.get("PAN", "") or "FORM60",
                 "ifsc_code": ifsc_code,
                 "root_account_number": root_account_number,
-                "root_rrn_transaction_id": root_rrn,
-                "rrn_transaction_id": rrn,
+                "root_rrn_transaction_id": ack_rrn,
+                "rrn_transaction_id": txn_id,
                 "root_bankid": "25",
                 "status_code": "00",
                 "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
@@ -267,9 +278,19 @@ def non_money_transfer_to(ack_rrn,decrypted_obj, data, payer_account_number, txn
     elif "CHQ PAID" in txn_desc:
         cheque_no = txn.get("ChequeNumber", "")
         withdrawal_date = txn.get("TransactionDate", "")
-        location = txn.get("BranchCode", "")
-        managername = "Abc"
-        managernumber = "9876543210"
+        branch_code = txn.get("BranchCode", "")
+        location = txn.get("BranchName", "")
+
+        # 🔹 fetch from DB
+        branch_manager = get_branch_manager(db, branch_code)
+
+        if branch_manager:
+            managername = branch_manager.emp_name
+            managernumber = branch_manager.mobile
+        else:
+            managername = ""
+            managernumber = ""
+
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
             "Job_id": job_id,
@@ -280,7 +301,7 @@ def non_money_transfer_to(ack_rrn,decrypted_obj, data, payer_account_number, txn
                     "account_number": payer_account_number,
                     "ifsc_code": ifsc_code,
                     "cheque_no": cheque_no,
-                    "withdrawal_date": withdrawal_date,
+                    "withdrawal_date": transaction_datetime,
                     "amount": str(txn_amount),
                     "disputed_amount": str(disputed_amt),
                     "location": location,
@@ -299,6 +320,7 @@ def non_money_transfer_to(ack_rrn,decrypted_obj, data, payer_account_number, txn
                 }
             ]
         }
+
     # AEPS
     elif "AEPS" in txn_desc:
         # Example: AEPS ACQ CW-99506997-KVB-11:15 AM-RRN:424711036020-1 112, ...

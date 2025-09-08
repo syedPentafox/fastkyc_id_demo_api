@@ -255,7 +255,7 @@ def i4c_request_job(request_json: str):
 
                     payment_status_dict = {
                         "Transaction_Ref_Number": rrn,
-                        "Mode_Of_Payment": transaction_type,
+                        "Mode_Of_Payment": "NEFT",
                     }
                     payment_status_url = kvb_endpoint.rstrip("/") + "/" + payment_status_path.lstrip("/")
 
@@ -279,7 +279,7 @@ def i4c_request_job(request_json: str):
                 else:
                     logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
                     rrn_valid = False
-                    
+
                 if not rrn_valid :
                     for idx, casa_txn in enumerate(casa_txn_details):
                         txn_desc = casa_txn.get("TransactionDescription", "")
@@ -559,7 +559,7 @@ def i4c_request_job(request_json: str):
 
                                 # ======= Condition for I4C "amount" =======
                                 if net_balance_float <= 0:
-                                    final_amount = 0.0
+                                    final_amount = "0.0"
                                 elif net_balance_float < disputed_amount_float:
                                     final_amount = net_balance_float
                                 else:

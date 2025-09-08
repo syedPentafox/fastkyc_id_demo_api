@@ -9,7 +9,7 @@ from .background_jobs_file_logger import add_background_jobs_file_handler
 
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 import re
-from routers.main import db
+from utils.db_connection import db
 from datetime import datetime
 
 def sanitize_account_number(account_no: str) -> str:
@@ -18,10 +18,14 @@ def sanitize_account_number(account_no: str) -> str:
     # keep only digits, remove spaces/special chars
     return re.sub(r"\D", "", account_no)
 
-def get_bank_details_by_ifsc(db: Session, ifsc_code: str):
+def get_bank_details_by_ifsc(db, ifsc_code: str):
     if not ifsc_code:
         return None
-    return db.query(BankMaster).filter(BankMaster.ifsc_code == ifsc_code).first()
+
+    session = db.get_db_session()
+    return session.query(BankMaster).filter(BankMaster.ifsc_code == ifsc_code).first()
+
+
 
 def money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, root_account_number, disputed_amount, phone_number, email, root_rrn, log_file_name):
   logger = logging.getLogger(log_file_name)

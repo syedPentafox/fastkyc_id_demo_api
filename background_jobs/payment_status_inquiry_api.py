@@ -49,6 +49,7 @@ def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url,
                 if (str(payment_status_error_code) != "0" or str(payment_status_error_message).lower() != "success"):
                     # FIXME: error in KVB_ENDPOINT
                     logger.error(f"[KVB_PAYMENT_STATUS_ERROR] {json.dumps(payment_status_decoded, indent=4)}")
+                    return None
                 else:
                     logger.info(f"[KVB_PAYMENT_STATUS_SUCCESS] {json.dumps(payment_status_decoded, indent=4)}")
             except Exception as payment_status_json_exc:

@@ -174,13 +174,14 @@ def i4c_request_job(request_json: str):
                 payer_account_number = str(instrument_data.get("payer_account_number", ""))
                 
                 # Get additional fields from CASA response (same as hold API)
-                pan_number = decrypted_obj.get("PAN", "") or "FORM60"
-                ifsc_code = decrypted_obj.get("IFSCCode", "")
-                net_balance = decrypted_obj.get("NetBalance", None)
+                # pan_number = decrypted_obj.get("PAN", "") or "FORM60"
+                # ifsc_code = decrypted_obj.get("IFSCCode", "")
+                # net_balance = decrypted_obj.get("NetBalance", None)
                 disputed_amount = incident.get("disputed_amount", 0)
                 disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
                 amount = incident.get("amount", 0)
                 amount_float = float(amount) if amount else 0.0
+                rrn = incident.get("rrn", "")
                 
                 # Use current timestamp for invalid RRN
                 current_timestamp = datetime.now()
@@ -215,7 +216,7 @@ def i4c_request_job(request_json: str):
 
                 # call_i4c_response_api(invalid_rrn_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
                 send_invalid_rrn_response("01", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
-                logger.info(f"[RRN_VALIDATION] Sent status code 02 response for invalid RRN: {rrn}")
+                logger.info(f"[RRN_VALIDATION] Sent status code 01 response for invalid RRN: {rrn}")
 
                 db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                 db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'statement unavailable', 'is_valid': False})
@@ -240,6 +241,8 @@ def i4c_request_job(request_json: str):
                         send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
                         db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                         db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': incident.get("rrn", "")}, {'status': 'technical error', 'is_valid': False})
+
+                        continue
             
                 # =======
                 # RRN Validation - Check if incident RRN, amount and datetime exist in CASA transactions
@@ -340,10 +343,12 @@ def i4c_request_job(request_json: str):
                             send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'technical error', 'is_valid': False})
-                    else:
+                            continue
+                    else:   
                         logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")
                         rrn_valid = False
-                
+                    
+                    
                 if not rrn_valid:
                     # =======
                     # RRN Invalid - Send status code 02 response and skip balance logic
@@ -827,8 +832,8 @@ def i4c_request_job(request_json: str):
                                         #total_selected_amount += txn_amount
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         payer_account_number = instrument.get("payer_account_number", "")
-                                        curr_rrn = txn.get('ChequeNumber', '')
-                                        is_success = non_money_transfer_to(rrn,decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email, log_file_name)
+                                        curr_rrn = rrn
+                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     else:

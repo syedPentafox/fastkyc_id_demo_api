@@ -37,13 +37,14 @@ def upi_payment_status_inquiry_api(payload, kvb_key, upi_payment_status_url, src
         response.raise_for_status()
         resp_json = response.json()
         upi_encrypt_res = resp_json.get("out_msg", {}).get("encryptRes")
-        status_error_code = resp_json.get("ErrorCode")
-        status_error_message = resp_json.get("ErrorMessage")
+        upi_decrypt_res = aes_util.aes_decrypt(kvb_key, upi_encrypt_res)
+        decrypted = json.loads(upi_decrypt_res)
+        logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decrypted response: {decrypted}")
+        status_error_code = decrypted.get("ErrorCode")
+        status_error_message = decrypted.get("ErrorMessage")
         if (str(status_error_code) == "0" or str(status_error_message).lower() == "success"):
             try:
-                decrypted = aes_util.aes_decrypt(kvb_key, upi_encrypt_res)
-                logger.info(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decrypted response: {decrypted}")
-                return json.loads(decrypted)
+                return decrypted
             except Exception as dec_exc:
                 # FIXME: error in KVB_ENDPOINT
                 logger.warning(f"[UPI_PAYMENT_STATUS_INQUIRY_API] Decryption failed: {dec_exc}")

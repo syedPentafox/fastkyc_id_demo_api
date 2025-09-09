@@ -127,15 +127,6 @@ def i4c_request_job(request_json: str):
             # email = address_info.get("Email", "testing@gmail.com") if address_info else "testing@gmail.com"
             email = (address_info.get("Email") if address_info else "") or ""
 
-            payer_account_number = instrument['payer_account_number']
-
-            if len(payer_account_number) >= 7 and payer_account_number[4:7].isdigit():
-                bank_code = int(payer_account_number[4:7])   # extract 5th–7th characters
-                if 300 <= bank_code <= 399:
-                    logger.info(f"[RRN_VALIDATION] Bank code {bank_code} in range 300-399, overriding status to 99")
-                    send_invalid_rrn_response("99", data, incident, {}, incident.get("rrn", ""), phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
-                    db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                    db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': incident.get("rrn", "")}, {'status': 'technical error', 'is_valid': False})
             # =======
             # CASA STMT Inquiry API
             # =======
@@ -173,7 +164,7 @@ def i4c_request_job(request_json: str):
                 # =======
                 # Account not found - Send status code 01 response and skip balance logic
                 # =======
-                logger.warning(f"[RRN_VALIDATION] Statement not found - not found in CASA transactions: {rrn}")
+                #logger.warning(f"[RRN_VALIDATION] Statement not found - not found in CASA transactions: {rrn}")
                 
                 # Prepare status 02 response payload with all hold API fields
                 payload_data = data.get("request", {})
@@ -236,6 +227,20 @@ def i4c_request_job(request_json: str):
             # If CASA API was successful, validate RRN before proceeding
             # =======
             if decrypted_obj:
+
+                # =======
+                # Check if account number 300 -399 Validation - if yes, send status code 99 and mark technical error
+                # =======
+                #payer_account_number = str(instrument_data.get("payer_account_number", ""))
+
+                if len(account_number) >= 7 and account_number[4:7].isdigit():
+                    bank_code = int(account_number[4:7])   # extract 5th–7th characters
+                    if 300 <= bank_code <= 399:
+                        logger.info(f"[RRN_VALIDATION] Bank code {bank_code} in range 300-399, overriding status to 99")
+                        send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
+                        db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                        db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': incident.get("rrn", "")}, {'status': 'technical error', 'is_valid': False})
+            
                 # =======
                 # RRN Validation - Check if incident RRN, amount and datetime exist in CASA transactions
                 # =======
@@ -260,7 +265,7 @@ def i4c_request_job(request_json: str):
                 
                 logger.info(f"[RRN_VALIDATION] Validating  RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
                 
-
+                
                 if not rrn_valid :
                     for idx, casa_txn in enumerate(casa_txn_details):
                         txn_desc = casa_txn.get("TransactionDescription", "")
@@ -430,7 +435,7 @@ def i4c_request_job(request_json: str):
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_upi(decrypted_obj, data, rrn, txn_date_formatted, amount, disputed_amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
+                            is_success = money_transfer_to_upi(decrypted_obj,data,txn_date_formatted, amount, disputed_amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
@@ -768,7 +773,7 @@ def i4c_request_job(request_json: str):
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         rrn = incident.get('rrn', '')
 
-                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, rrn, log_file_name)
+                                        is_success = money_transfer_to_non_upi(decrypted_obj, data,txn_ref_number, mode_of_payment, response_table, rrn, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
 
@@ -802,7 +807,7 @@ def i4c_request_job(request_json: str):
                                         payer_account_number = instrument.get("payer_account_number", "")
 
                                         rrn = rrn = incident.get('rrn', '')
-                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, disputed_amt, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
+                                        is_success = money_transfer_to_upi(decrypted_obj, data,reference_id,txn_date_formatted, txn_amount, disputed_amt, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):
@@ -850,3 +855,4 @@ def i4c_request_job(request_json: str):
                             logger.warning(f"[CASA_MATCHED_TXN] No transaction found for RRN {rrn}")
             else:
                 logger.info("CASA STMT failed.")
+

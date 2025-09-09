@@ -720,6 +720,8 @@ def i4c_request_job(request_json: str):
                                 for txn in casa_txn_details[matched_index+1:]:
                                     txn_desc = txn.get("TransactionDescription", "").upper()
                                     txn_amount_str = txn.get("TransactionAmount", "0")
+                                    mnemonic_desc = txn.get("MnemonicDesc", "").upper()
+
                                     if txn.get("CodeDRCR") == "C":
                                         continue
                                     try:
@@ -727,37 +729,49 @@ def i4c_request_job(request_json: str):
                                     except Exception:
                                         txn_amount = 0.0
 
-                                    # Simple disputed amount calculation
+                                    # disputed amount
                                     disputed_amt = min(txn_amount, pending_amount_float - total_selected_amount)
 
-                                    # Only select transactions based on description rules
-                                    if any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]) and txn_desc != "IMPS CHARGES":
+                                    # Match if either description OR mnemonic desc contains NEFT/RTGS/IMPS
+                                    if (
+                                        (any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]) and txn_desc != "IMPS CHARGES")
+                                        or any(x in mnemonic_desc for x in ["NEFT", "RTGS", "IMPS"])
+                                    ):
                                         selected_txns.append(txn)
-                                        #total_selected_amount += txn_amount
                                         logger.info(f"[CASA_SELECTED_TXN] Adding NEFT/RTGS/IMPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
-                                        # Hit payment status inquiry API
+
+                                        # Transaction reference handling
                                         txn_desc_original = txn.get("TransactionDescription", "")
                                         txn_ref_number = ""
                                         match = re.search(r"-(\d+)-", txn_desc_original)
                                         if match:
                                             txn_ref_number = match.group(1)
-                                        mode_of_payment = next((x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc), "")
+
+                                        mode_of_payment = next(
+                                            (x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc or x in mnemonic_desc),
+                                            ""
+                                        )
+
                                         split_txn_desc = txn_desc_original.split('-')
                                         txn_ref_number = split_txn_desc[1 if mode_of_payment in ['NEFT', 'IMPS'] else -1]
 
+                                        # Date conversion
                                         casa_txn_date = txn.get("TransactionDate", "")
                                         try:
                                             casa_datetime_obj = datetime.strptime(casa_txn_date, "%d-%m-%Y %H:%M:%S")
                                             converted_datetime = casa_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
                                         except Exception:
                                             converted_datetime = casa_txn_date
+
                                         amount_str = "{:.2f}".format(txn_amount)
                                         disputed_amt_str = "{:.2f}".format(disputed_amt)
                                         payer_account_number = instrument.get("payer_account_number", "")
-                                        rrn = rrn = incident.get('rrn', '')
+                                        rrn = incident.get('rrn', '')
+
                                         is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, rrn, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
+
                                     elif "UPI" in txn_desc:
                                         selected_txns.append(txn)
                                         logger.info(f"[CASA_SELECTED_TXN] Adding UPI transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")

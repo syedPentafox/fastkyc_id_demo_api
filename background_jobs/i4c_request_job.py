@@ -258,7 +258,7 @@ def i4c_request_job(request_json: str):
                 matched_casa_txn = None
                 matched_index = None
                 
-                logger.info(f"[RRN_VALIDATION] Validating RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
+                logger.info(f"[RRN_VALIDATION] Validating  RRN: {rrn}, Amount: {incident_amount}, DateTime: {incident_datetime}")
                 
 
                 if not rrn_valid :

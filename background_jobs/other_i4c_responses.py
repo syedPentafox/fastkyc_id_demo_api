@@ -16,7 +16,9 @@ from background_jobs.i4c_response_api import call_i4c_response_api
 def sanitize_account_number(account_no: str) -> str:
     if not account_no:
         return ""
-    return re.sub(r"\D", "", account_no)
+    # Keep only letters and digits
+    return re.sub(r"[^a-zA-Z0-9]", "", account_no)
+
 
 def get_branch_manager(db, branch_code: str):
     if not branch_code:
@@ -44,9 +46,8 @@ def resolve_payee_bank(db, ifsc_code: str):
     return "KVB", "25"
 
 
-
-def money_transfer_to_non_upi(decrypted_obj, data, rrn,transaction_type, response_table, ack_rrn, transaction_datetime,
-                              amount, root_account_number, disputed_amount, phone_number, email,
+def money_transfer_to_non_upi(decrypted_obj, data,transaction_type, response_table, rrn, transaction_datetime,
+                              amount, root_account_number, disputed_amount, phone_number, email,ack_rrn,
                               log_file_name):
     logger = logging.getLogger(log_file_name)
     kvb_endpoint = os.getenv("KVB_ENDPOINT", "")
@@ -72,15 +73,13 @@ def money_transfer_to_non_upi(decrypted_obj, data, rrn,transaction_type, respons
     )
     logger.info(f"[PAYMENT_STATUS_INQUIRY] Response: {payment_status_response}")
 
-    txn_id = ""
-    payee_account_number = ""
-    ifsc_code = ""
+    txn_id = rrn
     payee_account_number = root_account_number
     ifsc_code = decrypted_obj.get("IFSCCode", "") or ""
     if payment_status_response and isinstance(payment_status_response, dict):
         payee_account_number = payment_status_response.get("Beneficiary_Account_No", "") if payment_status_response else root_account_number
         ifsc_code = payment_status_response.get("IFSC", "") or ""
-        txn_id = payment_status_response.get("TxnId", "") if payment_status_response else rrn
+        txn_id = payment_status_response.get("Transaction_Ref_Number", "") if payment_status_response else ack_rrn
 
     payee_account_number = sanitize_account_number(payee_account_number)
     payee_bank, payee_bank_code = resolve_payee_bank(db, ifsc_code)
@@ -149,7 +148,7 @@ def money_transfer_to_upi(decrypted_obj, data,rrn,txn_date_formatted, amount, di
     if upi_response and isinstance(upi_response, dict):
         payee_account_number = upi_response.get("PayeeAccountNumber", "") or payee_account_number
         ifsc_code = upi_response.get("PayeeIFSC", "") or ifsc_code
-        txn_id = upi_response.get("TransactionId", "") if upi_response else "root_rrn"
+        txn_id = upi_response.get("TransactionId", "") if upi_response else root_rrn
 
     payee_account_number = sanitize_account_number(payee_account_number)
     txn_id=sanitize_account_number(txn_id)
@@ -214,7 +213,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         atm_of_bank = ""
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through ATM",
@@ -294,7 +293,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
 
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through Cheque",
@@ -331,7 +330,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
             rrn_val = match.group(1)
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
-            "Job_id": job_id,
+            "job_id": job_id,
             "transactions": [
                 {
                     "txn_type": "Withdrawal through AEPS",
@@ -354,4 +353,5 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         }
 
     return call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
+
 

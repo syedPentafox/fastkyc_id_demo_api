@@ -44,8 +44,8 @@ def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url,
             logger.info(f"[KVB_PAYMENT_STATUS_DECRYPTED_RESPONSE] {decrypted_payment_status}")
             try:
                 payment_status_decoded = json.loads(decrypted_payment_status)
-                payment_status_error_code = payment_status_decoded.get("ErrorCode")
-                payment_status_error_message = payment_status_decoded.get("ErrorMessage")
+                payment_status_error_code = payment_status_decoded.get("ErrorCode", "0")
+                payment_status_error_message = payment_status_decoded.get("ErrorMessage", "success")
                 if (str(payment_status_error_code) != "0" or str(payment_status_error_message).lower() != "success"):
                     # FIXME: error in KVB_ENDPOINT
                     logger.error(f"[KVB_PAYMENT_STATUS_ERROR] {json.dumps(payment_status_decoded, indent=4)}")
@@ -64,3 +64,4 @@ def payment_status_inquiry_api(payment_status_dict, kvb_key, payment_status_url,
         # FIXME: error in KVB_ENDPOINT
         logger.error(f"[KVB_PAYMENT_STATUS_API_ERROR] {payment_status_api_exc}")
         return None
+

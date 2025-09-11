@@ -230,7 +230,7 @@ def i4c_request_job(request_json: str):
             if decrypted_obj:
 
                 # =======
-                # Check if account number 300 -399 Validation - if yes, send status code 99 and mark technical error
+                # Check if account number 300 -399 Validation - if yes, send status code 99 and mark internal error
                 # =======
                 #payer_account_number = str(instrument_data.get("payer_account_number", ""))
 
@@ -240,7 +240,7 @@ def i4c_request_job(request_json: str):
                         logger.info(f"[RRN_VALIDATION] Bank code {bank_code} in range 300-399, overriding status to 99")
                         send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
                         db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                        db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': incident.get("rrn", "")}, {'status': 'technical error', 'is_valid': False})
+                        db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': incident.get("rrn", "")}, {'status': 'internal error', 'is_valid': False})
 
                         continue
             
@@ -342,7 +342,7 @@ def i4c_request_job(request_json: str):
                             rrn_valid = False
                             send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
-                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'technical error', 'is_valid': False})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'internal error', 'is_valid': False})
                             continue
                     else:   
                         logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN - 5th character is not 'N': {rrn}")

@@ -226,7 +226,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "pan_number": pan_number,
                     "atm_id": atm_id,
                     "place_of_atm": place_of_atm,
-                    "atm_of_bank": atm_of_bank,
+                    "atm_of_bank": atm_id,
                     "root_account_number": payer_account_number,
                     "root_rrn_transaction_id": root_rrn_transaction_id,
                     "root_bankid": root_bankid,

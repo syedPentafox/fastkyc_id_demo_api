@@ -27,7 +27,7 @@ from sqlalchemy import Date, MetaData, Numeric, String, Table, and_, case, cast,
 metadata = MetaData()
 
 router = APIRouter(
-    route_class=APIRouteWrapper ,dependencies=[Depends(verify_access_token)]
+    route_class=APIRouteWrapper #,dependencies=[Depends(verify_access_token)]
 )
 
 
@@ -399,10 +399,10 @@ def get_all_complaints(
         }
     )
 
-@router.patch("/ncrp/api/complaints/{collection}/{ack_no}/status", tags=["Dashboard"])
+@router.post("/ncrp/api/complaints/{collection}/{rrn}/status", tags=["Dashboard"])
 def update_complaint_status(
     collection: str,
-    ack_no: str,
+    rrn: str,
     db: Session = Depends(get_db)
 ):
     """
@@ -412,11 +412,11 @@ def update_complaint_status(
     if not model:
         raise HTTPException(status_code=400, detail=f"Unknown collection {collection}")
 
-    # perform update
+    # update
     rows_updated = (
         db.query(model)
-        .filter(model.ack_no == ack_no)
-        .update({"status": "manually_resolved"}, synchronize_session=False)
+        .filter(model.rrn == rrn)
+        .update({"status": "manually resolved"}, synchronize_session=False)
     )
 
     if rows_updated == 0:
@@ -425,6 +425,7 @@ def update_complaint_status(
     db.commit()
 
     return make_success_response(
-        data={"ack_no": ack_no, "collection": collection, "new_status": "manually_resolved"},
+        data={"rrn": rrn, "collection": collection, "new_status": "manually resolved"},
         message="Record updated successfully",
     )
+

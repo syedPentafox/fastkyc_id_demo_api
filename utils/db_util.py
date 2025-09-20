@@ -2318,6 +2318,86 @@ class DatabaseHandler:
                 print("data", data)
         return collection_data, headers, boolean_keys
 
+    # def export_as_file(
+    #     self,
+    #     data,
+    #     file_type,
+    #     file_name,
+    #     summary=None,
+    #     custom_headers=None,
+    #     ignore_columns: list = None,
+    #     base64_download: bool = False,   # <---- added
+    # ):
+    #     flattened_data, headers, boolean_keys = self.get_flatten_data(
+    #         data, table_name=file_name
+    #     )
+    #     df = pd.DataFrame(flattened_data)
+
+    #     items, _ = self.get_data_from_table(
+    #         "collection_fields",
+    #         ["field", "export_eligible", "sort"],
+    #         {"collection_eq": file_name},
+    #         sort_by=["sort"],
+    #         page=-1,
+    #     )
+    #     delete_columns: list = [item["field"] for item in items if item["field"] and item["export_eligible"] == False]
+
+    #     if not custom_headers:
+    #         new_header_order = [item['field'] for item in sorted(
+    #             [item for item in items if item['export_eligible']],
+    #             key=lambda x: (x['sort'] is None, x['sort'])
+    #         )]
+    #         df = df[new_header_order]
+
+    #     if ignore_columns:
+    #         delete_columns.extend(ignore_columns)
+    #     df = df.drop(columns=delete_columns, errors="ignore")
+
+    #     for bool_key in boolean_keys:
+    #         df[bool_key] = df[bool_key].replace({True: "Yes", False: "No"})
+
+    #     df = df.rename(columns=headers if not custom_headers else custom_headers)
+    #     current_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    #     filename_base = f"{file_name}_{current_timestamp}"
+
+    #     # ----- CSV -----
+    #     if file_type == "csv":
+    #         output = io.StringIO()
+    #         df.to_csv(output, index=False)
+    #         content = output.getvalue().encode()
+    #         output.close()
+
+    #     # ----- XLSX -----
+    #     elif file_type == "xlsx":
+    #         output = io.BytesIO()
+    #         start_row_index = 0
+    #         with pd.ExcelWriter(output, engine="openpyxl") as writer:
+    #             if summary:
+    #                 summary_df = pd.DataFrame(summary, index=[0])
+    #                 summary_df.to_excel(writer, index=False, sheet_name=file_name, startrow=start_row_index)
+    #                 start_row_index = len(summary_df) + 2
+    #             df.to_excel(writer, index=False, sheet_name=file_name, startrow=start_row_index)
+    #         output.seek(0)
+    #         content = output.getvalue()
+    #         output.close()
+
+    #     # ----- Return as base64 or upload -----
+    #     if base64_download:
+    #         base64_content = base64.b64encode(content).decode()
+    #         filename = f"{filename_base}.{file_type}"
+    #         headers = {"Content-Disposition": f"attachment; filename={filename}"}
+    #         return Response(content=base64_content, media_type="application/octet-stream", headers=headers)
+    #     else:
+    #         s3_key = f"downloads/{filename_base}.{file_type}"
+    #         if locally_save_file:
+    #             with open(s3_key, "wb") as f:
+    #                 f.write(content)
+    #         else:
+    #             self.s3_client.put_object(Bucket=self.s3_bucket, Key=s3_key, Body=content)
+    #         upload_url = s3_key if locally_save_file else f"{docs_url}/{s3_key}"
+    #         return make_success_response(
+    #             data=[{"url": upload_url}], message="File Download successfully"
+    #         )
     def export_as_file(
         self,
         data,
@@ -2326,13 +2406,13 @@ class DatabaseHandler:
         summary=None,
         custom_headers=None,
         ignore_columns: list = None,
-        base64_download: bool = False,   # <---- added
+        base64_download: bool = False,
     ):
-        flattened_data, headers, boolean_keys = self.get_flatten_data(
-            data, table_name=file_name
-        )
+        # Flatten data for export
+        flattened_data, headers, boolean_keys = self.get_flatten_data(data, table_name=file_name)
         df = pd.DataFrame(flattened_data)
 
+        # Fetch export-eligible fields from collection_fields
         items, _ = self.get_data_from_table(
             "collection_fields",
             ["field", "export_eligible", "sort"],
@@ -2340,23 +2420,34 @@ class DatabaseHandler:
             sort_by=["sort"],
             page=-1,
         )
-        delete_columns: list = [item["field"] for item in items if item["field"] and item["export_eligible"] == False]
 
-        if not custom_headers:
-            new_header_order = [item['field'] for item in sorted(
-                [item for item in items if item['export_eligible']],
-                key=lambda x: (x['sort'] is None, x['sort'])
-            )]
-            df = df[new_header_order]
-
+        # Columns to drop
+        delete_columns: list = [item["field"] for item in items if item["field"] and not item["export_eligible"]]
         if ignore_columns:
             delete_columns.extend(ignore_columns)
         df = df.drop(columns=delete_columns, errors="ignore")
 
-        for bool_key in boolean_keys:
-            df[bool_key] = df[bool_key].replace({True: "Yes", False: "No"})
+        # Determine column order
+        if not custom_headers:
+            new_header_order = [
+                item['field']
+                for item in sorted([item for item in items if item['export_eligible']],
+                                key=lambda x: (x['sort'] is None, x['sort']))
+            ]
+            # Ensure all expected columns exist in DataFrame
+            for col in new_header_order:
+                if col not in df.columns:
+                    df[col] = None
+            df = df[new_header_order]
+        else:
+            df = df.rename(columns=custom_headers)
 
-        df = df.rename(columns=headers if not custom_headers else custom_headers)
+        # Format boolean fields
+        for bool_key in boolean_keys:
+            if bool_key in df.columns:
+                df[bool_key] = df[bool_key].replace({True: "Yes", False: "No"})
+
+        # Prepare filename
         current_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename_base = f"{file_name}_{current_timestamp}"
 
@@ -2372,6 +2463,7 @@ class DatabaseHandler:
             output = io.BytesIO()
             start_row_index = 0
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                # Write summary if present
                 if summary:
                     summary_df = pd.DataFrame(summary, index=[0])
                     summary_df.to_excel(writer, index=False, sheet_name=file_name, startrow=start_row_index)
@@ -2398,6 +2490,7 @@ class DatabaseHandler:
             return make_success_response(
                 data=[{"url": upload_url}], message="File Download successfully"
             )
+
 
     def get_role_by_user_id(self, user_id):
         result = self.get_record_by_id("users", user_id, ["role.name"])

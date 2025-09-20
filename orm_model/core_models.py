@@ -381,7 +381,17 @@ class FraudulentMaster(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     fraud_type = Column(String(50), nullable=False)
     fraud_value = Column(String(100), nullable=False)
-    
+
+class CBSHoldReport(Base):
+    __tablename__ = "cbs_hold_report"
+
+    account_number = Column(String(30), nullable=False, primary_key=True)
+    disputed_amount = Column(Numeric(15, 2), nullable=False) # NUMBER(15,2)
+    customer_balance = Column(Numeric(15, 2), nullable=False)
+    i4c_hold_amount = Column(Numeric(15, 2), nullable=False) 
+    hold_date = Column(DateTime, nullable=True)    # TIMESTAMP
+
+
 class UpiFraudTransactions(Base):
     __tablename__ = "upi_fraud_transactions"
     

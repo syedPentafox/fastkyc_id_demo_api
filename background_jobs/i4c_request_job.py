@@ -1,4 +1,8 @@
+from decimal import Decimal
 import logging
+
+
+from orm_model.core_models import CBSHoldReport
 from .background_jobs_file_logger import add_background_jobs_file_handler
 import os
 from background_jobs.hold_funds_api import call_hold_funds_api
@@ -26,6 +30,7 @@ from background_jobs.account_address_fetch_api import call_account_address_fetch
 from utils.db_connection import db
 from background_jobs.utils import fraud_type_table_prefix
 
+   
 def i4c_request_job(request_json: str):
     data = request_json
     #logger.info(json.dumps(data, indent=4))
@@ -337,6 +342,7 @@ def i4c_request_job(request_json: str):
                         if (payment_status_response and isinstance(payment_status_response, dict)):
                             logger.info(f"[RRN_VALIDATION][NEFT] Valid RRN (Payment Inquiry success): {rrn}")
                             rrn_valid = True
+                            matched_casa_txn = True
                         else:
                             logger.warning(f"[RRN_VALIDATION][NEFT] Invalid RRN (Payment Inquiry failed): {rrn}")
                             rrn_valid = False
@@ -525,6 +531,21 @@ def i4c_request_job(request_json: str):
                                     }
                                 ]
                             }
+                            cb_report_data = {
+                                "account_number": payer_account_number,
+                                "disputed_amount": Decimal(str(disputed_amount_float)),   
+                                "customer_balance": Decimal(str(net_balance)),            
+                                "hold_marked_cbs": True,
+                                "i4c_hold_amount": Decimal(str(hold_amount)),             
+                                "hold_date": (
+                                    transaction_datetime_val if isinstance(transaction_datetime_val, datetime)
+                                    else datetime.strptime(transaction_datetime_val, "%Y-%m-%d %H:%M:%S")  
+                                )
+                            }
+
+                            db.create_record_("cbs_hold_report", cb_report_data, user_id=None)
+                            logger.info(f"[STORE INTO CBS REPORT] Inserted hold report for {payer_account_number}")
+
                             is_hold_i4c_success = call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, data['received_dt'], log_file_name)
 
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
@@ -642,6 +663,7 @@ def i4c_request_job(request_json: str):
                             # =======
                             # Call I4C response API after hold
                             # =======
+                                
                                 logger.info("[CALL_I4C_RESPONSE_API] Call I4C response API after hold")
 
                                 # Convert balances safely
@@ -699,6 +721,20 @@ def i4c_request_job(request_json: str):
                                         ]
                                     }
 
+                                    cb_report_data = {
+                                        "account_number": payer_account_number,
+                                        "disputed_amount": Decimal(str(disputed_amount_float)),   
+                                        "customer_balance": Decimal(str(net_balance)),            
+                                        "hold_marked_cbs": True,
+                                        "i4c_hold_amount": Decimal(str(hold_amount)),             
+                                        "hold_date": (
+                                            transaction_datetime_val if isinstance(transaction_datetime_val, datetime)
+                                            else datetime.strptime(transaction_datetime_val, "%Y-%m-%d %H:%M:%S")  
+                                        )
+                                    }
+
+                                    db.create_record_("cbs_hold_report", cb_report_data, user_id=None)
+                                    logger.info(f"[STORE INTO CBS REPORT] Inserted hold report for {payer_account_number}")
                                     is_hold_i4c_success = call_i4c_response_api(
                                         i4c_payload, kvb_key, kvb_endpoint,
                                         response_table, data['received_dt'], log_file_name
@@ -743,29 +779,57 @@ def i4c_request_job(request_json: str):
                                     disputed_amt = min(txn_amount, pending_amount_float - total_selected_amount)
 
                                     # Match if either description OR mnemonic desc contains NEFT/RTGS/IMPS
+                                    # if (
+                                    #     (any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]) and txn_desc != "IMPS CHARGES")
+                                    #     or any(x in mnemonic_desc for x in ["NEFT", "RTGS", "IMPS"])
+                                    # ):
+                                    #     selected_txns.append(txn)
+                                    #     logger.info(f"[CASA_SELECTED_TXN] Adding NEFT/RTGS/IMPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
+
+                                    #     # Transaction reference handling
+                                    #     txn_desc_original = txn.get("TransactionDescription", "")
+                                    #     txn_ref_number = ""
+                                    #     match = re.search(r"-(\d+)-", txn_desc_original)
+                                    #     if match:
+                                    #         txn_ref_number = match.group(1)
+
+                                    #     mode_of_payment = next(
+                                    #         (x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc or x in mnemonic_desc),
+                                    #         ""
+                                    #     )
+
+                                    #     split_txn_desc = txn_desc_original.split('-')
+                                    #     txn_ref_number = split_txn_desc[1 if mode_of_payment in ['NEFT', 'IMPS'] else -1]
                                     if (
                                         (any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]) and txn_desc != "IMPS CHARGES")
                                         or any(x in mnemonic_desc for x in ["NEFT", "RTGS", "IMPS"])
                                     ):
                                         selected_txns.append(txn)
-                                        logger.info(f"[CASA_SELECTED_TXN] Adding NEFT/RTGS/IMPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
+                                        print("[CASA_SELECTED_TXN] Adding transaction")
 
-                                        # Transaction reference handling
-                                        txn_desc_original = txn.get("TransactionDescription", "")
-                                        txn_ref_number = ""
-                                        match = re.search(r"-(\d+)-", txn_desc_original)
-                                        if match:
-                                            txn_ref_number = match.group(1)
+                                        # Prefer TransactionDescription for mode
+                                        mode_of_payment = next((x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc), None)
+                                        if not mode_of_payment:  # fallback to MnemonicDesc only for mode
+                                            mode_of_payment = next((x for x in ["NEFT", "RTGS", "IMPS"] if x in mnemonic_desc), None)
 
-                                        mode_of_payment = next(
-                                            (x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc or x in mnemonic_desc),
-                                            ""
-                                        )
+                                        # Extract txn_ref_number
+                                        if mode_of_payment and any(x in txn_desc for x in ["NEFT", "RTGS", "IMPS"]):
+                                            # Use standard split on description
+                                            split_txn_desc = txn_desc.split('-')
+                                            if mode_of_payment in ['NEFT', 'IMPS'] and len(split_txn_desc) > 1:
+                                                txn_ref_number = split_txn_desc[1]
+                                            elif len(split_txn_desc) > 1:
+                                                txn_ref_number = split_txn_desc[-1]
+                                            else:
+                                                txn_ref_number = ""
+                                        else:
+                                            # Only use KVBL code from description if mode is detected via mnemonic
+                                            match = re.search(r"(KVBL\w+)-", txn_desc)
+                                            txn_ref_number = match.group(1) if match else ""
 
-                                        split_txn_desc = txn_desc_original.split('-')
-                                        txn_ref_number = split_txn_desc[1 if mode_of_payment in ['NEFT', 'IMPS'] else -1]
 
-                                        # Date conversion
+
+                                        # Convert date
                                         casa_txn_date = txn.get("TransactionDate", "")
                                         try:
                                             casa_datetime_obj = datetime.strptime(casa_txn_date, "%d-%m-%Y %H:%M:%S")
@@ -778,9 +842,15 @@ def i4c_request_job(request_json: str):
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         root_rrn = incident.get('rrn', '')
 
-                                        is_success = money_transfer_to_non_upi(decrypted_obj, data, mode_of_payment, response_table, txn_ref_number, converted_datetime, amount_str, payer_account_number, disputed_amt_str, phone_number, email, root_rrn, log_file_name)
+                                        is_success = money_transfer_to_non_upi(
+                                            decrypted_obj, data, mode_of_payment, response_table,
+                                            txn_ref_number, converted_datetime, amount_str,
+                                            payer_account_number, disputed_amt_str,
+                                            phone_number, email, root_rrn, log_file_name
+                                        )
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
+
 
                                     elif "UPI" in txn_desc:
                                         selected_txns.append(txn)
@@ -860,5 +930,11 @@ def i4c_request_job(request_json: str):
                             logger.warning(f"[CASA_MATCHED_TXN] No transaction found for RRN {rrn}")
             else:
                 logger.info("CASA STMT failed.")
+                send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
+                logger.info(f"[RRN_VALIDATION] Sent status code 01 response for invalid RRN: {rrn}")
 
+                db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'internal error', 'is_valid': False})
+                
 
+    

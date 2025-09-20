@@ -138,7 +138,7 @@ async def get_user_id_from_refresh_token(token):
         raise credentials_exception
     return token_data.get("user_id")
 
-def create_access_token_ncrp(data: dict, expires_delta: int = 60):
+def create_access_token_ncrp(data: dict, expires_delta: int = 5):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=expires_delta)
     to_encode.update({"exp": expire})

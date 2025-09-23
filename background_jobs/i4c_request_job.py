@@ -726,7 +726,7 @@ def i4c_request_job(request_json: str):
                                         "disputed_amount": Decimal(str(disputed_amount_float)),   
                                         "customer_balance": Decimal(str(net_balance)),            
                                         "hold_marked_cbs": True,
-                                        "i4c_hold_amount": Decimal(str(hold_amount)),             
+                                        "i4c_hold_amount": Decimal(str(final_amount)),             
                                         "hold_date": (
                                             transaction_datetime_val if isinstance(transaction_datetime_val, datetime)
                                             else datetime.strptime(transaction_datetime_val, "%Y-%m-%d %H:%M:%S")  
@@ -805,7 +805,7 @@ def i4c_request_job(request_json: str):
                                         or any(x in mnemonic_desc for x in ["NEFT", "RTGS", "IMPS"])
                                     ):
                                         selected_txns.append(txn)
-                                        print("[CASA_SELECTED_TXN] Adding transaction")
+                                        logger.info(f"[CASA_SELECTED_TXN] Adding NEFT/RTGS/IMPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
 
                                         # Prefer TransactionDescription for mode
                                         mode_of_payment = next((x for x in ["NEFT", "RTGS", "IMPS"] if x in txn_desc), None)

@@ -766,6 +766,90 @@ class VishingFraudResponse(Base):
     received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL         
     is_success = Column(Boolean, nullable=True, default=False)  
 
+class BusinessEmailFraudTransaction(Base):
+    __tablename__ = "business_email_fraud_transactions"
+    
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class BusinessEmailFraudIncident(Base):
+    __tablename__ = "business_email_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    is_valid = Column(Boolean, nullable=True, default=False)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
+
+class BusinessEmailFraudResponse(Base):
+    __tablename__ = "business_email_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL
+    is_success = Column(Boolean, nullable=True, default=False)
+
+class AadharFraudTransaction(Base):
+    __tablename__ = "aadhar_fraud_transactions"
+    
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    sub_category = Column(String(100), nullable=False)  # VARCHAR2(100) NOT NULL
+    requestor = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_bank_code = Column(String(10), nullable=False)  # VARCHAR2(10) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    payer_mobile_number = Column(String(15), nullable=False)  # VARCHAR2(15) NOT NULL
+    payer_account_number = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    state = Column(String(100), nullable=True)  # VARCHAR2(100)
+    district = Column(String(100), nullable=True)  # VARCHAR2(100)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    incident_response = Column(Text, nullable=True)  # CLOB
+
+
+class AadharFraudIncident(Base):
+    __tablename__ = "aadhar_fraud_incidents"
+    
+    ack_no = Column(String(30), nullable=False, primary_key=True)  # VARCHAR2(30) NOT NULL
+    job_id = Column(String(100), nullable=False, primary_key=True)  # VARCHAR2(100) NOT NULL
+    amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    rrn = Column(String(50), nullable=False, primary_key=True)  # VARCHAR2(50) NOT NULL
+    transaction_date = Column(Date, nullable=False)  # DATE NOT NULL
+    transaction_time = Column(String(20), nullable=False)  # VARCHAR2(20) NOT NULL
+    disputed_amount = Column(Numeric(10, 2), nullable=False)  # NUMBER(10,2) NOT NULL
+    layer = Column(Numeric, nullable=False)
+    received_dt = Column(DateTime, nullable=False)  # TIMESTAMP(6) NOT NULL
+    mode_of_payment = Column(String(50), nullable=False)  # VARCHAR2(50) NOT NULL
+    is_valid = Column(Boolean, nullable=True, default=False)
+    status = Column(String(30), nullable=True)  # VARCHAR2(6)
+
+
+class AadharFraudResponse(Base):
+    __tablename__ = "aadhar_fraud_responses"
+ 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
+    incident_response = Column(Text, nullable=True)                  # CLOB
+    received_dt = Column(DateTime, nullable=False)                   # TIMESTAMP(6) NOT NULL         
+    is_success = Column(Boolean, nullable=True, default=False)  
 
 class BranchManagerDetails(Base):
     __tablename__ = "branch_manager_details"   # Oracle table name

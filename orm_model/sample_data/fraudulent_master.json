@@ -24,5 +24,20 @@
 			"id": 1,
 			"fraud_type": "UPI Related Frauds",
 			"fraud_value": "upi_fraud_incidents"
+		},
+		{
+			"id": 6,
+			"fraud_type": "Business Email Compromise/Email Takeover",
+			"fraud_value": "business_email_fraud_incidents"
+		},
+		{
+			"id": 7,
+			"fraud_type": "Aadhar Enabled Payment System (AEPS)",
+			"fraud_value": "aadhar_fraud_incidents"
+		},
+		{
+			"id": 8,
+			"fraud_type": "E-Wallet Related Fraud",
+			"fraud_value": "ewallet_fraud_incidents"
 		}
 	]

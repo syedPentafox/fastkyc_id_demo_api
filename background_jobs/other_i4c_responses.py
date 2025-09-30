@@ -12,6 +12,17 @@ from background_jobs.payment_status_inquiry_api import payment_status_inquiry_ap
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 from background_jobs.i4c_response_api import call_i4c_response_api
 
+def sanitize_balance(value):
+    """
+    Returns 0.0 if value is negative, otherwise returns the float value.
+    Handles empty strings or invalid inputs gracefully.
+    """
+    try:
+        val = float(value)
+        return val if val >= 0 else 0.0
+    except (ValueError, TypeError):
+        return 0.0
+
 
 def sanitize_account_number(account_no: str) -> str:
     if not account_no:
@@ -103,7 +114,7 @@ def money_transfer_to_non_upi(decrypted_obj, data,transaction_type, response_tab
                 "rrn_transaction_id": txn_id,
                 "root_bankid": "25",
                 "status_code": "00",
-                "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                 "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
                 "remarks": data.get("request", {}).get("acknowledgement_no", ""),
                 "payee_bank": payee_bank,
@@ -177,7 +188,7 @@ def money_transfer_to_upi(decrypted_obj, data,rrn,txn_date_formatted, amount, di
                 "root_bankid": "25",
                 "status_code": "00",
                 "remarks": data.get("request", {}).get("acknowledgement_no", ""),
-                "root_effective_balance": str(decrypted_obj.get("NetBalance", "")),
+                "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                 "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
             }
         ]
@@ -232,7 +243,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_bankid": root_bankid,
                     "status_code": status_code,
                     "remarks": remarks,
-                    "root_effective_balance": root_effective_balance,
+                    "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }
             ]
@@ -269,7 +280,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_bankid": root_bankid,
                     "status_code": status_code,
                     "remarks": remarks,
-                    "root_effective_balance": root_effective_balance,
+                    "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }
             ]
@@ -315,7 +326,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_bankid": root_bankid,
                     "status_code": status_code,
                     "remarks": remarks,
-                    "root_effective_balance": root_effective_balance,
+                    "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }
             ]
@@ -346,7 +357,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_bankid": root_bankid,
                     "status_code": status_code,
                     "remarks": remarks,
-                    "root_effective_balance": root_effective_balance,
+                    "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }
             ]

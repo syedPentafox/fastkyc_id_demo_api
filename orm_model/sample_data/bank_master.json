@@ -985,7 +985,7 @@
         "bank_code": 531
     },
     {
-        "ifsc_code": "",
+        "ifsc_code": "IPOS",
         "bank_name": "India Post Payments Bank",
         "bank_code": 156
     },

@@ -532,6 +532,9 @@ def i4c_request_job(request_json: str):
                                 ]
                             }
                             cb_report_data = {
+                                "ack_no":acknowledgement_no,
+                                "job_id":job_id,
+                                "rrn":rrn,
                                 "account_number": payer_account_number,
                                 "disputed_amount": Decimal(str(disputed_amount_float)),   
                                 "customer_balance": Decimal(str(net_balance)),            
@@ -722,6 +725,9 @@ def i4c_request_job(request_json: str):
                                     }
 
                                     cb_report_data = {
+                                        "ack_no":acknowledgement_no,
+                                        "job_id":job_id,
+                                        "rrn":rrn,
                                         "account_number": payer_account_number,
                                         "disputed_amount": Decimal(str(disputed_amount_float)),   
                                         "customer_balance": Decimal(str(net_balance)),            

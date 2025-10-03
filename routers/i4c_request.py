@@ -21,10 +21,10 @@ from fastapi_utilities import repeat_at, repeat_every
 #    logger.info("log from repeat_fn")
 
 #@router.post("/api/i4c-request", tags=["I4C Request"])
-# @router.get("/api/i4c-request")
+@router.get("/api/i4c-request")
 #async def i4c_request(request_data: I4CRequestModel, request: Request, background_tasks: BackgroundTasks):
-@router.on_event("startup")
-@repeat_every(seconds = 60 * 10)
+#@router.on_event("startup")
+#@repeat_every(seconds = 60 * 10)
 async def i4c_request():
     out, _ = db.get_data_from_table(
         tbl_name="i4c_request",

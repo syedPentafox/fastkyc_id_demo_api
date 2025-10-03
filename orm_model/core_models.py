@@ -385,6 +385,9 @@ class FraudulentMaster(Base):
 class CBSHoldReport(Base):
     __tablename__ = "cbs_hold_report"
 
+    job_id = Column(String(100), nullable=False, primary_key=True)   # VARCHAR2(100) NOT NULL
+    ack_no = Column(String(30), nullable=False, primary_key=True)    # VARCHAR2(30) NOT NULL
+    rrn = Column(String(30), nullable=False, primary_key=True)       # VARCHAR2(30) NOT NULL
     account_number = Column(String(30), nullable=False)
     disputed_amount = Column(Numeric(15, 2), nullable=False) # NUMBER(15,2)
     customer_balance = Column(Numeric(15, 2), nullable=False,primary_key=True)

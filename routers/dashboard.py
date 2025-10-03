@@ -10,7 +10,7 @@ from fastapi.params import Depends, Query
 from httpx import QueryParams
 from numpy import select
 from requests import Session
-from orm_model.core_models import AepsFraudIncident, CreditCardFraudIncident, DematFraudIncident, EmailFraudIncident, EwalletFraudIncident, I4CRequest, InternetBankingFraudIncident, UpiFraudIncidents, VishingFraudIncident, get_db
+from orm_model.core_models import AadharFraudIncident, AepsFraudIncident, BusinessEmailFraudIncident, CreditCardFraudIncident, DematFraudIncident, EmailFraudIncident, EwalletFraudIncident, I4CRequest, InternetBankingFraudIncident, UpiFraudIncidents, VishingFraudIncident, get_db
 from response_models.i4c_request_models import I4CRequestModel
 from response_models.response_models import make_success_response
 from routers import i4c_request
@@ -40,6 +40,9 @@ FRAUD_MODELS = {
     "email_fraud_incidents": EmailFraudIncident,
     "internet_banking_fraud_incidents": InternetBankingFraudIncident,
     "vishing_fraud_incidents": VishingFraudIncident,
+    "aadhar_fraud_incidents": AadharFraudIncident,
+    "business_email_fraud_incidents":BusinessEmailFraudIncident
+
 }
 
 def get_start_date(period: str) -> datetime:
@@ -217,6 +220,8 @@ INCIDENT_TABLES = [
     "email_fraud_incidents",
     "vishing_fraud_incidents",
     "ewallet_fraud_incidents",
+    "business_email_fraud_incidents",
+    "aadhar_fraud_incidents",
 ]
 
 FIELDS = [

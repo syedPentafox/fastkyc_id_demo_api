@@ -423,7 +423,8 @@ def i4c_request_job(request_json: str):
                 
                 mode_of_payment = instrument.get("mode_of_payment", "CREDIT").upper()
                 transaction_type = instrument.get("transaction_type", "").upper()
-                if mode_of_payment == "DEBIT" and transaction_type in ["IMPS", "NEFT", "RTGS", "UPI", "ATM", "POS", "CHQ PAID", "AEPS"]:
+                if mode_of_payment == "DEBIT":
+                    logger.info(f"[DEBIT_FLOW] Processing DEBIT transaction type: {transaction_type}")
                     # For DEBIT, directly call payment inquiry API and then I4C response API
                     try:
                         if transaction_type in ["IMPS", "NEFT", "RTGS"]:
@@ -432,9 +433,10 @@ def i4c_request_job(request_json: str):
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             amount = str(incident.get("amount", ""))
-                            disputed_amount = str(incident.get('disputed_amount', ''))
+                            disputed_amt = incident['disputed_amount']
+                            disputed_amt_str = "{:.2f}".format(disputed_amt)
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amount, phone_number, email, rrn, log_file_name)
+                            is_success = money_transfer_to_non_upi(decrypted_obj, data, transaction_type, response_table, rrn, transaction_datetime, amount, payer_account_number, disputed_amt_str, phone_number, email, rrn, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
                         elif transaction_type == "UPI":
@@ -442,25 +444,34 @@ def i4c_request_job(request_json: str):
                             txn_date_obj = datetime.strptime(txn_date_str, "%Y-%m-%d")
                             txn_date_formatted = txn_date_obj.strftime("%d-%b-%Y")
                             amount = str(instrument.get("amount", ""))
-                            disputed_amount = str(instrument.get("disputed_amount", ""))
+                            disputed_amt = incident['disputed_amount']
+                            disputed_amt_str = "{:.2f}".format(disputed_amt)
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             payer_account_number = instrument.get("payer_account_number", "")
-                            is_success = money_transfer_to_upi(decrypted_obj,data,rrn,txn_date_formatted, amount, disputed_amount, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
+                            is_success = money_transfer_to_upi(decrypted_obj,data,rrn,txn_date_formatted, amount, disputed_amt_str, transaction_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
-                        elif transaction_type in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]:
+                        elif transaction_type in ["ATM", "POS", "CHQ PAID", "AEPS"]:
                             payer_account_number = instrument.get("payer_account_number", "")
                             #transaction_datetime = incident.get("transaction_date", "") + " " + incident.get("transaction_time", "")
                             transaction_datetime = casa_datetime.strftime('%Y-%m-%d %H:%M:%S')
                             amount = str(instrument.get("amount", ""))
-                            disputed_amount = str(instrument.get("disputed_amount", ""))
-                            is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime, phone_number, email, log_file_name)
+                            disputed_amt = incident['disputed_amount']
+                            disputed_amt_str = "{:.2f}".format(disputed_amt)
+                            is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, txn_desc, txn_amount, disputed_amt_str, response_table, transaction_datetime, phone_number, email, log_file_name)
                             db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
                             db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'success' if is_success else 'failure', 'is_valid': True})
+                        else:
+                            send_invalid_rrn_response("99", data, incident, decrypted_obj, rrn, phone_number, email, kvb_key, kvb_endpoint, response_table, log_file_name, db, incidents_table)
+                            logger.info(f"[RRN_VALIDATION] Sent status code 99 response for invalid RRN: {rrn}")
+                            db.bulk_update_record('i4c_request', {'job_id': data['job_id']}, {'status': 'P'})
+                            db.bulk_update_record(incidents_table, {'job_id': data['job_id'], 'rrn': rrn}, {'status': 'internal error', 'is_valid': False})
+
                     except Exception as debit_exc:
                         logger.error(f"[DEBIT_FLOW_ERROR] {debit_exc}")
-                else:
+                elif mode_of_payment == "CREDIT":
+                    logger.info(f"[CREDIT_FLOW] Processing CREDIT transaction type: {transaction_type}")
                     net_balance = decrypted_obj.get("NetBalance")
                     net_balance_float = float(net_balance) if net_balance else 0.0
                     disputed_amount = incident.get("disputed_amount", 0)
@@ -576,6 +587,22 @@ def i4c_request_job(request_json: str):
                             # Call hold funds API and capture the timestamp it used
                             is_hold_i4c_success = False
 
+                            payload_data = data.get("request", {})
+                            acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
+                            job_id = str(data.get("job_id", ""))
+
+                            net_balance = decrypted_obj.get("NetBalance", None)
+                            # Get payer_account_number and rrn from i4c request
+                            payer_account_number = ""
+                            rrn = ""
+                            rrn = incident.get("rrn", "")
+                            instrument_data = payload_data.get("instrument", {})
+                            payer_account_number = str(instrument_data.get("payer_account_number", ""))
+                            # Use the same server timestamp for I4C response
+                            
+                            disputed_amount_float = float(disputed_amount) if disputed_amount else 0.0
+                            hold_amount = "{:.2f}".format(disputed_amount_float)
+
                             # # NOTE: check for handling of 0 or negative balance
                             # net_balance_float = net_balance_float if net_balance_float > 0 else 1.23
 
@@ -591,7 +618,25 @@ def i4c_request_job(request_json: str):
                                 password=password,
                                 log_file_name=log_file_name
                             )
+                            
+                            transaction_datetime_val = hold_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                            cb_report_data = {
+                                "ack_no":acknowledgement_no,
+                                "job_id":job_id,
+                                "rrn":rrn,
+                                "account_number": payer_account_number,
+                                "disputed_amount": Decimal(str(disputed_amount_float)),   
+                                "customer_balance": Decimal(str(net_balance)),            
+                                "hold_marked_cbs": True,
+                                "i4c_hold_amount": Decimal(str(hold_amount)),             
+                                "hold_date": (
+                                    transaction_datetime_val if isinstance(transaction_datetime_val, datetime)
+                                    else datetime.strptime(transaction_datetime_val, "%Y-%m-%d %H:%M:%S")  
+                                )
+                            }
 
+                            db.create_record_("cbs_hold_report", cb_report_data, user_id=None)
+                            logger.info(f"[STORE INTO CBS REPORT] Inserted hold report for {payer_account_number}")
                             # if is_hold_success:
                             #     # =======
                             #     # Call I4C response API after hold
@@ -724,23 +769,23 @@ def i4c_request_job(request_json: str):
                                         ]
                                     }
 
-                                    cb_report_data = {
-                                        "ack_no":acknowledgement_no,
-                                        "job_id":job_id,
-                                        "rrn":rrn,
-                                        "account_number": payer_account_number,
-                                        "disputed_amount": Decimal(str(disputed_amount_float)),   
-                                        "customer_balance": Decimal(str(net_balance)),            
-                                        "hold_marked_cbs": True,
-                                        "i4c_hold_amount": Decimal(str(final_amount)),             
-                                        "hold_date": (
-                                            transaction_datetime_val if isinstance(transaction_datetime_val, datetime)
-                                            else datetime.strptime(transaction_datetime_val, "%Y-%m-%d %H:%M:%S")  
-                                        )
-                                    }
+                                    # cb_report_data = {
+                                    #     "ack_no":acknowledgement_no,
+                                    #     "job_id":job_id,
+                                    #     "rrn":rrn,
+                                    #     "account_number": payer_account_number,
+                                    #     "disputed_amount": Decimal(str(disputed_amount_float)),   
+                                    #     "customer_balance": Decimal(str(net_balance)),            
+                                    #     "hold_marked_cbs": True,
+                                    #     "i4c_hold_amount": Decimal(str(final_amount)),             
+                                    #     "hold_date": (
+                                    #         transaction_datetime_val if isinstance(transaction_datetime_val, datetime)
+                                    #         else datetime.strptime(transaction_datetime_val, "%Y-%m-%d %H:%M:%S")  
+                                    #     )
+                                    # }
 
-                                    db.create_record_("cbs_hold_report", cb_report_data, user_id=None)
-                                    logger.info(f"[STORE INTO CBS REPORT] Inserted hold report for {payer_account_number}")
+                                    # db.create_record_("cbs_hold_report", cb_report_data, user_id=None)
+                                    # logger.info(f"[STORE INTO CBS REPORT] Inserted hold report for {payer_account_number}")
                                     is_hold_i4c_success = call_i4c_response_api(
                                         i4c_payload, kvb_key, kvb_endpoint,
                                         response_table, data['received_dt'], log_file_name
@@ -886,9 +931,9 @@ def i4c_request_job(request_json: str):
                                             converted_datetime = casa_txn_date
 
                                         payer_account_number = instrument.get("payer_account_number", "")
-
+                                        disputed_amt_str = "{:.2f}".format(disputed_amt)
                                         rrn = rrn = incident.get('rrn', '')
-                                        is_success = money_transfer_to_upi(decrypted_obj, data,reference_id,txn_date_formatted, txn_amount, disputed_amt, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
+                                        is_success = money_transfer_to_upi(decrypted_obj, data, reference_id, txn_date_formatted, txn_amount, disputed_amt_str, converted_datetime, payer_account_number, response_table, phone_number, email, rrn, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     elif any(x in txn_desc for x in ["ATM CSW", "POS/", "CHQ PAID", "AEPS"]):
@@ -909,7 +954,8 @@ def i4c_request_job(request_json: str):
                                         logger.info(f"[CASA_SELECTED_TXN] Adding ATM/POS/CHQ PAID/AEPS transaction: {txn} | Amount: {txn_amount} | Running Total: {total_selected_amount}")
                                         payer_account_number = instrument.get("payer_account_number", "")
                                         curr_rrn = rrn
-                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt, response_table, transaction_datetime_val, phone_number, email, log_file_name)
+                                        disputed_amt_str = "{:.2f}".format(disputed_amt)
+                                        is_success = non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, curr_rrn, txn_desc, txn_amount, disputed_amt_str, response_table, transaction_datetime_val, phone_number, email, log_file_name)
                                         total_selected_amount += txn_amount
                                         all_responses.append(is_success)
                                     else:

@@ -875,6 +875,7 @@ class BankMaster(Base):
 class StatusMaster(Base):
     __tablename__ = "status_master"
 
+    category=Column(String(100), nullable=False)
     status_code = Column(String(20), nullable=False, primary_key=True)  # VARCHAR2(20) PK
     status_name = Column(String(100), nullable=False)  # VARCHAR2(100)
     status_description = Column(Text, nullable=True)  # CLOB

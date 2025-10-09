@@ -359,28 +359,32 @@ def add_dual_table(query):
     return query
 
 def convert_date_literals(query):
-    """Convert date literals to Oracle format"""
-    # Convert PostgreSQL date format (YYYY-MM-DD) to Oracle TO_DATE format
-    # Pattern to match date comparisons
-    date_pattern = r"(\w+\.?\w*\s*(?:>=|<=|=|>|<)\s*)'(\d{4}-\d{2}-\d{2})'"
-    
+    """Convert PostgreSQL date/time literals to Oracle TRUNC() format"""
+
+    # --- DATE comparisons ---
+    # Example: transaction_date = '2025-10-07'
+    date_pattern = r"(\w+\.?\w*\s*(?:=|>=|<=|>|<)\s*)'(\d{4}-\d{2}-\d{2})'"
+
     def replace_date(match):
-        column_op = match.group(1)
+        column_op = match.group(1).strip()
         date_str = match.group(2)
-        return f"{column_op}TO_DATE('{date_str}', 'YYYY-MM-DD')"
-    
+        # Use TRUNC for Oracle date comparison
+        return f"TRUNC({column_op.split()[0]}) {column_op[len(column_op.split()[0]):]} TRUNC(TO_DATE('{date_str}', 'YYYY-MM-DD'))"
+
     query = re.sub(date_pattern, replace_date, query, flags=re.IGNORECASE)
-    
-    # Convert timestamp format if needed
-    timestamp_pattern = r"(\w+\.?\w*\s*(?:>=|<=|=|>|<)\s*)'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})'"
-    
+
+    # --- DATETIME comparisons ---
+    # Example: transaction_time >= '2025-10-07 12:30:00'
+    timestamp_pattern = r"(\w+\.?\w*\s*(?:=|>=|<=|>|<)\s*)'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})'"
+
     def replace_timestamp(match):
-        column_op = match.group(1)
+        column_op = match.group(1).strip()
         timestamp_str = match.group(2)
-        return f"{column_op}TO_TIMESTAMP('{timestamp_str}', 'YYYY-MM-DD HH24:MI:SS')"
-    
+        # Use TRUNC to ignore fractional seconds/time zone differences
+        return f"TRUNC({column_op.split()[0]}) {column_op[len(column_op.split()[0]):]} TRUNC(TO_TIMESTAMP('{timestamp_str}', 'YYYY-MM-DD HH24:MI:SS'))"
+
     query = re.sub(timestamp_pattern, replace_timestamp, query, flags=re.IGNORECASE)
-    
+
     return query
 
 def final_cleanup(query):

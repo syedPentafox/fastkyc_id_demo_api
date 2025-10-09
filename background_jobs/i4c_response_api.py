@@ -1,6 +1,8 @@
 from datetime import datetime
 import os
 import logging
+
+from orm_model.core_models import StatusMaster
 from .background_jobs_file_logger import add_background_jobs_file_handler
 import json
 from utils.aes_encryption_decryption import AESUtil
@@ -65,6 +67,17 @@ def call_i4c_response_api(i4c_payload, kvb_key, kvb_endpoint, response_table, re
 
     return successful_response
 
+def get_status_remark(status_code: str):
+    session = db.get_db_session()
+    remark = session.query(StatusMaster).filter(StatusMaster.status_code == status_code).first()
+    if remark:
+        return {
+            "status_code": remark.status_code,
+            "status_name": remark.status_name,
+            "status_description": remark.status_description
+        }
+    return None
+
 def send_invalid_rrn_response(
     status_code: str,
     data: dict,
@@ -82,8 +95,9 @@ def send_invalid_rrn_response(
 ):
     
     """
-    Helper function to send invalid RRN response (status codes 01, 02, 99).
+    Helper function to send invalid RRN response (status codes ).
     """
+    remarks = get_status_remark(status_code)
     payload_data = data.get("request", {})
     acknowledgement_no = str(payload_data.get("acknowledgement_no", ""))
     job_id = str(data.get("job_id", ""))
@@ -124,7 +138,7 @@ def send_invalid_rrn_response(
                 "status_code": status_code,
                 "root_effective_balance": str(net_balance) if net_balance is not None else "",
                 "root_ifsc_code": ifsc_code,
-                "remarks": acknowledgement_no,
+                "remarks": remarks["status_name"] if remarks else acknowledgement_no
             }
         ]
     }
@@ -141,5 +155,5 @@ def send_invalid_rrn_response(
     db.bulk_update_record(
         incidents_table,
         {'job_id': data['job_id'], 'rrn': rrn},
-        {'status': 'invalid' if status_code == "02" else 'statement unavailable', 'is_valid': False}
+        {'status': 'invalid' if status_code == "40002" else 'statement unavailable', 'is_valid': False}
     )

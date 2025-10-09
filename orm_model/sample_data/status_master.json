@@ -1,71 +1,194 @@
 [
-    {
-        "status_code": "0",
-        "status_name": "SUCCESS",
-        "status_description": "Transaction Data Found"
-    },
-    {
-        "status_code": "1",
-        "status_name": "Record not found",
-        "status_description": "Record missing for input parameters"
-    },
-    {
-        "status_code": "2",
-        "status_name": "Invalid RRN",
-        "status_description": "Invalid RRN, does not follow RRN logics"
-    },
-    {
-        "status_code": "3",
-        "status_name": "Invalid RRN range",
-        "status_description": "Input RRN is out of range"
-    },
-    {
-        "status_code": "4",
-        "status_name": "Invalid incidents count",
-        "status_description": "Incidents count more than 25"
-    },
-    {
-        "status_code": "11",
-        "status_name": "Structure Validation failed",
-        "status_description": "Invalid Json format"
-    },
-    {
-        "status_code": "12",
-        "status_name": "Invalid Input parameter <parameter1>, <<parameter2>",
-        "status_description": "Invalid Input Parameter\n1.\tWhen input JSON has\nmissing mandatory fields"
-    },
-    {
-        "status_code": "13",
-        "status_name": "Request Size greater than 10KB",
-        "status_description": "Request message size greater than 10 KB"
-    },
-    {
-        "status_code": "14",
-        "status_name": "Invalid incident input parameter <parameter1>, <<parameter2>",
-        "status_description": "Invalid Input Parameter\n1.\tWhen input JSON has\nmissing mandatory fields in the incidents"
-    },
-    {
-
-        "status_code": "15",
-        "status_name": "Multiple Records Found",
-        "status_description": "For the requested rrn number multiple records found."
-    },
-    {
-
-        "status_code": "31",
-        "status_name": "Pending",
-        "status_description": "Waiting for execution or unknown task id"
-    },
-    {
-
-        "status_code": "32",
-        "status_name": "Failure",
-        "status_description": "Task execution resulted in exception"
-    },
-    {
-
-        "status_code": "99",
-        "status_name": "Sorry We are not able to process your request. Kindly try after some time.",
-        "status_description": "Internal error"
-    }
+  {
+    "category": "Success",
+    "status_code": "00",
+    "status_name": "SUCCESS",
+    "status_description": "Transaction Data Found"
+  },
+  {
+    "category": "Validation Errors",
+    "status_code": "40001",
+    "status_name": "Invalid Account Number",
+    "status_description": "Account number format is invalid."
+  },
+  {
+    "category": "Validation Errors",
+    "status_code": "40002",
+    "status_name": "Account Not Found",
+    "status_description": "The account does not exist in CBS."
+  },
+  {
+    "category": "Validation Errors",
+    "status_code": "40003",
+    "status_name": "Invalid IFSC Code",
+    "status_description": "IFSC does not match any registered branch."
+  },
+  {
+    "category": "Validation Errors",
+    "status_code": "40004",
+    "status_name": "Invalid Transaction Amount",
+    "status_description": "Amount cannot be zero or negative."
+  },
+  {
+    "category": "Validation Errors",
+    "status_code": "40005",
+    "status_name": "Invalid Date",
+    "status_description": "Future or past date not allowed."
+  },
+  {
+    "category": "Authentication & Authorization Errors",
+    "status_code": "40101",
+    "status_name": "Unauthorized Access",
+    "status_description": "API key or token missing/invalid."
+  },
+  {
+    "category": "Authentication & Authorization Errors",
+    "status_code": "40102",
+    "status_name": "Session Expired",
+    "status_description": "User must re-authenticate."
+  },
+  {
+    "category": "Authentication & Authorization Errors",
+    "status_code": "40301",
+    "status_name": "Forbidden Operation",
+    "status_description": "User does not have permission."
+  },
+  {
+    "category": "Transaction Errors",
+    "status_code": "50001",
+    "status_name": "Insufficient Balance",
+    "status_description": "Not enough funds."
+  },
+  {
+    "category": "Transaction Errors",
+    "status_code": "50002",
+    "status_name": "Lien/Freeze Exists",
+    "status_description": "Account has lien/hold."
+  },
+  {
+    "category": "Transaction Errors",
+    "status_code": "50003",
+    "status_name": "Duplicate Transaction",
+    "status_description": "Same request already processed."
+  },
+  {
+    "category": "Transaction Errors",
+    "status_code": "50004",
+    "status_name": "Transaction Limit Exceeded",
+    "status_description": "Exceeds regulatory/daily limits."
+  },
+  {
+    "category": "Transaction Errors",
+    "status_code": "50005",
+    "status_name": "Invalid Transaction Type",
+    "status_description": "Not supported for this account."
+  },
+  {
+    "category": "Transaction Errors",
+    "status_code": "50006",
+    "status_name": "RRN/Reference Number Mismatch",
+    "status_description": "Provided RRN invalid."
+  },
+  {
+    "category": "System/Connectivity Errors",
+    "status_code": "60001",
+    "status_name": "CBS Connection Timeout",
+    "status_description": "Core banking did not respond."
+  },
+  {
+    "category": "System/Connectivity Errors",
+    "status_code": "60002",
+    "status_name": "Service Unavailable",
+    "status_description": "API endpoint down."
+  },
+  {
+    "category": "System/Connectivity Errors",
+    "status_code": "60003",
+    "status_name": "Database Connection Failed",
+    "status_description": "Unable to fetch records."
+  },
+  {
+    "category": "System/Connectivity Errors",
+    "status_code": "60004",
+    "status_name": "Upstream Dependency Failed",
+    "status_description": "External service (e.g., NPCI, UPI) not responding."
+  },
+  {
+    "category": "System/Infrastructure Errors",
+    "status_code": "60011",
+    "status_name": "Host System Down",
+    "status_description": "CBS unavailable."
+  },
+  {
+    "category": "System/Infrastructure Errors",
+    "status_code": "60012",
+    "status_name": "Timeout in Clearing House",
+    "status_description": "NEFT/RTGS settlement delay."
+  },
+  {
+    "category": "System/Infrastructure Errors",
+    "status_code": "60013",
+    "status_name": "Duplicate API Request ID",
+    "status_description": "Same request ID reused."
+  },
+  {
+    "category": "System/Infrastructure Errors",
+    "status_code": "60014",
+    "status_name": "Batch Processing Failed",
+    "status_description": "End-of-day batch error."
+  },
+  {
+    "category": "System/Infrastructure Errors",
+    "status_code": "60015",
+    "status_name": "Encryption/Decryption Error",
+    "status_description": "Payload security failure."
+  },
+  {
+    "category": "System/Infrastructure Errors",
+    "status_code": "60016",
+    "status_name": "Digital Signature Invalid",
+    "status_description": "Sign/verify failed."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70004",
+    "status_name": "Service Temporarily Unavailable",
+    "status_description": "Maintenance mode."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70005",
+    "status_name": "Request Size Too Large",
+    "status_description": "Payload exceeds limit."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70006",
+    "status_name": "Rate Limit Exceeded",
+    "status_description": "Too many API calls."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70007",
+    "status_name": "Concurrency Conflict",
+    "status_description": "Record being modified elsewhere."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70008",
+    "status_name": "Business Rule Not Satisfied",
+    "status_description": "Violates internal policy."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70009",
+    "status_name": "Reference ID Not Found",
+    "status_description": "Invalid transaction reference."
+  },
+  {
+    "category": "Generic/Unclassified Errors",
+    "status_code": "70010",
+    "status_name": "Unmapped Exception",
+    "status_description": "Error not classified in system"
+  }
 ]

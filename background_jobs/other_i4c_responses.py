@@ -7,10 +7,22 @@ import os
 import logging
 import re
 from utils.db_connection import db
-from orm_model.core_models import BankMaster, BranchManagerDetails
+from orm_model.core_models import BankMaster, BranchManagerDetails, StatusMaster
 from background_jobs.payment_status_inquiry_api import payment_status_inquiry_api
 from background_jobs.upi_payment_status_inquiry_api import upi_payment_status_inquiry_api
 from background_jobs.i4c_response_api import call_i4c_response_api
+
+status_code = "00"
+def get_status_remark(status_code: str):
+    session = db.get_db_session()
+    remark = session.query(StatusMaster).filter(StatusMaster.status_code == status_code).first()
+    if remark:
+        return {
+            "status_code": remark.status_code,
+            "status_name": remark.status_name,
+            "status_description": remark.status_description
+        }
+    return None
 
 def sanitize_balance(value):
     """
@@ -54,7 +66,7 @@ def resolve_payee_bank(db, ifsc_code: str):
     bank_record = get_bank_details_by_ifsc(db, ifsc_code)
     if bank_record:
         return bank_record.bank_name, str(bank_record.bank_code)
-    return "KVB", "25"
+    return "", ""
 
 
 def money_transfer_to_non_upi(decrypted_obj, data,transaction_type, response_table, rrn, transaction_datetime,
@@ -94,7 +106,7 @@ def money_transfer_to_non_upi(decrypted_obj, data,transaction_type, response_tab
 
     payee_account_number = sanitize_account_number(payee_account_number)
     payee_bank, payee_bank_code = resolve_payee_bank(db, ifsc_code)
-
+    remarks = get_status_remark(status_code)
     i4c_payload = {
         "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
         "job_id": data.get("job_id", ""),
@@ -116,7 +128,7 @@ def money_transfer_to_non_upi(decrypted_obj, data,transaction_type, response_tab
                 "status_code": "00",
                 "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                 "root_ifsc_code": decrypted_obj.get("IFSCCode", ""),
-                "remarks": data.get("request", {}).get("acknowledgement_no", ""),
+                "remarks": remarks["status_name"],
                 "payee_bank": payee_bank,
                 "payee_bank_code": payee_bank_code,
                 "payee_account_number": payee_account_number
@@ -164,7 +176,7 @@ def money_transfer_to_upi(decrypted_obj, data,rrn,txn_date_formatted, amount, di
     payee_account_number = sanitize_account_number(payee_account_number)
     txn_id=sanitize_account_number(txn_id)
     payee_bank, payee_bank_code = resolve_payee_bank(db, ifsc_code)
-
+    remarks = get_status_remark(status_code)
     i4c_payload = {
         "acknowledgement_no": data.get("request", {}).get("acknowledgement_no", ""),
         "job_id": data.get("job_id", ""),
@@ -187,7 +199,7 @@ def money_transfer_to_upi(decrypted_obj, data,rrn,txn_date_formatted, amount, di
                 "root_rrn_transaction_id": root_rrn,
                 "root_bankid": "25",
                 "status_code": "00",
-                "remarks": data.get("request", {}).get("acknowledgement_no", ""),
+                "remarks": remarks["status_name"],
                 "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                 "root_ifsc_code": decrypted_obj.get("IFSCCode", "")
             }
@@ -213,7 +225,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
     remarks = acknowledgement_no
     root_effective_balance = str(decrypted_obj.get("NetBalance", ""))
     root_ifsc_code = decrypted_obj.get("IFSCCode", "")
-
+    remarks = get_status_remark(status_code)
     # ATM
     if "ATM CSW" in txn_desc:
         # Parse ATM fields
@@ -242,7 +254,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_rrn_transaction_id": root_rrn_transaction_id,
                     "root_bankid": root_bankid,
                     "status_code": status_code,
-                    "remarks": remarks,
+                    "remarks": remarks["status_name"] if remarks else acknowledgement_no,
                     "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }
@@ -257,6 +269,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         approval_code = txn_split[2]
         merchant_name = txn_split[3]
         pos_transaction_id = txn.get("ChequeNumber", "")
+        remarks = get_status_remark(status_code)
         i4c_payload = {
             "acknowledgement_no": acknowledgement_no,
             "job_id": job_id,
@@ -279,7 +292,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_rrn_transaction_id": root_rrn_transaction_id,
                     "root_bankid": root_bankid,
                     "status_code": status_code,
-                    "remarks": remarks,
+                    "remarks": remarks["status_name"] if remarks else acknowledgement_no,
                     "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }
@@ -294,6 +307,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
 
         # 🔹 fetch from DB
         branch_manager = get_branch_manager(db, branch_code)
+        remarks = get_status_remark(status_code)
 
         if branch_manager:
             managername = branch_manager.emp_name
@@ -324,7 +338,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_account_number": payer_account_number,
                     "root_rrn_transaction_id": root_rrn_transaction_id,
                     "root_bankid": root_bankid,
-                    "status_code": status_code,
+                   "remarks": remarks["status_name"] if remarks else acknowledgement_no,
                     "remarks": remarks,
                     "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
@@ -337,6 +351,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
         # Example: AEPS ACQ CW-99506997-KVB-11:15 AM-RRN:424711036020-1 112, ...
         rrn_val = ""
         match = re.search(r"RRN:([\w\d]+)", txn.get("TransactionDescription", ""))
+        remarks = get_status_remark(status_code)
         if match:
             rrn_val = match.group(1)
         i4c_payload = {
@@ -356,7 +371,7 @@ def non_money_transfer_to(decrypted_obj, data, payer_account_number, txn, rrn, t
                     "root_rrn_transaction_id": root_rrn_transaction_id,
                     "root_bankid": root_bankid,
                     "status_code": status_code,
-                    "remarks": remarks,
+                    "remarks": remarks["status_name"] if remarks else acknowledgement_no,
                     "root_effective_balance": str(sanitize_balance(decrypted_obj.get("NetBalance", ""))),
                     "root_ifsc_code": root_ifsc_code
                 }

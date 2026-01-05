@@ -1,1 +1,0 @@
-zip -r all_code.zip routers/ background_jobs/ zipcode.sh response_models/ utils/ orm_model/ router_helper/ validation_models/

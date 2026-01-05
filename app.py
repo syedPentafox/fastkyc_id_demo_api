@@ -28,7 +28,7 @@ load_dotenv()
 
 app = FastAPI()
 
-scheduler = AsyncIOScheduler()
+# scheduler = AsyncIOScheduler()
 
 """CORS policies reject the api requests from unknown origin(the place where the api call is originated).
 In our architecture, the front-end server and this back-end server resides in same domain or sub-domain.

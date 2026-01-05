@@ -1,9 +1,0 @@
-status_category_key = "status.category"
-branch_name_in_key = "branch_code.branch_name_in"
-assigned_to_eq_key = "lead_id.assigned_to_eq"
-lead_not_assigned_you = "Lead is not assigned to you"
-application_json = "application/json"
-lead_location_mismatch = "Lead Location and RM Location Mismatch"
-ALLOWED_EXTENSIONS = {"csv", "xlsx"}
-MAX_FILE_SIZE_MB = 10
-MAX_RECORDS = 5000

@@ -25,7 +25,7 @@ This project, **Digital Command Centre for DICGC Operations**, aims to provide a
 ## 💻 **Tech Stack**
 - **Backend:**
   - Python - FastAPI Framework
-  - PostgreSQL (Database)
+  - MySQL (Database)
 
 ---
 
@@ -39,7 +39,7 @@ This project, **Digital Command Centre for DICGC Operations**, aims to provide a
   - [Visual Studio](https://visualstudio.microsoft.com/vs/community/)
   - [PyCharm](https://www.jetbrains.com/pycharm/download/)
 - **Poetry** ([Installation Guide](https://python-poetry.org/docs/))
-- **PostgreSQL** ([Download](https://www.postgresql.org/download/))
+- **MySQL 8.0+** ([Download](https://dev.mysql.com/downloads/mysql/))
 - **Insomnia** ([Download](https://insomnia.rest/download))
 
 ### 🐍 **Installing Python**
@@ -86,12 +86,31 @@ poetry install
 poetry add <package-name>
 ```
 
-### 5️⃣ Add Environment Variables
+### 5️⃣ Set Up MySQL Database
+Create a MySQL database for the application:
+
+```bash
+# Login to MySQL
+mysql -u root -p
+
+# Create database
+CREATE DATABASE myapp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# Create user and grant privileges (optional, for production)
+CREATE USER 'myapp_user'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON myapp.* TO 'myapp_user'@'localhost';
+FLUSH PRIVILEGES;
+
+# Exit MySQL
+EXIT;
+```
+
+### 6️⃣ Add Environment Variables
 Create a `.env` file with the following keys:
 
 | **Variable**              | **Description**                              | **Default Value**                                           | **Example Value**                                              |
 |---------------------------|----------------------------------------------|-------------------------------------------------------------|--------------------------------------------------------------|
-| `DATABASE_URL`            | URL for database connection                 | `postgresql://user:password@localhost/dbname`               | `postgresql://postgres:root@localhost/pnc`                   |
+| `DATABASE_URL`            | URL for database connection                 | `mysql+pymysql://user:password@localhost:3306/dbname`      | `mysql+pymysql://root:password@localhost:3306/myapp`     |
 | `AMAZON_S3_BASE_URL`      | Base URL for Amazon S3                      | `https://example.cloudfront.net`                            | `https://example.cloudfront.net`                             |
 | `S3_BUCKET_NAME`          | Name of the S3 bucket                       | `example-bucket`                                            | `bucket_name`                                                |
 | `JWT_SECRET_KEY`          | Secret key for JWT                          | `your-jwt-secret-key`                                       | `6dcaa22947e965f1c7ae06f1ec6d4f7ebcf603a5578541574883fb700c97ade2` |
@@ -107,12 +126,12 @@ Create a `.env` file with the following keys:
 ---
 # **🔧 Alembic Setup and Usage Guide**
 
-## **1. 🚀 Install Alembic and PostgreSQL Driver**
+## **1. 🚀 Install Alembic and MySQL Driver**
 
-First, install Alembic and the PostgreSQL driver for Python (`psycopg2`).
+First, install Alembic and the MySQL driver for Python (`pymysql`).
 
 ```bash
-pip install alembic psycopg2
+pip install alembic pymysql
 ```
 
 ---
@@ -129,17 +148,17 @@ alembic init migrations
 
 ---
 
-## **3. ⚙️ Configure Alembic for PostgreSQL**
+## **3. ⚙️ Configure Alembic for MySQL**
 
 ### **📝 Update `alembic.ini`**
 
-Open the `alembic.ini` file and set the `sqlalchemy.url` to your PostgreSQL connection string.
+Open the `alembic.ini` file and set the `sqlalchemy.url` to your MySQL connection string.
 
 ```ini
-sqlalchemy.url = postgresql+psycopg2://username:password@localhost/dbname
+sqlalchemy.url = mysql+pymysql://username:password@localhost:3306/dbname
 ```
 
-🔑 Replace `username`, `password`, `localhost`, and `dbname` with your PostgreSQL database credentials.
+🔑 Replace `username`, `password`, `localhost`, and `dbname` with your MySQL database credentials.
 
 ### **🔗 Link SQLAlchemy Models**
 

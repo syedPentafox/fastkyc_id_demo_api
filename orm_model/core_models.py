@@ -1,7 +1,6 @@
 from sqlalchemy import (
     Column,
     DateTime,
-    Identity,
     Integer,
     PrimaryKeyConstraint,
     text,
@@ -13,14 +12,13 @@ from sqlalchemy import (
     Text,
     Float,
     Numeric,
-    Sequence,
 )
 from dotenv import load_dotenv
 import os
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import ENUM
+# MySQL uses standard SQLAlchemy types, no dialect-specific imports needed
 import json
 from sqlalchemy.types import TypeDecorator, Text as TextType
 import codecs
@@ -39,7 +37,13 @@ SQLALCHEMY_ENGINE_OPTIONS = {
     "poolclass": NullPool,
     "echo": True,
 }
-engine = create_engine(DB_URL, **SQLALCHEMY_ENGINE_OPTIONS)
+# For MySQL, we need to specify the charset and use pymysql driver
+engine = create_engine(
+    DB_URL,
+    **SQLALCHEMY_ENGINE_OPTIONS,
+    connect_args={"charset": "utf8mb4"},
+    pool_recycle=3600,  # Recycle connections after 1 hour to avoid MySQL timeout
+)
 """
 Each instance of the SessionLocal class will be a database session. The class itself is not a database session yet.
 But once we create an instance of the SessionLocal class, this instance will be the actual database session.
@@ -72,7 +76,6 @@ def get_db():
 db = next(get_db())
 
 AbstractBase = declarative_base()
-
 
 class JSONEncodedText(TypeDecorator):
     """Platform-independent JSON type using Text storage."""
@@ -292,13 +295,7 @@ class FileUploadReports(Base):
 class Modules(Base):
     __tablename__ = "modules"
 
-    id = Column(
-        Integer,
-        Sequence("module_id_seq"),
-        primary_key=True,
-        nullable=False,
-        autoincrement=True,
-    )
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     created_date = Column(
         DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
     )

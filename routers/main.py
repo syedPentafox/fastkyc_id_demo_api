@@ -10,7 +10,7 @@ from sqlalchemy import text
 from response_models.response_models import make_failure_response, make_success_response
 import pandas as pd
 import io
-from utils.metrics import MAX_FILE_SIZE_MB, MAX_RECORDS
+from utils.db_util import MAX_FILE_SIZE_MB, MAX_RECORDS
 from utils.file_storage import s3_file_upload
 from math import ceil
 import numpy as np

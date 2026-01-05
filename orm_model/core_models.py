@@ -239,35 +239,35 @@ class CollectionField(Base):
     modified_date = Column(DateTime, nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    collection = Column(String(1000))
-    field = Column(String(1000))
-    label = Column(String(1000))
-    type = Column(String(1000))
-    special = Column(String(1000))
-    interface = Column(String(1000))
+    collection = Column(Text)
+    field = Column(Text)
+    label = Column(Text)
+    type = Column(Text)
+    special = Column(Text)
+    interface = Column(Text)
     is_required = Column(Boolean)
-    options = Column(String(1000))
-    display = Column(String(1000))
-    display_options = Column(String(1000))
+    options = Column(Text)
+    display = Column(Text)
+    display_options = Column(Text)
     readonly = Column(Boolean)
     hidden = Column(Boolean)
     sort = Column(Integer)
-    width = Column(String(1000))
-    data_type = Column(String(1000))
-    default_value = Column(String(1000))
+    width = Column(Text)
+    data_type = Column(Text)
+    default_value = Column(Text)
     max_length = Column(Integer, nullable=True)
     numeric_precision = Column(Integer, nullable=True)
     numeric_scale = Column(Integer, nullable=True)
     is_nullable = Column(Boolean)
     is_primary_key = Column(Boolean)
     has_auto_increment = Column(String(10))
-    foreign_key_column = Column(String(1000))
-    foreign_key_table = Column(String(1000))
-    filters = Column(String(1000))
-    comment = Column(String(1000))
-    return_value = Column(String(1000))
+    foreign_key_column = Column(Text)
+    foreign_key_table = Column(Text)
+    filters = Column(Text)
+    comment = Column(Text)
+    return_value = Column(Text)
     api = Column(String(255))
-    regex = Column(String(1000))
+    regex = Column(Text)
     export_eligible = Column(Boolean, default=True, nullable=False)
     template_eligible = Column(Boolean, default=True, nullable=False)
 
@@ -913,20 +913,27 @@ def try_parse_datetime(value):
 
 def bulk_insert_from_json(model_class, file_path):
     # Open the JSON file and load its data
-    with codecs.open(os.getenv("MASTER_DATA_FOLDER_PATH") + file_path, "r") as file:
-        data = json.load(file)
-        # Check if the data is a list and the table is empty
-        if isinstance(data, list) and db.query(model_class).count() == 0:
-            for item in data:
-                # Convert any datetime-looking string to Python datetime
-                for key, value in item.items():
-                    item[key] = try_parse_datetime(value)
-            # Create model instances from the JSON data
-            records = [model_class(**item) for item in data]
-            # Bulk insert the records into the database
-            db.bulk_save_objects(records)
-            # Commit the transaction
-            db.commit()
+    full_path = os.path.join(os.getenv("MASTER_DATA_FOLDER_PATH", ""), file_path)
+    try:
+        with codecs.open(full_path, "r") as file:
+            data = json.load(file)
+            # Check if the data is a list and the table is empty
+            if isinstance(data, list) and db.query(model_class).count() == 0:
+                for item in data:
+                    # Convert any datetime-looking string to Python datetime
+                    for key, value in item.items():
+                        item[key] = try_parse_datetime(value)
+                # Create model instances from the JSON data
+                records = [model_class(**item) for item in data]
+                # Bulk insert the records into the database
+                db.bulk_save_objects(records)
+                # Commit the transaction
+                db.commit()
+                print(f"Successfully inserted data from {file_path}")
+    except FileNotFoundError:
+        print(f"Skipping {file_path}: File not found at {full_path}")
+    except Exception as e:
+        print(f"Error processing {file_path}: {str(e)}")
 
 
 def bulk_insert_from_json_file():

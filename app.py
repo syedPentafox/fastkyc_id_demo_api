@@ -2,14 +2,14 @@ import os
 from fastapi import FastAPI
 import uvicorn
 from routers import (
-    auth,
-    dashboard,
+    # auth,
+    # dashboard,
     main,
     masters,
     login,
     rbac,
     reports,
-    i4c_request
+    # i4c_request
 )
 from fastapi.middleware.cors import CORSMiddleware
 from brotli_asgi import BrotliMiddleware
@@ -73,9 +73,12 @@ async def start_scheduling():
     """This creates all tables stored in the Base.metadata(example:models_user,models_product).
     Conditional by default, will not attempt to recreate tables already present in the target database.
     """
+    # COMMENTED OUT: Template table creation (not needed for existing database)
     Base.metadata.create_all(bind=engine)
     AbstractBase.metadata.create_all(bind=engine)
     bulk_insert_from_json_file()
+
+    # Refresh metadata to load existing tables from your database
     db.refresh_metadata()
 
 
@@ -95,15 +98,15 @@ def call_fastapi_endpoint():
 # scheduler = BackgroundScheduler()
 
 @app.on_event("startup")
-def start_scheduler():
-    scheduler.add_job(call_fastapi_endpoint, "interval", minutes=1)
-    scheduler.start()
-    print("Scheduler started")
+# def start_scheduler():
+#     scheduler.add_job(call_fastapi_endpoint, "interval", minutes=1)
+#     scheduler.start()
+#     print("Scheduler started")
 
 @app.on_event("shutdown")
-def shutdown_scheduler():
-    scheduler.shutdown()
-    print("Scheduler stopped")
+# def shutdown_scheduler():
+#     scheduler.shutdown()
+#     print("Scheduler stopped")
 
 @app.get("/")
 def home():
@@ -239,15 +242,15 @@ def health_check():
     return {"message": "Application running sucessfully"}
 
 
-app.include_router(auth.router)
-app.include_router(main.router)
-app.include_router(main.router)
-app.include_router(masters.router)
-app.include_router(login.router)
-app.include_router(rbac.router)
-app.include_router(reports.router)
-app.include_router(i4c_request.router)
-app.include_router(dashboard.router)
+# app.include_router(auth.router)
+# app.include_router(main.router)
+# app.include_router(main.router)
+# app.include_router(masters.router)
+# app.include_router(login.router)
+# app.include_router(rbac.router)
+# app.include_router(reports.router)
+# app.include_router(i4c_request.router)
+# app.include_router(dashboard.router)
 
 # Start the FastAPI application
 if __name__ == "__main__":

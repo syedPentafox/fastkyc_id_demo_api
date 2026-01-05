@@ -2,7 +2,8 @@ import requests
 from utils.db_connection import db
 import json
 import curlify
-from utils.metrics import application_json
+# from utils.metrics import application_json
+application_json = "application/json"
 
 
 class APIRequester:

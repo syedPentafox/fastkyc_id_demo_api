@@ -48,12 +48,14 @@ from io import StringIO
 from typing import Any
 import re
 from response_models.response_models import make_success_response, make_failure_response
-from utils.metrics import lead_location_mismatch
+# from utils.metrics import lead_location_mismatch
+# Defined locally as the module is missing
+lead_location_mismatch = {"message": "Lead location mismatch", "status_code": 400}
 import numpy as np
 import ast
 from dateutil import parser
 
-from utils.new_tables import import_table_metadata
+# from utils.new_tables import import_table_metadata
 
 logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)

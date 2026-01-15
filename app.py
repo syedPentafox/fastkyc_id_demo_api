@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import example
+from routers import example, feature_flow, flow_generation
 import uvicorn
 import os
 from dotenv import load_dotenv
@@ -26,6 +26,9 @@ app.add_middleware(
 
 # Include Routers
 app.include_router(example.router, prefix="/api", tags=["Example"])
+app.include_router(flow_generation.router, prefix="/api")
+app.include_router(feature_flow.router, prefix="/api")
+
 
 @app.get("/")
 def home():

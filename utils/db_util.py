@@ -149,15 +149,31 @@ class DatabaseHandler:
     def get_data_from_table(self, tbl_name, columns=None, filters=None, sort_by=None, page=1, per_page=10):
         model = self.get_model(tbl_name)
         if not model:
-             raise HTTPException(status_code=404, detail=f"Table {tbl_name} not found")
+            raise HTTPException(status_code=404, detail=f"Table {tbl_name} not found")
 
-        # Basic Select
-        query = self.Session().query(model)
-        
+        session = self.Session()
+
+        # ---------------------------------------
+        # Handle column selection
+        # ---------------------------------------
+        if columns:
+            try:
+                selected_columns = [getattr(model, col) for col in columns]
+            except AttributeError:
+                raise HTTPException(status_code=400, detail="Invalid column name")
+            query = session.query(*selected_columns)
+        else:
+            query = session.query(model)
+
+        # ---------------------------------------
+        # Filters
+        # ---------------------------------------
         if filters:
             query = self.generate_filters(query, tbl_name, filters)
-            
+
+        # ---------------------------------------
         # Sorting
+        # ---------------------------------------
         if sort_by:
             for col in sort_by:
                 if col.startswith("-"):
@@ -165,34 +181,49 @@ class DatabaseHandler:
                 else:
                     query = query.order_by(asc(getattr(model, col)))
         else:
-             # Default sort by id if available
-             if hasattr(model, 'id'):
-                 query = query.order_by(desc(model.id))
-        
+            if hasattr(model, 'id'):
+                query = query.order_by(desc(model.id))
+
+        # ---------------------------------------
         # Pagination
+        # ---------------------------------------
         total_records = query.count()
         total_pages = ceil(total_records / per_page)
-        
+
         if page > 0:
             query = query.offset((page - 1) * per_page).limit(per_page)
-            
+
         result = query.all()
-        
+
+        # ---------------------------------------
         # Serialization
+        # ---------------------------------------
         result_as_json = []
+
         for row in result:
-            # Convert SQLAlchemy object to dict
-            row_dict = {c.name: getattr(row, c.name) for c in row.__table__.columns}
-            
-            # Handle non-serializable types like datetime
+            if columns:
+                # row is a tuple when using selected columns
+                row_dict = dict(zip(columns, row))
+            else:
+                row_dict = {c.name: getattr(row, c.name) for c in row.__table__.columns}
+
+            # Handle datetime
             for k, v in row_dict.items():
                 if isinstance(v, datetime):
                     row_dict[k] = v.isoformat()
-            
+
             result_as_json.append(row_dict)
 
-        metadata = {"page": page, "per_page": per_page, "total_pages": total_pages, "total_records": total_records}
+        metadata = {
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+            "total_records": total_records
+        }
+
         return result_as_json, metadata
+
+
 
     def create_record(self, tbl_name, data):
         model = self.get_model(tbl_name)

@@ -1,9 +1,11 @@
 
 import os
+import uuid
 from sqlalchemy import (
     create_engine, Column, Integer, String, Boolean,Enum,
-    DateTime, Text, ForeignKey, text
+    DateTime, Text, ForeignKey, text, JSON
 )
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy.pool import NullPool
 
@@ -124,6 +126,7 @@ class FeatureFlow(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     description = Column(String(255))
+    status = Column(String(50), default="active", server_default="active")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
@@ -137,7 +140,7 @@ class FeatureApiDependency(Base):
 
     execution_order = Column(Integer)
 
-    api_type = Column(String(50), default="normal")
+    api_type = Column(String(50), default="default")
     poll_interval = Column(Integer)
     poll_max_attempts = Column(Integer)
     poll_success_path = Column(String(255))
@@ -202,20 +205,23 @@ class FlowFeatureMap(Base):
 class ActiveFlow(Base):
     __tablename__ = "active_flows"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     flow_id = Column(Integer, ForeignKey("flows.id"), nullable=False)
 
-    end_customer_identifier = Column(String(255))
+    end_customer_identifier = Column(JSON)
 
     current_feature_id = Column(Integer)
     current_api_id = Column(Integer)
 
+    authentication_required = Column(Boolean, default=False)
+    authentication_type = Column(String(50), default=None)
+
     current_step = Column(Integer)
     total_step = Column(Integer)
 
-    is_active = Column(Boolean, default=True)
-    start_at = Column(DateTime, nullable=False)
-    end_at = Column(DateTime)
+    expires_at = Column(DateTime)
+    status = Column(String(50))
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
     activated_by = Column(Integer, ForeignKey("customers.id"))
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
@@ -228,7 +234,7 @@ class JourneyLog(Base):
     __tablename__ = "journey_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    active_flow_id = Column(Integer, ForeignKey("active_flows.id"), nullable=False)
+    active_flow_id = Column(String(36), ForeignKey("active_flows.id"), nullable=False)
     feature_id = Column(Integer, ForeignKey("feature_flow.id"), nullable=False)
     api_id = Column(Integer, ForeignKey("features_master.id"), nullable=False)
 

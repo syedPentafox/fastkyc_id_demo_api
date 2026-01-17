@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import Optional
 import logging
 from orm_model.core_models import ApiRequiredField, FeatureApiDependency, FeatureFlow, FeatureMaster, FieldMaster
 from schemas.reqeust_schemas import FeatureFlowRequest
@@ -16,18 +17,30 @@ router = APIRouter(dependencies=[Depends(verify_access_token)])
 db = DatabaseHandler()
 
 
+'''
+this route is used to get all features with their field mappings
+'''
 @router.get("/feature_flow/feature", tags=["flow"])
-def get_all_features_api_with_flow():
+def get_all_features_api_with_flow(
+    status: Optional[str] = None,
+    category: Optional[str] = None
+):
     with db.Session() as session:
         # Join FeatureMaster, ApiRequiredField, and FieldMaster
-        results = (
+        query = (
             session.query(FeatureMaster, FieldMaster)
-            .join(ApiRequiredField, ApiRequiredField.api_id == FeatureMaster.id)
-            .join(FieldMaster, FieldMaster.id == ApiRequiredField.field_id)
-            .filter(FeatureMaster.status == "active") 
-            .all()
+            .outerjoin(ApiRequiredField, ApiRequiredField.api_id == FeatureMaster.id)
+            .outerjoin(FieldMaster, FieldMaster.id == ApiRequiredField.field_id)
         )
-
+        
+        # Apply filters
+        if status:
+            query = query.filter(FeatureMaster.status == status)
+        if category:
+            query = query.filter(FeatureMaster.category == category)
+            
+        results = query.all()
+        print(results)
         if not results:
             return make_success_response(data=[], message="No features with field mappings found")
 
@@ -48,26 +61,82 @@ def get_all_features_api_with_flow():
                     # "request": feature.request,
                     # "response": feature.response,
                     "from_field": [],
-                    "created_at": feature.created_date.isoformat() if feature.created_date else None
+                    "created_at": feature.created_date.isoformat() if feature.created_date and not isinstance(feature.created_date, str) else feature.created_date
                 }
-            
+
             # Serialize FieldMaster data
-    
-            field_data = {c.name: getattr(field, c.name) for c in field.__table__.columns}
-            # Handle datetimes
-            if field_data.get('created_at'): field_data['created_at'] = field_data['created_at'].isoformat()
-            if field_data.get('updated_at'): field_data['updated_at'] = field_data['updated_at'].isoformat()
+            if field:
+                field_data = {c.name: getattr(field, c.name) for c in field.__table__.columns}
+                # Handle datetimes
+                if field_data.get('created_at'): field_data['created_at'] = field_data['created_at'].isoformat()
+                if field_data.get('updated_at'): field_data['updated_at'] = field_data['updated_at'].isoformat()
             
-            feature_map[feature.id]["from_field"].append(field_data)
+                feature_map[feature.id]["from_field"].append(field_data)
 
         return make_success_response(list(feature_map.values()))
 
+
+'''
+this route is used to get a single feature by ID or Name
+'''
+@router.get("/feature_flow/feature/{identifier}", tags=["flow"])
+def get_feature_by_id_or_name(identifier: str):
+    with db.Session() as session:
+        # Determine if identifier is ID or Name
+        if identifier.isdigit():
+            feature_results = (
+                session.query(FeatureMaster, FieldMaster)
+                .outerjoin(ApiRequiredField, ApiRequiredField.api_id == FeatureMaster.id)
+                .outerjoin(FieldMaster, FieldMaster.id == ApiRequiredField.field_id)
+                .filter(FeatureMaster.id == int(identifier))
+                .all()
+            )
+        else:
+             feature_results = (
+                session.query(FeatureMaster, FieldMaster)
+                .outerjoin(ApiRequiredField, ApiRequiredField.api_id == FeatureMaster.id)
+                .outerjoin(FieldMaster, FieldMaster.id == ApiRequiredField.field_id)
+                .filter(FeatureMaster.feature == identifier)
+                .all()
+            )
+
+        if not feature_results:
+             return make_success_response(data={}, message="Feature not found")
+
+        # Process the single feature
+        feature_obj = feature_results[0][0] # First row, FeatureMaster object
+        feature_data = {
+            "id": feature_obj.id,
+            "feature": feature_obj.feature,
+            "title": feature_obj.title,
+            "feature_description": feature_obj.feature_description,
+            "category": feature_obj.category,
+            "icon": feature_obj.icon,
+            "status": feature_obj.status,
+            "url": feature_obj.url,
+            "from_field": [],
+            "created_at": feature_obj.created_date.isoformat() if feature_obj.created_date and not isinstance(feature_obj.created_date, str) else feature_obj.created_date
+        }
+
+        for _, field in feature_results:
+            if field:
+                field_data = {c.name: getattr(field, c.name) for c in field.__table__.columns}
+                if field_data.get('created_at'): field_data['created_at'] = field_data['created_at'].isoformat() if not isinstance(field_data['created_at'], str) else field_data['created_at']
+                if field_data.get('updated_at'): field_data['updated_at'] = field_data['updated_at'].isoformat() if not isinstance(field_data['updated_at'], str) else field_data['updated_at']
+                feature_data["from_field"].append(field_data)
+        
+        return make_success_response(feature_data)
+
+
+'''
+this route is used to get all feature flows with their API dependencies
+'''
 @router.get("/feature_flow",tags=["flow"])
 def get_all_flow_features():
     with db.Session() as session:
         # Query all feature flows with their API dependencies
         
-        # First, get all feature flows
+        # 1 get all feature flows
         feature_flows = session.query(FeatureFlow).all()
         
         if not feature_flows:
@@ -80,11 +149,11 @@ def get_all_flow_features():
                 "id": flow.id,
                 "name": flow.name,
                 "description": flow.description,
-                "created_at": flow.created_at.isoformat() if flow.created_at else None,
+                "created_at": flow.created_at.isoformat() if flow.created_at and not isinstance(flow.created_at, str) else flow.created_at,
                 "features": []
             }
             
-            # Get all API dependencies for this feature flow
+            #2. Get all API dependencies for this feature flow
             api_deps = (
                 session.query(FeatureApiDependency, FeatureMaster)
                 .join(FeatureMaster, FeatureMaster.id == FeatureApiDependency.api_id)
@@ -93,7 +162,7 @@ def get_all_flow_features():
                 .all()
             )
             
-            # Group APIs and their fields
+            #3 Group APIs and their fields
             for dep, feature in api_deps:
                 feature_data = {
                     "id": feature.id,
@@ -123,9 +192,9 @@ def get_all_flow_features():
                     field_data = {c.name: getattr(field, c.name) for c in field.__table__.columns}
                     # Handle datetimes
                     if field_data.get('created_at'): 
-                        field_data['created_at'] = field_data['created_at'].isoformat()
+                        field_data['created_at'] = field_data['created_at'].isoformat() if not isinstance(field_data['created_at'], str) else field_data['created_at']
                     if field_data.get('updated_at'): 
-                        field_data['updated_at'] = field_data['updated_at'].isoformat()
+                        field_data['updated_at'] = field_data['updated_at'].isoformat() if not isinstance(field_data['updated_at'], str) else field_data['updated_at']
                     
                     field_data['is_mandatory'] = mapping.is_mandatory
                     feature_data["form_fields"].append(field_data)
@@ -137,6 +206,82 @@ def get_all_flow_features():
         return make_success_response(result)
 
 
+'''
+this route is used to get a single feature flow by ID or Name, with optional filtering
+'''
+@router.get("/feature_flow/{identifier}", tags=["flow"])
+def get_feature_flow_by_id_or_name(
+    identifier: str
+):
+    with db.Session() as session:
+        # Determine if identifier is ID or Name
+        if identifier.isdigit():
+            flow = session.query(FeatureFlow).filter(FeatureFlow.id == int(identifier)).first()
+        else:
+            flow = session.query(FeatureFlow).filter(FeatureFlow.name == identifier).first()
+
+        if not flow:
+            return make_success_response(data={}, message="Feature flow not found")
+
+        flow_data = {
+            "id": flow.id,
+            "name": flow.name,
+            "description": flow.description,
+            "created_at": flow.created_at.isoformat() if flow.created_at and not isinstance(flow.created_at, str) else flow.created_at,
+            "features": []
+        }
+
+        # Build the query for dependencies
+        query = (
+            session.query(FeatureApiDependency, FeatureMaster)
+            .join(FeatureMaster, FeatureMaster.id == FeatureApiDependency.api_id)
+            .filter(FeatureApiDependency.feature_id == flow.id)
+        )
+
+        # Order by execution order
+        api_deps = query.order_by(FeatureApiDependency.execution_order).all()
+
+        for dep, feature in api_deps:
+            feature_data = {    
+                "id": feature.id,
+                "feature": feature.feature,
+                "title": feature.title,
+                "feature_description": feature.feature_description,
+                "category": feature.category,
+                "icon": feature.icon,
+                "status": feature.status,
+                "url": feature.url,
+                "execution_order": dep.execution_order,
+                "api_type": dep.api_type,
+                "form_fields": []
+            }
+
+            # Get form fields for this API
+            field_mappings = (
+                session.query(ApiRequiredField, FieldMaster)
+                .join(FieldMaster, FieldMaster.id == ApiRequiredField.field_id)
+                .filter(ApiRequiredField.api_id == feature.id)
+                .all()
+            )
+
+            for mapping, field in field_mappings:
+                field_data = {c.name: getattr(field, c.name) for c in field.__table__.columns}
+                if field_data.get('created_at'): 
+                    field_data['created_at'] = field_data['created_at'].isoformat() if not isinstance(field_data['created_at'], str) else field_data['created_at']
+                if field_data.get('updated_at'): 
+                    field_data['updated_at'] = field_data['updated_at'].isoformat() if not isinstance(field_data['updated_at'], str) else field_data['updated_at']
+                
+                field_data['is_mandatory'] = mapping.is_mandatory
+                feature_data["form_fields"].append(field_data)
+
+            flow_data["features"].append(feature_data)
+
+        return make_success_response(flow_data)
+
+
+'''
+this route is used to create a new feature flow
+'''
 @router.post("/feature_flow", tags=['flow'])
 async def create_feature_flow(payload: FeatureFlowRequest,):
 

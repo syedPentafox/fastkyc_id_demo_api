@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import example, feature_flow, flow_generation
+from routers import example, feature_flow, flow_generation, flow_journey
 import uvicorn
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Boilerplate FastAPI App")
+app = FastAPI(title="FastKYC ID Application API")
 
 # Create Database Tables on Startup
 from orm_model.core_models import Base, engine
@@ -28,11 +28,12 @@ app.add_middleware(
 app.include_router(example.router, prefix="/api", tags=["Example"])
 app.include_router(flow_generation.router, prefix="/api")
 app.include_router(feature_flow.router, prefix="/api")
+app.include_router(flow_journey.router, prefix="/api")
 
 
 @app.get("/")
 def home():
-    return {"message": "Welcome to the Boilerplate FastAPI Application"}
+    return {"message": "Welcome to the FastKYC ID Application API"}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

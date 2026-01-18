@@ -105,59 +105,20 @@ class FlowGenerationRequest(BaseModel):
                 item.order = i + 1
             return v
 
-class IdentifierType(str, Enum):
-    mobile = "mobile"
-    email = "email"
-
 class EndCustomerDetails(BaseModel):
     name: str = Field(..., min_length=1)
-    identifier: str
-    identifier_type: IdentifierType
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    additional_data: Optional[dict] = None
 
-    @field_validator("identifier")
-    @classmethod
-    def validate_identifier(cls, v, info):
-        # WIP : validation mapping as per type
-        return v
-
-    @field_validator("identifier_type")
-    @classmethod
-    def validate_type(cls, v):
-        return v
-    
-    # Use model validator for cross-field validation
-    def __init__(self, **data):
-        super().__init__(**data)
-        self._validate_identifier_format()
-
-    def _validate_identifier_format(self):
-        idf = self.identifier
-        typ = self.identifier_type
-        
-        if typ == IdentifierType.email:
-            # Simple email regex
-            if not re.match(r"[^@]+@[^@]+\.[^@]+", idf):
-                raise ValueError("Invalid email format")
-        elif typ == IdentifierType.mobile:
-            # Simple digit check, length 10-15
-            if not (idf.isdigit() and 10 <= len(idf) <= 15):
-                raise ValueError("Invalid mobile number (must be 10-15 digits)")
-
-class AuthType(str, Enum):
-    otp = "otp"
-    email = "email"
+    # @model_validator(mode="after")
+    # def validate_contact_info(self):
+    #     if not self.phone or not self.email:
+    #         raise ValueError("At least one contact method (phone or email) must be provided")
+    #     return self
 
 class FlowActivationRequest(BaseModel):
     flow_id: int
     end_customer_details: EndCustomerDetails
     expires: Optional[datetime] = None
-    auth_req: Optional[bool] = False
-    auth_type: Optional[AuthType] = None
 
-    @model_validator(mode="after")
-    def validate_auth_fields(self):
-        if self.auth_req:
-            if not self.auth_type:
-                raise ValueError("auth_type must be provided when auth_req is true")
-
-        return self

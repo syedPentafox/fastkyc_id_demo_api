@@ -9,6 +9,7 @@ from schemas.reqeust_schemas import FlowGenerationRequest, FlowActivationRequest
 from orm_model.core_models import Flow, FeatureFlow, CustomerFlowMapping, FlowFeatureMap, ActiveFlow
 from typing import Optional
 from utils.flow_features_helper import get_feature_flow_details, validate_flow_components
+from utils.journey_auth import create_journey_token
 from sqlalchemy import and_, func, cast, String
 from datetime import datetime, timedelta
 import os
@@ -226,8 +227,8 @@ def activate_flow(
             return error_failure_response(msg, 400)
 
         with db.Session() as session:
-            # 2. Deactivate Old Flows for this End User
-            identifier_value = payload.end_customer_details.identifier
+            # 2. Deactivate Old Flows for this End User (SKIP complex match for now)
+            # identifier_value = payload.end_customer_details.identifier
             
             now = datetime.now()
             
@@ -235,7 +236,6 @@ def activate_flow(
             session.query(ActiveFlow).filter(
                 ActiveFlow.activated_by == user_id,
                 ActiveFlow.status == 'active',
-                func.json_unquote(func.json_extract(ActiveFlow.end_customer_identifier, '$.identifier')) == identifier_value
             ).update(
                 {
                     "status": "inactive", 
@@ -257,8 +257,6 @@ def activate_flow(
                 activated_by=user_id,
                 status='active',
                 expires_at=expires_at,
-                authentication_required=payload.auth_req,
-                authentication_type=payload.auth_type if payload.auth_req else None,
                 # current_step=1,
                 # total_step=1 
             )
@@ -266,14 +264,23 @@ def activate_flow(
             session.add(new_active_flow)
             session.commit()
             session.refresh(new_active_flow)
+
+            # 4. Generate Token
+            token_payload = {
+                "flow_id": new_active_flow.id,
+                "customer_id": new_active_flow.activated_by,
+                "end_customer": customer_json
+            }
+            token = create_journey_token(token_payload)
             
-            # 4. Generate Redirect URL
+            # 5. Generate Redirect URL
             domain = os.getenv("REDIRECT_DOMAIN", "http://localhost:3000")
-            redirect_url = f"{domain}?flow_id={new_active_flow.id}"
+            redirect_url = f"{domain}?tkn={token}"
             
             return make_success_response({
                 "active_flow_id": new_active_flow.id,
                 "created_at": new_active_flow.created_at.isoformat() if new_active_flow.created_at else None,
+                "token": token,
                 "redirect_url": redirect_url
             })
 

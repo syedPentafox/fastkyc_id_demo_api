@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, Body, Depends, Request
 from utils.db_util import DatabaseHandler
 from response_models.response_models import make_success_response
 from utils.error_handler import error_failure_response
@@ -6,7 +6,7 @@ from orm_model.core_models import (
     ActiveFlow, Flow, FlowFeatureMap, FeatureFlow, 
     FeatureApiDependency, FeatureMaster, ApiRequiredField, FieldMaster
 )
-from utils.journey_auth import create_journey_token
+from utils.journey_auth import create_journey_token, authenticate_journey_user
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
@@ -84,15 +84,19 @@ def get_journey_flow_details(session: Session, flow_id: int):
 
 @router.get("/flow/activate", tags=['journey'])
 def start_flow_journey(
-    flow_id: str = Query(..., description="Active Flow ID (UUID)")
+    request: Request,
+    auth_payload: dict = Depends(authenticate_journey_user)
 ):
     try:
+        # Extract flow_id from authenticated token payload
+        flow_id = auth_payload.get("flow_id")
+        
         with db.Session() as session:
             # 1. Fetch Active Flow
             active_flow = session.query(ActiveFlow).filter(ActiveFlow.id == flow_id).first()
             
             if not active_flow:
-                return error_failure_response("Invalid Flow ID", 404)
+                return error_failure_response("Invalid Active Flow ID in token", 404)
             
             if active_flow.status != 'active':
                 return error_failure_response("Flow is not active", 400)
@@ -122,99 +126,16 @@ def start_flow_journey(
                     "description": flow_master.description
                 },
                 "end_customer": end_customer_data,
-                "auth_required": active_flow.authentication_required,
-                "auth_type": active_flow.authentication_type,
                 "status": active_flow.status,
                 "expires_at": active_flow.expires_at.isoformat() if active_flow.expires_at else None,
                 "steps": steps_structure
             }
 
-            # 4. Generate Token if Auth NOT Required
-            if not active_flow.authentication_required:
-                token_payload = {
-                    "flow_id": active_flow.id,
-                    "customer_id": active_flow.activated_by,
-                    "end_customer": end_customer_data
-                }
-                token = create_journey_token(token_payload)
-                response_data["token"] = token
+            # Token is already generated at activation and passed via URL/Header
+            # No need to generate it here.
             
             return make_success_response(response_data)
 
     except Exception as e:
         print(f"Error in start_flow_journey: {e}")
         return error_failure_response(f"Internal Error: {e}", 500)
-
-
-
-'''
-For Demo we are simulatng this OTP routes but in future if we gonna added this auth service,
-we just get to handle the api calling and some smallvalidation would be required and we are good.
-'''
-@router.post("/otp_init", tags=['journey'])
-def initiate_otp(
-    payload: dict = Body(...)
-):
-    try:
-        phone = payload.get("phone")
-        active_flow_id = payload.get("active_flow_id")
-        
-        if not phone or not active_flow_id:
-             return error_failure_response("Phone and Active Flow ID required", 400)
-        
-        # Mock Response
-        return make_success_response({
-            "client_id": str(uuid.uuid4()),
-            "otp_sent": True,
-            "message": "OTP sent successfully"
-        })
-    except Exception as e:
-        return error_failure_response(f"Error sending OTP: {e}", 500)
-
-
-'''
-Similarly we gonna handle this 
-'''
-@router.post("/submit_otp", tags=['journey'])
-def submit_otp(
-    payload: dict = Body(...)
-):
-    try:
-        client_id = payload.get("client_id")
-        otp = payload.get("otp")
-        active_flow_id = payload.get("active_flow_id")
-        
-        if not client_id or not otp or not active_flow_id:
-            return error_failure_response("Missing required fields", 400)
-
-        # Mock Verification
-        if otp != "123456":
-             return error_failure_response("Invalid OTP", 400)
-             
-        # Generate Token
-        with db.Session() as session:
-            active_flow = session.query(ActiveFlow).filter(ActiveFlow.id == active_flow_id).first()
-            if not active_flow:
-                return error_failure_response("Invalid Active Flow ID", 400)
-                
-            end_customer_data = active_flow.end_customer_identifier
-            if isinstance(end_customer_data, str):
-                try:
-                    end_customer_data = json.loads(end_customer_data)
-                except:
-                    pass
-            
-            token_payload = {
-                "flow_id": active_flow.id,
-                "customer_id": active_flow.activated_by,
-                "end_customer": end_customer_data
-            }
-            token = create_journey_token(token_payload)
-            
-            return make_success_response({
-                "token": token,
-                "message": "Authentication successful"
-            })
-            
-    except Exception as e:
-        return error_failure_response(f"Error submitting OTP: {e}", 500)

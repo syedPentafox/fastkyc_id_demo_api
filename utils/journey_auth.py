@@ -33,3 +33,32 @@ def verify_journey_token(token: str):
             detail="Invalid journey token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+async def authenticate_journey_user(request: Request):
+    """
+    Dependency to authenticate journey user via Token.
+    Supports 'Authorization: Bearer <token>' header or 'token' query parameter.
+    """
+    token = None
+    
+    # 1. Try Header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    
+    # 2. Try Query Param (if header missing)
+    if not token:
+        token = request.query_params.get("token")
+        
+    if not token:
+         raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    payload = verify_journey_token(token)
+    
+    # Attach to request state
+    request.state.journey_user = payload
+    return payload

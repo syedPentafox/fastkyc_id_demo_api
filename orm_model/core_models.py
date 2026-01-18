@@ -31,6 +31,7 @@ Base = declarative_base()
 # MASTER TABLES
 # =====================================================
 
+# Ready Only Table
 class Customer(Base):
     __tablename__ = "customers"
 
@@ -59,6 +60,7 @@ class Customer(Base):
     sb_enabled = Column(Enum('0', '1'), server_default='0')
     prod_enabled = Column(Enum('0', '1'), server_default='0')
     
+# Read Only Table   
 class FeatureMaster(Base):
     __tablename__ = "features_master"
 
@@ -212,9 +214,6 @@ class ActiveFlow(Base):
 
     current_feature_id = Column(Integer)
     current_api_id = Column(Integer)
-
-    authentication_required = Column(Boolean, default=False)
-    authentication_type = Column(String(50), default=None)
 
     current_step = Column(Integer)
     total_step = Column(Integer)

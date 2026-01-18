@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import example, feature_flow, flow_generation, flow_journey
+from routers import example, feature_flow, flow_generation, flow_journey, journey_execution
 import uvicorn
 import os
 from dotenv import load_dotenv
@@ -29,6 +29,7 @@ app.include_router(example.router, prefix="/api", tags=["Example"])
 app.include_router(flow_generation.router, prefix="/api")
 app.include_router(feature_flow.router, prefix="/api")
 app.include_router(flow_journey.router, prefix="/api")
+app.include_router(journey_execution.router, prefix="/api")
 
 
 @app.get("/")

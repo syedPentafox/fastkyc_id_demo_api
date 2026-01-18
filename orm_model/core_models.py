@@ -211,6 +211,7 @@ class ActiveFlow(Base):
     flow_id = Column(Integer, ForeignKey("flows.id"), nullable=False)
 
     end_customer_identifier = Column(JSON)
+    journey_state = Column(JSON, nullable=True)
 
     current_feature_id = Column(Integer)
     current_api_id = Column(Integer)

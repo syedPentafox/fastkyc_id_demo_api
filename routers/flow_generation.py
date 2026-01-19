@@ -112,7 +112,7 @@ def get_all_features_flows(
             query = (
                 session.query(Flow)
                 .join(CustomerFlowMapping, CustomerFlowMapping.flow_id == Flow.id)
-                .filter(CustomerFlowMapping.customer_id == user_id)
+                # .filter(CustomerFlowMapping.customer_id == user_id)
                 .filter(Flow.status == 'active') 
             )
 

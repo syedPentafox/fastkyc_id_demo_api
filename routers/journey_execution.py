@@ -1,7 +1,10 @@
+import uuid
+from traceback import print_tb
 from fastapi import APIRouter, Depends, Body, HTTPException, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
+import uuid
 
 from utils.db_util import DatabaseHandler
 from utils.journey_auth import authenticate_journey_user
@@ -150,34 +153,102 @@ def submit_step_data(
                 
             # Load Feature Master
             feature = session.query(FeatureMaster).filter(FeatureMaster.id == target_api_dep.api_id).first()
-            
-            # 3. Validate Input Data (Basic Check against FieldMaster)
-             # (Skipping deep regex validation for speed, but ideally done here)
-             
-            # 4. Dependency Injection
-            # Check if this API needs 'client_id' or other state from previous steps.
-            # We don't have explicit "needs_client_id" flag in core_models detailed in prompt (just said 'some apis will need').
-            # We'll heuristic: If 'client_id' is in `journey_state` and NOT in `input_data`, inject it.
-            
+
+            # 4. Dependency Injection & Data Preparation
             journey_state = flow.journey_state or {}
-            
             final_data = input_data.copy()
-            if "client_id" in journey_state and "client_id" not in final_data:
+            
+            print(f"[DEPENDENCY INJECTION] journey_state: {journey_state}")
+            print(f"[DEPENDENCY INJECTION] input_data: {input_data}")
+            
+            if "client_id" in journey_state and ("client_id" in feature.request and "client_id" not in final_data):
                 final_data["client_id"] = journey_state["client_id"]
+                print(f"[DEPENDENCY INJECTION] Injected client_id: {journey_state['client_id']}")
+
+            # 5. Check for Missing Mandatory Fields (Should we show Form?) & Build Mapped Payload
+            # Get Form Fields configuration
+            field_mappings = (
+                session.query(ApiRequiredField, FieldMaster)
+                .join(FieldMaster, FieldMaster.id == ApiRequiredField.field_id)
+                .filter(ApiRequiredField.api_id == feature.id)
+                .all()
+            )
+            
+            form_fields = []
+            missing_mandatory = []
+            
+            # Use 'final_data' which contains ClientID + UserInputs
+            mapped_payload = {}
+            # Preserve client_id if not mapped explicitly (usually it's standard)
+            if "client_id" in final_data:
+                mapped_payload["client_id"] = final_data["client_id"]
+
+            for mapping, field in field_mappings:
+                # Construct Form Config
+                f_dict = {}
+                for col in field.__table__.columns:
+                        val = getattr(field, col.name)
+                        if isinstance(val, datetime):
+                            val = val.isoformat()
+                        f_dict[col.name] = val
+                f_dict['is_mandatory'] = mapping.is_mandatory
+                form_fields.append(f_dict)
                 
-            # 5. Execute via Connector
+                # Check for Data Presence
+                if field.field in final_data:
+                    # Logic 1: Use key_name if present, else original field name
+                    target_key = mapping.key_name if mapping.key_name else field.field
+                    mapped_payload[target_key] = final_data[field.field]
+                elif mapping.is_mandatory:
+                     missing_mandatory.append(field.field)
+
+            # Check if missing
+            if missing_mandatory:
+                # Update current_api_id so next request knows we are here
+                if flow.current_api_id != feature.id:
+                    flow.current_api_id = feature.id
+                    session.commit()
+
+                return make_success_response({
+                    "action": "NEXT_FORM",
+                    "feature_id": feature.id,
+                    "feature_name": feature.feature,
+                    "title": feature.title,
+                    "description": feature.feature_description,
+                    "form_fields": form_fields,
+                    "validation_error": f"Missing fields: {missing_mandatory}" if input_data else None 
+                })
+
+            # 6. Execute via Connector (Only if all data is present)
+            # Use 'mapped_payload' instead of 'final_data' for external call
+            
+            # INJECTION: Check if feature needs 'redirect_url'
+            # Simple string check as requested: "you can parse the curl and check if it ask redirecturl"
+            print(feature.request, "feature.request", "redirect_url" in feature.request)
+            if feature.request and "redirect_url" in feature.request:
+                 import os
+                 redirect_url = os.getenv("JOURNEY_CALLBACK_URL")
+                 if redirect_url:
+                     mapped_payload["redirect_url"] = redirect_url
+                     mapped_payload["state"] = str(uuid.uuid4())
+
             connector = FastKYCConnector(session, customer_id)
-            api_result = connector.execute_feature(feature, final_data)
+            api_result = connector.execute_feature(feature, mapped_payload)
             
             # 6. Handle Result
             status = api_result.get("status", "UNKNOWN") # FastKYC returns 'status' usually?
             # User example: {"status": "SUCCESS", "client_id": ...}
-            
+            print("checking the nesting ->", api_result)
             # Update State
-            if "client_id" in api_result:
-                journey_state["client_id"] = api_result["client_id"]
+            client_id = (
+                api_result.get("client_id")
+                or api_result.get("data", {}).get("client_id")
+            )
+
+            if client_id:
+                journey_state["client_id"] = client_id
                 flow.journey_state = journey_state
-                
+
             # Log
             log = JourneyLog(
                 active_flow_id=flow.id,
@@ -194,25 +265,40 @@ def submit_step_data(
             next_step_response = {}
             
             # Handle POLLING / REDIRECT
-            if target_api_dep.api_type == "redirects":
+            if target_api_dep.api_type == "redirects" and (status == "SUCCESS" or status == "success"):
                 # Redirect logic
-                # Usually returns a URL to redirect user to.
-                # We stay on this step/api until verified.
-                redirect_url = api_result.get("url")
-                # Also probably a client_id for polling?
+                # The redirect API has been executed successfully
+                # Now we need to advance to the NEXT API (which should be the polling/verification API)
+                data = api_result.get("data")
+                redirect_url = data.get("url")
                 
-                # Update flow to 'polling' state for this api?
-                flow.current_api_id = feature.id
-                session.commit()
+                # Find the next API in sequence for polling
+                current_idx = -1
+                for i, api in enumerate(apis):
+                    if api.api_id == target_api_dep.api_id:
+                        current_idx = i
+                        break
                 
-                return make_success_response({
-                    "action": "REDIRECT",
-                    "url": redirect_url,
-                    "poll_info": {
-                        "api_id": feature.id,
-                        "client_id": api_result.get("client_id")
-                    }
-                })
+                # Check if there's a next API (should be the polling API)
+                if current_idx + 1 < len(apis):
+                    next_api = apis[current_idx + 1]
+                    # Advance to next API (the polling API)
+                    flow.current_api_id = next_api.api_id
+                    session.commit()
+                    
+                    return make_success_response({
+                        "action": "REDIRECT",
+                        "data": data,
+                        "url": redirect_url,
+                        "poll_info": {
+                            "api_id": next_api.api_id,  # Return NEXT API for polling, not current
+                            "client_id": data.get("client_id")
+                        }
+                    })
+                else:
+                    # No next API? This shouldn't happen for redirect flows
+                    session.commit()
+                    return error_failure_response("Configuration Error: No polling API after redirect", 500)
                 
             elif target_api_dep.api_type == "pooling":
                 # Polling logic (if this API ITSELF is the one to poll, or if it triggers polling)
@@ -221,7 +307,7 @@ def submit_step_data(
                 pass 
                 
             # DEFAULT / SUCCESS behavior: Move to Next API
-            if status == "SUCCESS" or "client_id" in api_result: # Loose success check
+            if status == "SUCCESS" or status == "success" or "client_id" in api_result: # Loose success check
                 # Advance
                 # 1. Check if more APIs in this Step
                 next_api = None
@@ -266,7 +352,8 @@ def submit_step_data(
                         "feature_name": next_feature.feature,
                         "title": next_feature.title,
                         "description": next_feature.feature_description,
-                        "form_fields": form_fields
+                        "form_fields": form_fields,
+                        "data": api_result # Return the result of the JUST executed API
                     })
                 else:
                     # Step Complete -> Move to Next Step (FeatureFlow)
@@ -287,7 +374,8 @@ def submit_step_data(
                     return make_success_response({
                         "action": status_action, 
                         "message": "Proceed to next step" if next_map else "Journey Completed",
-                        "next_step": flow.current_step if next_map else None
+                        "next_step": flow.current_step if next_map else None,
+                        "data": api_result # Return the result of the JUST executed API
                     })
             
             else:
@@ -331,15 +419,19 @@ def poll_status(
             
             status = result.get("status")
             
-            # Log this attempt? Maybe too verbose for polling, but good for debug.
-            # Optionally update state if success?
-            
-            if status == "SUCCESS":
-                 # Update ActiveFlow State if needed
-                 # Maybe we don't automatically advance here, frontend calls submit again?
-                 # OR we return "NEXT_ACTION" here?
-                 # Let's return the status and let Frontend trigger the next move (e.g. calling submit with empty data to trigger 'next' logic)
-                 pass
+            # If polling succeeds, ensure client_id is in journey_state for subsequent APIs
+            if status == "SUCCESS" or status == "success":
+                # Extract client_id from result (could be in 'data' or top level)
+                result_data = result.get("data", {})
+                new_client_id = result_data.get("client_id") or result.get("client_id") or client_id
+                
+                # Always save client_id to journey_state (either from response or the one we used for polling)
+                journey_state = active_flow.journey_state or {}
+                journey_state["client_id"] = new_client_id
+                active_flow.journey_state = journey_state
+                session.commit()
+                
+                print(f"[POLLING SUCCESS] Saved client_id to journey_state: {new_client_id}")
                  
             return make_success_response(result)
 

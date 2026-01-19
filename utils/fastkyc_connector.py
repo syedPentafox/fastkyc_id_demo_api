@@ -11,7 +11,7 @@ class FastKYCConnector:
     def __init__(self, session: Session, customer_id: int):
         self.session = session
         self.customer_id = customer_id
-        self.base_url = "https://api.fastkyc.in" # Could be env var
+        self.base_url = "https://fastkyc-api.fastkyc.in" # Could be env var
 
     def _get_api_key(self):
         # Raw SQL or if we had a model for api_keys. 
@@ -62,6 +62,7 @@ class FastKYCConnector:
             "feature": feature.feature,
             "data": input_data
         }
+        print("payload", payload)
         
         # Use feature.url. If it's relative, append to base.
         url = feature.url
@@ -69,10 +70,13 @@ class FastKYCConnector:
              url = f"{self.base_url}{url}"
              
         print(f"Calling FastKYC: {url} | Feature: {feature.feature}")
-        
+        print(f"Calling FastKYC: {url} | headers: {headers}")
+        print(f"Calling FastKYC: {url} | payoad: {payload}")
+
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             data = response.json()
+            print(f"FastKYC Response: {data}")
             
             # Simple error check based on status code or response body
             if response.status_code >= 400:

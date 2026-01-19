@@ -83,6 +83,7 @@ async def verify_access_token(request : Request,token: str = Depends(oauth2_sche
     try:
         logger.info("Authentication Initiated.")
         payload = jwt.decode(token, get_jwt_secret_key(), algorithms=[ALGORITHM])
+        # user_id: str = str(13)
         user_id: str = str(payload.get("sub"))
         # await validate_access_token(payload.get("sub"),token)
         if not user_id:

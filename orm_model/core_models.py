@@ -165,6 +165,7 @@ class ApiRequiredField(Base):
     api_id = Column(Integer, ForeignKey("features_master.id"), nullable=False)
     field_id = Column(Integer, ForeignKey("field_master.id"), nullable=False)
     is_mandatory = Column(Boolean, default=True)
+    key_name = Column(String(255), nullable=True) # Mapping Override
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     api = relationship("FeatureMaster")

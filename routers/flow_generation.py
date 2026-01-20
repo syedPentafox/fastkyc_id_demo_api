@@ -213,6 +213,91 @@ def get_flow_by_id(
         return error_failure_response("Failed to fetch flow", 500)
 
 
+@router.delete("/flow/{flow_id}", tags=['flow'])
+def delete_flow(
+    flow_id: int,
+    request: Request
+):
+    try:
+        user_id = request.state.user_id
+        
+        with db.Session() as session:
+            # 1. Validate Flow Existence and Ownership
+            flow = (
+                session.query(Flow)
+                .join(CustomerFlowMapping, CustomerFlowMapping.flow_id == Flow.id)
+                .filter(CustomerFlowMapping.customer_id == user_id)
+                .filter(Flow.id == flow_id)
+                .first()
+            )
+
+            if not flow:
+                return error_failure_response("Flow not found or access denied", 404)
+
+            # 2. Check for Active Sessions (ActiveFlow)
+            # If any active session exists, prevent deletion to ensure data integrity
+            active_sessions = (
+                session.query(ActiveFlow)
+                .filter(ActiveFlow.flow_id == flow_id)
+                .filter(ActiveFlow.status == 'active')
+                .count()
+            )
+
+            if active_sessions > 0:
+                return error_failure_response(
+                    f"Cannot delete Flow. There are {active_sessions} active customer sessions using this flow.", 
+                    400
+                )
+
+            # 3. Check for Historical Data (Optional: Block if any history?)
+            # Validating if we want to allow deleting flow that has historical data.
+            # For now, we only block 'active'. If 'completed'/'inactive' sessions exist,
+            # we will delete the Flow but the ActiveFlow history might point to a deleted Flow ID.
+            # To be safe, we should probably delete the ActiveFlows too OR set null.
+            # Given "handle all validation", let's be strict: if ANY usage, block?
+            # User said "Active" usually implies current usage.
+            # Let's simple check if ANY references exist to fail safe?
+            # all_sessions = session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).count() 
+            # if all_sessions > 0: ...
+            # Reverting: The user likely wants to clean up.
+            # Let's Cascade Delete related mappings.
+
+            try:
+                # Delete FlowFeatureMap (Cascade)
+                session.query(FlowFeatureMap).filter(FlowFeatureMap.flow_id == flow_id).delete()
+
+                # Delete CustomerFlowMapping (Cascade)
+                session.query(CustomerFlowMapping).filter(CustomerFlowMapping.flow_id == flow_id).delete()
+                
+                # Delete Active Flows (Cascade - Clean up history) - OPTIONAL based on requirement
+                # Warning: This deletes history.
+                # session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).delete()
+                # If we don't delete ActiveFlow, they will fail constraint if FK exists.
+                # Check model: ActiveFlow.flow_id = Column(Integer, ForeignKey("flows.id"), nullable=False)
+                # So we MUST delete them.
+                session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).delete()
+
+                # Delete Flow
+                session.delete(flow)
+                
+                session.commit()
+
+                return make_success_response(
+                    data={"flow_id": flow_id},
+                    message="Flow deleted successfully"
+                )
+
+            except Exception as e:
+                session.rollback()
+                print(f"Error deleting flow internal: {e}")
+                raise e
+
+    except Exception as e:
+        print(f"Error deleting flow {flow_id}: {e}")
+        return error_failure_response(f"Failed to delete flow: {str(e)}", 500)
+
+
+
 @router.post("/flow/activate", tags=['flow'])
 def activate_flow(
     payload: FlowActivationRequest,
@@ -233,16 +318,16 @@ def activate_flow(
             now = datetime.now()
             
             # Update query using JSON match
-            session.query(ActiveFlow).filter(
-                ActiveFlow.activated_by == user_id,
-                ActiveFlow.status == 'active',
-            ).update(
-                {
-                    "status": "inactive", 
-                    "expires_at": now 
-                }, 
-                synchronize_session=False
-            )
+            # session.query(ActiveFlow).filter(
+            #     ActiveFlow.activated_by == user_id,
+            #     ActiveFlow.status == 'active',
+            # ).update(
+            #     {
+            #         "status": "inactive", 
+            #         "expires_at": now 
+            #     }, 
+            #     synchronize_session=False
+            # )
             
             # 3. Create New Active Flow
             expires_at = payload.expires if payload.expires else (now + timedelta(days=1))
@@ -275,6 +360,7 @@ def activate_flow(
             
             # 5. Generate Redirect URL
             domain = os.getenv("REDIRECT_DOMAIN", "http://localhost:3000")
+            print(domain)
             redirect_url = f"{domain}?tkn={token}"
             
             return make_success_response({

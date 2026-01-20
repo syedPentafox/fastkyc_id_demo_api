@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { useJourneyStore, FlowActivationData } from '@/lib/store';
+import { useNavigate } from 'react-router-dom';
+import { useJourneyStore, useTokenStore, FlowActivationData } from '@/lib/store';
 import { useFlowActivation } from '@/lib/hooks';
 
 interface Props {
@@ -7,37 +8,31 @@ interface Props {
 }
 
 export const FlowInitializationHandler: React.FC<Props> = ({ children }) => {
-    const { initSession, setFlowData, setError, flowData, error: storeError, token } = useJourneyStore();
+    const navigate = useNavigate();
+    const { initSession, token } = useTokenStore();
+    const { setFlowData, setError, flowData, error: storeError } = useJourneyStore();
 
     // 1. Extract Token on Mount
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const tkn = params.get('tkn');
 
-        // Only set if we found a token and it's different (or we don't have one)
-        // Note: initSession saves to localStorage.
-        if (tkn) {
+        // Only set if we found a token and it's different
+        if (tkn && tkn !== token) {
             initSession(tkn);
-        } else if (!token && !tkn) {
-            // If no token in URL and no token in store/localStorage, we can't proceed.
-            // But we might be on a route that doesn't need it? 
-            // For now, let's assume this handler guards the flow.
         }
     }, [initSession, token]);
 
-    // 2. Fetch Data (TanStack Query)
-    // It will run if token is available.
-    const { data, error, isLoading } = useFlowActivation(token);
+    // 2. Fetch Data (TanStack Query) - only if we don't have flowData in sessionStorage
+    const shouldFetch = !!token && !flowData;
+    const { data, error, isLoading } = useFlowActivation(shouldFetch);
 
     // 3. Sync to Store
     useEffect(() => {
-        if (data) {
-            // Only update if not already set or checks pass
-            // We can do a deep check or just simple ID check if we had one.
-            // For now, simply set it.
+        if (data && !flowData) {
             setFlowData(data as FlowActivationData);
         }
-    }, [data, setFlowData]);
+    }, [data, flowData, setFlowData]);
 
     // 4. Handle Errors
     useEffect(() => {
@@ -46,6 +41,24 @@ export const FlowInitializationHandler: React.FC<Props> = ({ children }) => {
             setError(msg);
         }
     }, [error, setError]);
+
+    // 5. Check Expiration
+    useEffect(() => {
+        if (flowData?.expires_at) {
+            const checkExpiry = () => {
+                const expiresAt = new Date(flowData.expires_at).getTime();
+                const now = new Date().getTime();
+                if (now > expiresAt) {
+                    navigate('/session-expired');
+                }
+            };
+
+            checkExpiry();
+            // Check every minute just in case, though the header timer handles visual feedback
+            const interval = setInterval(checkExpiry, 60000);
+            return () => clearInterval(interval);
+        }
+    }, [flowData, navigate]);
 
     // Render Logic
 
@@ -61,8 +74,8 @@ export const FlowInitializationHandler: React.FC<Props> = ({ children }) => {
         );
     }
 
-    // If loading or (token exists but no data yet and no error)
-    if (isLoading || (token && !flowData && !error)) {
+    // If loading (and we're actually fetching)
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">
                 <div className="flex flex-col items-center animate-pulse">
@@ -73,7 +86,7 @@ export const FlowInitializationHandler: React.FC<Props> = ({ children }) => {
         );
     }
 
-    // If no token and no data (and verify strictly), maybe show "Missing Token"
+    // If no token and no data
     if (!token && !flowData) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">

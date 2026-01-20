@@ -98,9 +98,12 @@ def start_flow_journey(
             if not active_flow:
                 return error_failure_response("Invalid Active Flow ID in token", 404)
             
+            if(active_flow.status == 'completed'):
+                return error_failure_response("Flow is completed", 400)
+
             if active_flow.status != 'active':
                 return error_failure_response("Flow is not active", 400)
-            
+
             if active_flow.expires_at and active_flow.expires_at < datetime.now():
                 return error_failure_response("Flow has expired", 400)
 

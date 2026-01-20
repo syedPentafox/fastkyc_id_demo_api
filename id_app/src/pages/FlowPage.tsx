@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useJourneyStore } from '@/lib/store';
 import { DynamicForm } from '@/components/DynamicForm';
 import { Stepper } from '@/components/Stepper';
+import { BrandHeader } from '@/components/BrandHeader';
+import { JourneyOverview } from '@/components/JourneyOverview';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, ExternalLink, Loader2 } from 'lucide-react';
+import { AlertCircle, Check, ExternalLink, Loader2, XIcon } from 'lucide-react';
 import { useSubmitStep, usePolling } from '@/lib/hooks';
 
 export default function FlowPage() {
-    const { flowData, addCollectedData, collectedData } = useJourneyStore();
+    const navigate = useNavigate();
+    const {
+        flowData,
+        addCollectedData,
+        collectedData,
+        hasStartedJourney,
+        currentStepData,
+        setCurrentStepData,
+        currentStepNumber,
+        setCurrentStepNumber,
+        setHasStartedJourney
+    } = useJourneyStore();
     const { mutateAsync: submitStep, isPending: isSubmitting } = useSubmitStep();
 
-    const [started, setStarted] = useState(false);
-    const [currentStep, setCurrentStep] = useState(1);
-    const [currentStepData, setCurrentStepData] = useState<any>(null);
     const [localError, setLocalError] = useState<string | null>(null);
 
     // Polling state for redirect flows
@@ -26,19 +37,15 @@ export default function FlowPage() {
         pollingInfo?.featureId || null,
         isPolling
     );
-
     useEffect(() => {
-        if (flowData && !started && !currentStepData) {
-            submitStep({})
-                .then((data) => {
-                    setCurrentStepData(data);
-                    setStarted(true);
-                })
-                .catch((err) => {
-                    setLocalError(err.message || "Failed to start");
-                });
+        if (!hasStartedJourney) {
+            navigate('/', { replace: true });
+        } else if (!currentStepData && !localError && !isSubmitting) {
+            // go back if something fails
+            setHasStartedJourney(false);
+            navigate('/', { replace: true });
         }
-    }, [flowData, started, currentStepData, submitStep]);
+    }, [hasStartedJourney, currentStepData, localError, isSubmitting, navigate, setHasStartedJourney]);
 
     // Monitor popup window close
     useEffect(() => {
@@ -63,10 +70,17 @@ export default function FlowPage() {
         if (pollData && isPolling) {
             const status = pollData.status;
             if (pollData.data.is_completed) {
-                // Stop polling and move to next step automatically
+                // Stop polling
                 setIsPolling(false);
                 setPollingInfo(null);
-                setPopupWindow(null); // Clear popup reference
+                setPopupWindow(null);
+
+                // Save Polling Success Data
+                addCollectedData({
+                    stepNumber: currentStepNumber,
+                    featureName: currentStepData?.title || currentStepData?.feature_name || `Step ${currentStepNumber}`,
+                    data: pollData.data
+                });
 
                 // Automatically trigger next step without user interaction
                 const autoSubmit = async () => {
@@ -77,7 +91,7 @@ export default function FlowPage() {
                             return;
                         }
                         setCurrentStepData(payload);
-                        setCurrentStep(prev => prev + 1);
+                        setCurrentStepNumber(currentStepNumber + 1);
                     } catch (err: any) {
                         setLocalError(err.message || 'Failed to proceed to next step');
                     }
@@ -102,18 +116,47 @@ export default function FlowPage() {
         }
     }, [pollError, isPolling]);
 
+    // Auto-advance for STEP_COMPLETE
+    console.log("Current step data:", currentStepData);
+    useEffect(() => {
+        if (currentStepData && currentStepData.action === 'STEP_COMPLETE') {
+            const timer = setTimeout(async () => {
+                await handleStepSubmit({});
+                setCurrentStepNumber(currentStepNumber + 1);
+            }, 1500); // 1.5s delay to show success message
+
+            return () => clearTimeout(timer);
+        }
+    }, [currentStepData]);
+
+    // RAIPD API EXECUTION: Auto-advance if NEXT_FORM has no fields
+    useEffect(() => {
+        if (currentStepData && currentStepData.action === 'NEXT_FORM') {
+            const fields = currentStepData.form_fields || [];
+            if (fields.length === 0 && !isSubmitting && !localError) {
+                // Auto-submit empty forms (Rapid Execution)
+                console.log("Auto-advancing rapid API step...");
+                handleStepSubmit({});
+            }
+        }
+    }, [currentStepData, isSubmitting, localError]);
+
     const handleStepSubmit = async (data: any) => {
+        setLocalError(null);
         try {
-            // Save form data before submitting
-            if (currentStepData && Object.keys(data).length > 0) {
+            const payload = await submitStep(data);
+
+            // Save RESPONSE data for non-redirect flows
+            if (payload.action !== 'REDIRECT') {
+                // Filter out UI config to keep data clean
+                const { form_fields, action, poll_info, ...responseData } = payload;
+
                 addCollectedData({
-                    stepNumber: currentStep,
-                    featureName: currentStepData.title || currentStepData.feature_name || `Step ${currentStep}`,
-                    data: data,
+                    stepNumber: currentStepNumber,
+                    featureName: currentStepData?.title || currentStepData?.feature_name || `Step ${currentStepNumber}`,
+                    data: responseData
                 });
             }
-
-            const payload = await submitStep(data);
 
             if (payload.action === 'REDIRECT') {
                 // Open redirect URL in new window and store reference
@@ -143,124 +186,131 @@ export default function FlowPage() {
 
             setCurrentStepData(payload);
         } catch (err: any) {
-            setLocalError(err.message || "Something went wrong sending step.");
+            console.error("Error submitting step:", err);
+            setLocalError(err.response?.data?.message || err.message || "Something went wrong sending step.");
         }
     };
 
     if (!flowData) return null;
 
+    const isJourneyComplete = currentStepData?.action === 'JOURNEY_COMPLETE';
+
+    // Create display steps including the virtual "Overview" step
+    const displaySteps = [
+        ...flowData.steps,
+        {
+            step_number: flowData.steps.length + 1,
+            name: 'Overview',
+            description: 'Journey Summary',
+            action: 'OVERVIEW'
+        }
+    ];
+
+    // If journey is complete, we are on the Overview step (last step)
+    // Otherwise we are on the currentStepNumber
+    const stepperCurrentStep = isJourneyComplete ? displaySteps.length : currentStepNumber;
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 font-sans text-gray-900">
-            <div className="max-w-4xl mx-auto pt-8">
-                {/* Header */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
-                        {flowData.flow_details.name}
-                    </h1>
-                    <p className="text-gray-600 mt-3 text-lg">{flowData.flow_details.description}</p>
-                    {flowData.end_customer && (
-                        <p className="text-sm text-gray-500 mt-2">
-                            Welcome, <span className="font-semibold text-indigo-600">{flowData.end_customer.name}</span>
-                        </p>
-                    )}
-                </div>
+        <div className="min-h-screen bg-background">
+            {/* Brand Header */}
+            <BrandHeader />
 
-                <Stepper steps={flowData.steps} currentStep={currentStep} />
+            {/* Main Content */}
+            <div className="max-w-5xl mx-auto px-4 py-8">
 
+                {/* Stepper - Always visible */}
+                <Stepper
+                    steps={displaySteps as any}
+                    currentStep={stepperCurrentStep}
+                    isJourneyComplete={isJourneyComplete}
+                />
+
+                {/* Error Display */}
                 {localError && (
-                    <div className="max-w-md mx-auto mb-4 p-4 bg-red-50 text-red-700 rounded-lg shadow-sm border border-red-200">
-                        {localError}
+                    <div className="relative max-w-2xl mx-auto mb-6 p-4 bg-destructive/10 text-destructive rounded-xl shadow-sm border border-destructive/20 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-2">
+                            <span className="text-lg"><AlertCircle className="w-5 h-5" /></span>
+                            <span>{localError}</span>
+                        </div>
+                        <div className="absolute top-1 right-1 flex items-center gap-2">
+                            <button
+                                onClick={() => setLocalError(null)}
+                                className="text-sm text-destructive hover:underline bg-destructive/80 rounded-full p-1"
+                            >
+                                <XIcon className="w-3 h-3 text-white" />
+                            </button>
+                        </div>
                     </div>
                 )}
 
-                <div className="transition-all duration-500 ease-in-out">
-                    {!currentStepData && started && !localError && (
-                        <div className="text-center py-10">
-                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                            <p className="text-gray-400 mt-4">Loading Step...</p>
+                {/* Content Area - Centered */}
+                <div className="flex items-center justify-center min-h-[400px] transition-all duration-500 ease-in-out">
+                    {!currentStepData && !localError && (
+                        <div className="text-center py-16 animate-in fade-in duration-500">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary mb-4"></div>
+                            <p className="text-muted-foreground font-medium">Loading your next step...</p>
                         </div>
                     )}
 
                     {currentStepData && currentStepData.action === 'NEXT_FORM' && (
-                        <DynamicForm
-                            featureName={currentStepData.title || currentStepData.feature_name}
-                            fields={currentStepData.form_fields}
-                            onSubmit={handleStepSubmit}
-                            isLoading={isSubmitting}
-                        />
+                        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <DynamicForm
+                                featureName={currentStepData.title || currentStepData.feature_name}
+                                fields={currentStepData.form_fields}
+                                onSubmit={handleStepSubmit}
+                                isLoading={isSubmitting}
+                            />
+                        </div>
                     )}
 
                     {currentStepData && currentStepData.action === 'POLLING' && (
-                        <Card className="max-w-md mx-auto mt-6 text-center shadow-xl border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50">
-                            <CardContent className="pt-8 pb-8">
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg relative">
-                                    <Loader2 className="w-8 h-8 animate-spin" />
-                                    <div className="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-ping" />
+                        <Card className="max-w-lg mx-auto text-center shadow-2xl border-0 bg-card/90 backdrop-blur animate-in fade-in zoom-in-95 duration-500">
+                            <CardContent className="pt-12 pb-12">
+                                <div className="w-20 h-20 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl relative">
+                                    <Loader2 className="w-10 h-10 animate-spin" />
+                                    <div className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-blue-700 mb-2">Verification in Progress</h2>
-                                <p className="text-gray-600 mb-4">
+                                <h2 className="text-3xl font-bold text-foreground mb-3">Verification in Progress</h2>
+                                <p className="text-muted-foreground mb-6 text-lg">
                                     Please complete the verification in the opened window.
                                 </p>
-                                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground bg-accent rounded-full px-4 py-2 inline-flex">
                                     <ExternalLink className="w-4 h-4" />
                                     <span>Waiting for verification...</span>
                                 </div>
-                                <div className="mt-4 text-xs text-gray-400">
-                                    This page will automatically continue once verification is complete
+                                <div className="mt-6 text-xs text-muted-foreground">
+                                    ✨ This page will automatically continue once complete
                                 </div>
                             </CardContent>
                         </Card>
                     )}
 
                     {currentStepData && currentStepData.action === 'STEP_COMPLETE' && (
-                        <Card className="max-w-md mx-auto mt-6 text-center shadow-xl border-green-100 bg-gradient-to-br from-green-50 to-emerald-50">
-                            <CardContent className="pt-8 pb-8">
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                                    <Check className="w-8 h-8" />
+                        <Card className="max-w-lg mx-auto text-center shadow-2xl border-0 bg-white/90 backdrop-blur animate-in fade-in zoom-in-95 duration-500">
+                            <CardContent className="pt-12 pb-12">
+                                <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl animate-bounce">
+                                    <Check className="w-10 h-10" strokeWidth={3} />
                                 </div>
-                                <h2 className="text-2xl font-bold text-green-700 mb-2">Success!</h2>
-                                <p className="text-gray-600">{currentStepData.message}</p>
-
-                                <button
-                                    onClick={async () => {
-                                        await handleStepSubmit({});
-                                        setCurrentStep(prev => prev + 1);
-                                    }}
-                                    className="mt-6 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                                >
-                                    Continue to Next Step
-                                </button>
+                                <h2 className="text-3xl font-bold text-green-700 mb-3">Success!</h2>
+                                <p className="text-gray-600 mb-6 text-lg">{currentStepData.message}</p>
+                                <div className="flex items-center justify-center gap-2 text-sm text-indigo-600 bg-indigo-50 rounded-full px-4 py-2 inline-flex">
+                                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></div>
+                                    <span className="font-medium">Continuing to next step...</span>
+                                </div>
                             </CardContent>
                         </Card>
                     )}
 
                     {currentStepData && currentStepData.action === 'JOURNEY_COMPLETE' && (
-                        <div className="max-w-3xl mx-auto mt-6 space-y-6">
-                            <Card className="text-center shadow-xl border-green-100 bg-gradient-to-br from-green-50 to-emerald-50">
-                                <CardContent className="pt-8 pb-8">
-                                    <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                                        <Check className="w-10 h-10" />
-                                    </div>
-                                    <h2 className="text-3xl font-bold text-green-700 mb-2">Journey Complete!</h2>
-                                    <p className="text-gray-600 text-lg">{currentStepData.message}</p>
-                                </CardContent>
-                            </Card>
-
-                            {collectedData.length > 0 && (
-                                <Card className="shadow-xl border-indigo-100 bg-white">
-                                    <CardContent className="pt-6 pb-6">
-                                        <h3 className="text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2">
-                                            <span className="w-2 h-2 bg-indigo-600 rounded-full"></span>
-                                            Collected Data Summary
-                                        </h3>
-                                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                            <pre className="text-sm text-gray-700 overflow-x-auto whitespace-pre-wrap">
-                                                {JSON.stringify(collectedData, null, 2)}
-                                            </pre>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
+                        <div className="w-full">
+                            <JourneyOverview
+                                steps={flowData.steps}
+                                collectedData={collectedData}
+                                onFinish={() => {
+                                    setHasStartedJourney(false);
+                                    navigate('/', { replace: true });
+                                }}
+                            />
                         </div>
                     )}
                 </div>

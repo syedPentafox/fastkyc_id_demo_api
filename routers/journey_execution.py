@@ -85,8 +85,12 @@ def submit_step_data(
             if not flow:
                 return error_failure_response("Flow not found", 404)
             
+            if(flow.status == 'completed'):
+                return error_failure_response("Flow is completed", 400)
+
             if flow.status != "active":
                 return error_failure_response("Flow is not active", 400)
+
 
             # Initialize step if needed
             if not flow.current_step:
@@ -110,14 +114,7 @@ def submit_step_data(
             feature_flow_id = flow_map.feature_id
             
             # Find the API dependency to execute
-            # If flow.current_api_id is set, it means we are re-trying OR completing a polling step?
-            # Actually, standard flow: 
-            # - User Submits Data -> We Find NEXT API to execute (or current if it's the first time).
-            # - But usually UI submits data FOR a specific form.
-            # - So we should check if the submitted data matches the expected API fields.
-            
-            # Let's Look for the *Next Pending* API or the *Current* API if it was failed/polling.
-            
+          
             # Get all APIs for this step
             apis = (
                 session.query(FeatureApiDependency)
@@ -133,15 +130,7 @@ def submit_step_data(
                 target_api_dep = apis[0] if apis else None
             else:
                 # We are at a specific API.
-                # If it was "FAILED" or "POLLING", we might be re-submitting for IT.
-                # If it was "SUCCESS", we want the NEXT one.
-                # But 'submit' implies "Here is data, do the thing".
-                # Let's assume we are submitting for the `current_api_id` if set, 
-                # OR if the previous one finished, we move to next.
-                # Simplify: The UI "Knows" what it's submitting? 
-                # No, Server Driven.
-                # Let's Assume: The flow.current_api_id points to the one we are ABOUT to do or doing.
-                
+            
                 # Find index of current
                 for i, api in enumerate(apis):
                     if api.api_id == flow.current_api_id:
@@ -220,11 +209,6 @@ def submit_step_data(
                 })
 
             # 6. Execute via Connector (Only if all data is present)
-            # Use 'mapped_payload' instead of 'final_data' for external call
-            
-            # INJECTION: Check if feature needs 'redirect_url'
-            # Simple string check as requested: "you can parse the curl and check if it ask redirecturl"
-            print(feature.request, "feature.request", "redirect_url" in feature.request)
             if feature.request and "redirect_url" in feature.request:
                  import os
                  redirect_url = os.getenv("JOURNEY_CALLBACK_URL")
@@ -236,18 +220,24 @@ def submit_step_data(
             api_result = connector.execute_feature(feature, mapped_payload)
             
             # 6. Handle Result
-            status = api_result.get("status", "UNKNOWN") # FastKYC returns 'status' usually?
-            # User example: {"status": "SUCCESS", "client_id": ...}
-            print("checking the nesting ->", api_result)
-            # Update State
-            client_id = (
-                api_result.get("client_id")
-                or api_result.get("data", {}).get("client_id")
-            )
+            status = api_result.get("status", "UNKNOWN")
+
+            if not api_result.get("success"):
+                raise Exception(api_result.get("message", "FastKYC validation failed"))
+
+            data = api_result.get("data", {})
+
+            client_id = None    
+            if isinstance(data, dict):
+                client_id = data.get("client_id")
+            elif isinstance(data, list) and data:
+                if isinstance(data[0], dict):
+                    client_id = data[0].get("client_id")
 
             if client_id:
                 journey_state["client_id"] = client_id
                 flow.journey_state = journey_state
+
 
             # Log
             log = JourneyLog(
@@ -371,6 +361,12 @@ def submit_step_data(
                     session.commit()
                     
                     status_action = "STEP_COMPLETE" if next_map else "JOURNEY_COMPLETE"
+
+                    if status_action == "JOURNEY_COMPLETE":
+                        flow.status = "completed"
+                        flow.expires_at = datetime.now()
+                        session.commit()
+
                     return make_success_response({
                         "action": status_action, 
                         "message": "Proceed to next step" if next_map else "Journey Completed",

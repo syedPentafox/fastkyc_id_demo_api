@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import FlowPage from './pages/FlowPage';
-import LandingPage from './pages/LandingPage';
+import WelcomePage from './pages/WelcomePage';
+import SessionExpiredPage from './pages/SessionExpiredPage';
 import { FlowInitializationHandler } from './components/FlowInitializationHandler';
 import './index.css';
 
@@ -14,7 +15,7 @@ function App() {
         <Routes>
           <Route path="/" element={
             <FlowInitializationHandler>
-              <LandingPage />
+              <WelcomePage />
             </FlowInitializationHandler>
           } />
           <Route path="/flow" element={
@@ -22,6 +23,7 @@ function App() {
               <FlowPage />
             </FlowInitializationHandler>
           } />
+          <Route path="/session-expired" element={<SessionExpiredPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

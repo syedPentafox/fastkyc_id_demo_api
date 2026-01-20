@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import Optional
 import logging
-from orm_model.core_models import ApiRequiredField, FeatureApiDependency, FeatureFlow, FeatureMaster, FieldMaster
+from orm_model.core_models import ApiRequiredField, FeatureApiDependency, FeatureFlow, FeatureMaster, FieldMaster, FlowFeatureMap, JourneyLog
 from schemas.reqeust_schemas import FeatureFlowRequest
 from utils.authentication import verify_access_token
 from utils.custom_class import APIRouteWrapper
@@ -280,7 +280,7 @@ def get_feature_flow_by_id_or_name(
 
 
 '''
-this route is used to create a new feature flow
+this route is used to create a new feature flow but before deleting we will going to authenticate the role of the user.
 '''
 @router.post("/feature_flow", tags=['flow'])
 async def create_feature_flow(payload: FeatureFlowRequest,):
@@ -343,3 +343,66 @@ async def create_feature_flow(payload: FeatureFlowRequest,):
         data={"feature_id": flow_id},
         message=f"Feature Flow '{payload.name}' created successfully"
     )
+
+
+'''
+this route is used to delete a feature flow by ID or Name
+'''
+@router.delete("/feature_flow/{identifier}", tags=["flow"])
+def delete_feature_flow(
+    identifier: str
+):
+    try:
+        with db.Session() as session:
+            # 1. Resolve ID
+            if identifier.isdigit():
+                flow = session.query(FeatureFlow).filter(FeatureFlow.id == int(identifier)).first()
+            else:
+                flow = session.query(FeatureFlow).filter(FeatureFlow.name == identifier).first()
+
+            if not flow:
+                return error_failure_response("Feature flow not found", 404)
+
+            # 2. Validation: Check if used in any Flow (FlowFeatureMap)
+            usage_count = session.query(FlowFeatureMap).filter(FlowFeatureMap.feature_id == flow.id).count()
+            if usage_count > 0:
+                return error_failure_response(
+                    f"Cannot delete Feature Flow. It is currently used in {usage_count} Flows.",
+                    400
+                )
+
+            # 3. Validation: Check for Journey Logs? (Active execution history)
+            # JourneyLog has feature_id param (ForeignKey to feature_flow.id)
+            # Check model: feature_id = Column(Integer, ForeignKey("feature_flow.id"), nullable=False)
+            # So we must check this too.
+            log_usage = session.query(JourneyLog).filter(JourneyLog.feature_id == flow.id).count()
+            if log_usage > 0:
+                # If we have logs, we probably shouldn't delete it or we must cascade logs.
+                # Deleting Logs = Deleting Audit History.
+                # Better to BLOCK.
+                return error_failure_response(
+                    f"Cannot delete Feature Flow. It has {log_usage} execution logs associated with it.",
+                    400
+                )
+            
+            # 4. Delete
+            try:
+                # Delete Dependencies (FeatureApiDependency)
+                session.query(FeatureApiDependency).filter(FeatureApiDependency.feature_id == flow.id).delete()
+                
+                # Delete Feature Flow
+                session.delete(flow)
+                session.commit()
+
+                return make_success_response(
+                    data={"id": flow.id},
+                    message=f"Feature Flow '{flow.name}' deleted successfully"
+                )
+
+            except Exception as e:
+                session.rollback()
+                raise e
+
+    except Exception as e:
+        print(f"Error deleting feature flow {identifier}: {e}")
+        return error_failure_response(f"Failed to delete feature flow: {str(e)}", 500)

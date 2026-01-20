@@ -74,14 +74,12 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
     };
 
     return (
-        <Card className="w-full max-w-2xl mx-auto mt-6 shadow-2xl border-indigo-100 bg-white overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-
-            <CardHeader className="bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-indigo-100">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        <Card className="w-full max-w-2xl mx-auto mt-6 shadow-lg border-border bg-card overflow-hidden">
+            <CardHeader className="border-b border-border bg-muted/50">
+                <CardTitle className="text-2xl font-bold text-foreground">
                     {featureName}
                 </CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-muted-foreground">
                     Please provide the required information below
                 </CardDescription>
             </CardHeader>
@@ -92,12 +90,11 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
                         <div key={field.field} className="space-y-2 group">
                             <Label
                                 htmlFor={field.field}
-                                className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                                className="text-sm font-semibold text-foreground flex items-center gap-2"
                             >
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 group-hover:bg-indigo-600 transition-colors" />
                                 {field.label}
                                 {field.is_required && (
-                                    <span className="text-red-500 text-base">*</span>
+                                    <span className="text-destructive text-base">*</span>
                                 )}
                             </Label>
 
@@ -107,12 +104,12 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
                                         id={field.field}
                                         required={field.is_required}
                                         onChange={(e) => handleChange(field.field, e.target.value, field.regex)}
-                                        className={`border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 bg-white hover:border-indigo-400 ${errors[field.field] ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
+                                        className={`border-input bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${errors[field.field] ? 'border-destructive focus:ring-destructive/20' : 'focus:border-primary hover:border-primary/50'
                                             }`}
                                         placeholder={`Enter ${field.label.toLowerCase()}`}
                                     />
                                     {errors[field.field] && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
+                                        <p className="text-sm text-destructive flex items-center gap-1">
                                             <span className="text-xs">⚠</span>
                                             {errors[field.field]}
                                         </p>
@@ -125,12 +122,12 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
                                         type="number"
                                         required={field.is_required}
                                         onChange={(e) => handleChange(field.field, e.target.value, field.regex)}
-                                        className={`border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 bg-white hover:border-indigo-400 ${errors[field.field] ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
+                                        className={`border-input bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${errors[field.field] ? 'border-destructive focus:ring-destructive/20' : 'focus:border-primary hover:border-primary/50'
                                             }`}
                                         placeholder={`Enter ${field.label.toLowerCase()}`}
                                     />
                                     {errors[field.field] && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
+                                        <p className="text-sm text-destructive flex items-center gap-1">
                                             <span className="text-xs">⚠</span>
                                             {errors[field.field]}
                                         </p>
@@ -141,17 +138,17 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
                                     id={field.field}
                                     placeholder={`Unsupported type: ${field.type}`}
                                     disabled
-                                    className="bg-gray-100 border-gray-300"
+                                    className="bg-muted border-input opacity-50 cursor-not-allowed"
                                 />
                             )}
                         </div>
                     ))}
                 </CardContent>
 
-                <CardFooter className="bg-gradient-to-br from-gray-50 to-blue-50 border-t border-gray-200 pt-6 pb-6">
+                <CardFooter className="pt-6 pb-6">
                     <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        className="w-full bg-primary hover:bg-primary/70 text-primary-foreground font-semibold py-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         disabled={isLoading}
                     >
                         {isLoading ? (

@@ -24,11 +24,7 @@ class FastKYCConnector:
         # but adding a ReadOnly model is better.
         # For now, I'll use execute() for safety/speed.
         
-        query = text("SELECT api_key FROM api_key WHERE customer_id = :cid AND environment_type = '1' LIMIT 1") # Assuming '1' is prod/active? Or '0'? User didn't specify enum meaning.
-        # logic: usually 1=Live, 0=Sandbox. 
-        # But wait, user said "Environment-based separation". 
-        # I will try to fetch ANY key for now, or maybe check env var for mode.
-        # Let's assume '1' (Live) or just take the first one found.
+        query = text("SELECT api_key FROM api_key WHERE customer_id = :cid AND environment_type = '1' LIMIT 1") 
         
         result = self.session.execute(query, {"cid": self.customer_id}).fetchone()
         if not result:
@@ -83,10 +79,6 @@ class FastKYCConnector:
                 print(f"FastKYC Status Error: {data}")
                 # We might want to pass the error upstream
                 return {"status": "FAILED", "error": data.get("message", "Unknown API Error"), "details": data}
-            
-            # Check for logical success if the API returns 200 but "status": "FAILED" ?
-            # User example: {"status": "SUCCESS", "is_completed": true ...}
-            # I will return the whole data for the caller to parse.
             return data
             
         except Exception as e:

@@ -217,8 +217,8 @@ class ActiveFlow(Base):
     current_feature_id = Column(Integer)
     current_api_id = Column(Integer)
 
-    current_step = Column(Integer)
-    total_step = Column(Integer)
+    current_step = Column(Integer, default=1)
+    total_step = Column(Integer, default=0)
 
     expires_at = Column(DateTime)
     status = Column(String(50))

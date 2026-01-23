@@ -11,16 +11,16 @@ interface JourneyOverviewProps {
     onFinish: () => void;
 }
 
-const StepSummaryItem = ({ step, stepData }: { step: Step, stepData: CollectedStepData | undefined }) => {
+const StepSummaryItem = ({ step, stepDataList }: { step: Step, stepDataList: CollectedStepData[] }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const hasData = stepData && stepData.data && Object.keys(stepData.data).length > 0;
+    const hasData = stepDataList.length > 0;
 
     return (
         <div className="p-6 hover:bg-muted/20 transition-colors">
             <div className="flex items-start gap-4">
                 {/* Status Icon */}
                 <div className="shrink-0 mt-1">
-                    {stepData ? (
+                    {hasData ? (
                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
                             <CheckCircle2 className="w-5 h-5" />
                         </div>
@@ -39,11 +39,11 @@ const StepSummaryItem = ({ step, stepData }: { step: Step, stepData: CollectedSt
                         </h3>
                         <span className={cn(
                             "px-3 py-1 rounded-full text-xs font-medium border",
-                            stepData
+                            hasData
                                 ? "bg-green-50 text-green-700 border-green-200"
                                 : "bg-gray-50 text-gray-600 border-gray-200"
                         )}>
-                            {stepData ? "Verified" : "Pending"}
+                            {hasData ? "Verified" : "Pending"}
                         </span>
                     </div>
 
@@ -61,12 +61,12 @@ const StepSummaryItem = ({ step, stepData }: { step: Step, stepData: CollectedSt
                                 {isOpen ? (
                                     <>
                                         <ChevronUp className="w-3 h-3 mr-1" />
-                                        Hide API Response
+                                        Hide API Responses
                                     </>
                                 ) : (
                                     <>
                                         <ChevronDown className="w-3 h-3 mr-1" />
-                                        Show API Response
+                                        Show API Responses ({stepDataList.length})
                                     </>
                                 )}
                             </button>
@@ -78,12 +78,24 @@ const StepSummaryItem = ({ step, stepData }: { step: Step, stepData: CollectedSt
                                     isOpen ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0 mt-0"
                                 )}
                             >
-                                <div className="overflow-hidden">
-                                    <div className="bg-muted/50 rounded-lg p-3 text-xs border border-border font-mono overflow-x-auto max-h-60 overflow-y-auto">
-                                        <pre>
-                                            {JSON.stringify(stepData!.data, null, 2)}
-                                        </pre>
-                                    </div>
+                                <div className="overflow-hidden space-y-3">
+                                    {stepDataList.map((data, index) => (
+                                        <div key={index} className="bg-muted/50 rounded-lg p-3 border border-border">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                    #{index + 1}
+                                                </span>
+                                                <span className="text-xs font-medium text-foreground">
+                                                    {data.featureName}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto">
+                                                <pre>
+                                                    {JSON.stringify(data.data, null, 2)}
+                                                </pre>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -97,8 +109,8 @@ const StepSummaryItem = ({ step, stepData }: { step: Step, stepData: CollectedSt
 
 export const JourneyOverview: FC<JourneyOverviewProps> = ({ steps, collectedData, onFinish }) => {
     // Helper to find data for a step
-    const getStepData = (stepNumber: number) => {
-        return collectedData.find(d => d.stepNumber === stepNumber);
+    const getStepDataList = (stepNumber: number) => {
+        return collectedData.filter(d => d.stepNumber === stepNumber);
     };
 
     return (
@@ -130,12 +142,13 @@ export const JourneyOverview: FC<JourneyOverviewProps> = ({ steps, collectedData
                             <StepSummaryItem
                                 key={step.step_number}
                                 step={step}
-                                stepData={getStepData(step.step_number)}
+                                stepDataList={getStepDataList(step.step_number)}
                             />
                         ))}
                     </div>
                 </CardContent>
             </Card>
+
 
             {/* Actions */}
             {/* <div className="flex justify-center pt-4">

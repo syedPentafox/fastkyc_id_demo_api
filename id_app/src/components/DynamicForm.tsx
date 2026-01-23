@@ -4,15 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-
-interface FormField {
-    field: string;
-    label: string;
-    type: string;
-    is_required: boolean;
-    regex?: string;
-    options?: string;
-}
+import { FormField } from '@/lib/types';
 
 interface Props {
     featureName: string;
@@ -30,15 +22,19 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
 
         // Validate regex if provided
         if (regex && value) {
-            const regexPattern = new RegExp(regex);
-            if (!regexPattern.test(value)) {
-                setErrors(prev => ({ ...prev, [field]: 'Invalid format' }));
-            } else {
-                setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors[field];
-                    return newErrors;
-                });
+            try {
+                const regexPattern = new RegExp(regex);
+                if (!regexPattern.test(value)) {
+                    setErrors(prev => ({ ...prev, [field]: 'Invalid format' }));
+                } else {
+                    setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors[field];
+                        return newErrors;
+                    });
+                }
+            } catch (e) {
+                // Ignore invalid regex from backend to prevent crash
             }
         } else {
             // Clear error if no regex or empty value
@@ -57,11 +53,20 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
         const newErrors: Record<string, string> = {};
         fields.forEach(field => {
             const value = formData[field.field];
+            
+            // Check Mandatory
+            if (field.is_mandatory && !value) {
+                newErrors[field.field] = 'This field is required';
+            }
+
+            // Check Regex
             if (field.regex && value) {
-                const regexPattern = new RegExp(field.regex);
-                if (!regexPattern.test(value)) {
-                    newErrors[field.field] = 'Invalid format';
-                }
+                try {
+                    const regexPattern = new RegExp(field.regex);
+                    if (!regexPattern.test(value)) {
+                        newErrors[field.field] = 'Invalid format';
+                    }
+                } catch (e) { }
             }
         });
 
@@ -74,7 +79,7 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
     };
 
     return (
-        <Card className="w-full max-w-2xl mx-auto mt-6 shadow-lg border-border bg-card overflow-hidden">
+        <Card className="w-full max-w-2xl mx-auto mt-6 shadow-lg border-border bg-card overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <CardHeader className="border-b border-border bg-muted/50">
                 <CardTitle className="text-2xl font-bold text-foreground">
                     {featureName}
@@ -86,69 +91,64 @@ export const DynamicForm: React.FC<Props> = ({ featureName, fields, onSubmit, is
 
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-6 pt-6 pb-6">
-                    {fields.map((field) => (
-                        <div key={field.field} className="space-y-2 group">
-                            <Label
-                                htmlFor={field.field}
-                                className="text-sm font-semibold text-foreground flex items-center gap-2"
-                            >
-                                {field.label}
-                                {field.is_required && (
-                                    <span className="text-destructive text-base">*</span>
-                                )}
-                            </Label>
+                    {fields.map((field) => {
+                        const fieldType = (field.type || 'text').toUpperCase();
+                        const isText = fieldType === 'TEXT' || fieldType === 'STRING' || fieldType === 'INPUT';
+                        const isNumber = fieldType === 'NUMBER' || fieldType === 'NUMERIC' || fieldType === 'INTEGER';
 
-                            {field.type === 'TEXT' || field.type === 'string' ? (
-                                <>
+                        return (
+                            <div key={field.field} className="space-y-2 group">
+                                <Label
+                                    htmlFor={field.field}
+                                    className="text-sm font-semibold text-foreground flex items-center gap-2"
+                                >
+                                    {field.label || field.field}
+                                    {field.is_mandatory && (
+                                        <span className="text-destructive text-base">*</span>
+                                    )}
+                                </Label>
+
+                                {isText ? (
                                     <Input
                                         id={field.field}
-                                        required={field.is_required}
+                                        required={field.is_mandatory}
                                         onChange={(e) => handleChange(field.field, e.target.value, field.regex)}
-                                        className={`border-input bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${errors[field.field] ? 'border-destructive focus:ring-destructive/20' : 'focus:border-primary hover:border-primary/50'
-                                            }`}
-                                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                                        className={`border-input bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${errors[field.field] ? 'border-destructive focus:ring-destructive/20' : 'focus:border-primary hover:border-primary/50'}`}
+                                        placeholder={`Enter ${(field.label || field.field).toLowerCase()}`}
                                     />
-                                    {errors[field.field] && (
-                                        <p className="text-sm text-destructive flex items-center gap-1">
-                                            <span className="text-xs">⚠</span>
-                                            {errors[field.field]}
-                                        </p>
-                                    )}
-                                </>
-                            ) : field.type === 'NUMERIC' ? (
-                                <>
+                                ) : isNumber ? (
                                     <Input
                                         id={field.field}
                                         type="number"
-                                        required={field.is_required}
+                                        required={field.is_mandatory}
                                         onChange={(e) => handleChange(field.field, e.target.value, field.regex)}
-                                        className={`border-input bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${errors[field.field] ? 'border-destructive focus:ring-destructive/20' : 'focus:border-primary hover:border-primary/50'
-                                            }`}
-                                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                                        className={`border-input bg-background transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${errors[field.field] ? 'border-destructive focus:ring-destructive/20' : 'focus:border-primary hover:border-primary/50'}`}
+                                        placeholder={`Enter ${(field.label || field.field).toLowerCase()}`}
                                     />
-                                    {errors[field.field] && (
-                                        <p className="text-sm text-destructive flex items-center gap-1">
-                                            <span className="text-xs">⚠</span>
-                                            {errors[field.field]}
-                                        </p>
-                                    )}
-                                </>
-                            ) : (
-                                <Input
-                                    id={field.field}
-                                    placeholder={`Unsupported type: ${field.type}`}
-                                    disabled
-                                    className="bg-muted border-input opacity-50 cursor-not-allowed"
-                                />
-                            )}
-                        </div>
-                    ))}
+                                ) : (
+                                    <Input
+                                        id={field.field}
+                                        placeholder={`Unsupported type: ${field.type}`}
+                                        disabled
+                                        className="bg-muted border-input opacity-50 cursor-not-allowed"
+                                    />
+                                )}
+                                
+                                {errors[field.field] && (
+                                    <p className="text-sm text-destructive flex items-center gap-1 animate-in slide-in-from-left-1">
+                                        <span className="text-xs">⚠</span>
+                                        {errors[field.field]}
+                                    </p>
+                                )}
+                            </div>
+                        );
+                    })}
                 </CardContent>
 
-                <CardFooter className="pt-6 pb-6">
+                <CardFooter className="pt-6 pb-6 bg-muted/10">
                     <Button
                         type="submit"
-                        className="w-full bg-primary hover:bg-primary/70 text-primary-foreground font-semibold py-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isLoading}
                     >
                         {isLoading ? (

@@ -25,3 +25,16 @@ def list_tables():
 @router.get("/data/{table_name}")
 def get_table_data(table_name: str, page: int = 1, per_page: int = 10):
     return db_handler.get_data_from_table(table_name, page=page, per_page=per_page)
+
+@router.post("/mock/provider")
+def mock_provider(payload: dict = None):
+    # Simulate Success Response expected by FastKYCConnector
+    return {
+        "status": "SUCCESS",
+        "success": True,
+        "message": "Mock Success",
+        "data": {
+            "client_id": "mock_client_123", # For polling logic
+            "url": "http://example.com/redirect" # For redirect logic
+        }
+    }

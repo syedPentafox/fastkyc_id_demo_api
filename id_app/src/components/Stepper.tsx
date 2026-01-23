@@ -16,6 +16,8 @@ interface StepperProps {
 }
 
 export const Stepper: FC<StepperProps> = ({ steps, currentStep, isJourneyComplete }) => {
+    console.log("🪵 ~ Stepper ~ currentStep:", currentStep)
+    console.log("🪵 ~ Stepper ~ steps:", steps)
     return (
         <div className="w-full mb-8">
             <div className="block md:hidden">

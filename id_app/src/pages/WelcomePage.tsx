@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneyStore } from '@/lib/store';
-import { useSubmitStep } from '@/lib/hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2, Sparkles } from 'lucide-react';
@@ -9,23 +8,24 @@ import brandLogo from '@/assets/logo.png';
 
 export default function WelcomePage() {
     const navigate = useNavigate();
-    const { flowData, setHasStartedJourney, hasStartedJourney, setCurrentStepData } = useJourneyStore();
-    const { mutateAsync: submitStep, isPending } = useSubmitStep();
+    const { flowData, setHasStartedJourney, hasStartedJourney } = useJourneyStore();
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleStartJourney = async () => {
         try {
+            setIsLoading(true);
             setError(null);
-            // Make the first /submit call
-            const firstStepData = await submitStep({});
-            // Save to Zustand store
-            setCurrentStepData(firstStepData);
+
+            // Just mark as started and navigate. 
+            // The FlowPage will fetch the initial state automatically.
             setHasStartedJourney(true);
-            console.log("First step data:", firstStepData);
-            // Navigate to flow page
+
+            console.log("Journey Started, navigating to flow...");
             navigate('/flow');
         } catch (err: any) {
             setError(err.message || 'Failed to start journey');
+            setIsLoading(false);
         }
     };
 
@@ -50,12 +50,12 @@ export default function WelcomePage() {
                 <CardContent className="pt-12 pb-12 px-8">
 
                     {/* Flow Name */}
-                    <h1 className="text-4xl font-extrabold text-center text-foreground mb-4 tracking-tight">
+                    <h1 className="text-3xl font-extrabold tracking-wide text-center text-secondary-foreground/80 mb-4 tracking-tight">
                         {flowData.flow_details.name}
                     </h1>
 
                     {/* Flow Description */}
-                    <p className="text-muted-foreground text-center text-lg mb-8 leading-relaxed">
+                    <p className="text-secondary-foreground text-center text-md mb-8 leading-relaxed">
                         {flowData.flow_details.description}
                     </p>
 
@@ -106,10 +106,10 @@ export default function WelcomePage() {
                     {/* Start Button */}
                     <Button
                         onClick={handleStartJourney}
-                        disabled={isPending}
+                        disabled={isLoading}
                         className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        {isPending ? (
+                        {isLoading ? (
                             <>
                                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                                 Starting Journey...
@@ -127,8 +127,8 @@ export default function WelcomePage() {
                         Click the button above to begin your verification journey
                     </p>
                     <div className="flex justify-center items-center text-sm gap-2 mt-6">
-                    <span>Powered by</span>
-                    <img src={brandLogo} alt="FastKYC" className='h-6'/>
+                        <span>Powered by</span>
+                        <img src={brandLogo} alt="FastKYC" className='h-6' />
                     </div>
                 </CardContent>
             </Card>

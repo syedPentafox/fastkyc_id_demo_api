@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, Body
 
 from utils.authentication import verify_access_token
 from utils.custom_class import APIRouteWrapper
@@ -6,7 +6,7 @@ from utils.db_util import DatabaseHandler
 from response_models.response_models import make_success_response
 from utils.error_handler import error_failure_response
 from schemas.reqeust_schemas import FlowGenerationRequest, FlowActivationRequest
-from orm_model.core_models import Flow, FeatureFlow, CustomerFlowMapping, FlowFeatureMap, ActiveFlow
+from orm_model.core_models import Flow, FeatureFlow, CustomerFlowMapping, FlowFeatureMap, ActiveFlow, JourneyLog
 from typing import Optional
 from utils.flow_features_helper import get_feature_flow_details, validate_flow_components
 from utils.journey_auth import create_journey_token
@@ -225,8 +225,8 @@ def delete_flow(
             # 1. Validate Flow Existence and Ownership
             flow = (
                 session.query(Flow)
-                .join(CustomerFlowMapping, CustomerFlowMapping.flow_id == Flow.id)
-                .filter(CustomerFlowMapping.customer_id == user_id)
+                # .join(CustomerFlowMapping, CustomerFlowMapping.flow_id == Flow.id)
+                # .filter(CustomerFlowMapping.customer_id == user_id)
                 .filter(Flow.id == flow_id)
                 .first()
             )
@@ -249,43 +249,73 @@ def delete_flow(
                     400
                 )
 
-            # 3. Check for Historical Data (Optional: Block if any history?)
-            # Validating if we want to allow deleting flow that has historical data.
-            # For now, we only block 'active'. If 'completed'/'inactive' sessions exist,
-            # we will delete the Flow but the ActiveFlow history might point to a deleted Flow ID.
-            # To be safe, we should probably delete the ActiveFlows too OR set null.
-            # Given "handle all validation", let's be strict: if ANY usage, block?
-            # User said "Active" usually implies current usage.
-            # Let's simple check if ANY references exist to fail safe?
-            # all_sessions = session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).count() 
-            # if all_sessions > 0: ...
-            # Reverting: The user likely wants to clean up.
-            # Let's Cascade Delete related mappings.
+            # 3. Cleanup Expired Sessions (Zombies)
+
+            now = datetime.now()
+            expired_active_flows = (
+                session.query(ActiveFlow)
+                .filter(ActiveFlow.flow_id == flow_id)
+                .filter(ActiveFlow.expires_at < now)
+                .all()
+            )
+
+            for af in expired_active_flows:
+                 # Check if this specific session has logs
+                 has_logs = session.query(JourneyLog).filter(JourneyLog.active_flow_id == af.id).count() > 0
+                 if not has_logs:
+                      session.delete(af)
+            
+            session.flush()
+
+            # 4. Check for Journey Logs (via ActiveFlow)
+            # If logs exist, we must SOFT DELETE.
+            # If no logs exist, we can HARD DELETE.
+
+            # Check if any ActiveFlow associated with this Flow has JourneyLogs
+            # Join ActiveFlow -> JourneyLog
+            log_count = (
+                session.query(JourneyLog)
+                .join(ActiveFlow, ActiveFlow.id == JourneyLog.active_flow_id)
+                .filter(ActiveFlow.flow_id == flow_id)
+                .count()
+            )
 
             try:
-                # Delete FlowFeatureMap (Cascade)
-                session.query(FlowFeatureMap).filter(FlowFeatureMap.flow_id == flow_id).delete()
+                if log_count > 0:
+                    # SOFT DELETE STRATEGY
+                    
+                    # 1. Delete Configuration Mappings (Cleanup)
+                    session.query(FlowFeatureMap).filter(FlowFeatureMap.flow_id == flow_id).delete()
+                    session.query(CustomerFlowMapping).filter(CustomerFlowMapping.flow_id == flow_id).delete()
+                    
+                    # 2. Mark Flow as Deleted
+                    flow.status = 'deleted'
+                    
+                    # 3. Terminate Active Sessions
+                    session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).update({"status": "terminated"})
 
-                # Delete CustomerFlowMapping (Cascade)
-                session.query(CustomerFlowMapping).filter(CustomerFlowMapping.flow_id == flow_id).delete()
-                
-                # Delete Active Flows (Cascade - Clean up history) - OPTIONAL based on requirement
-                # Warning: This deletes history.
-                # session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).delete()
-                # If we don't delete ActiveFlow, they will fail constraint if FK exists.
-                # Check model: ActiveFlow.flow_id = Column(Integer, ForeignKey("flows.id"), nullable=False)
-                # So we MUST delete them.
-                session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).delete()
+                    session.commit()
+                    return make_success_response(data={"flow_id": flow_id}, message="Flow deleted successfully")
 
-                # Delete Flow
-                session.delete(flow)
-                
-                session.commit()
+                else:
+                    # HARD DELETE STRATEGY
+                    
+                    # 1. Delete Configuration
+                    session.query(FlowFeatureMap).filter(FlowFeatureMap.flow_id == flow_id).delete()
+                    session.query(CustomerFlowMapping).filter(CustomerFlowMapping.flow_id == flow_id).delete()
+                    
+                    # 2. Delete ActiveFlow (Safe because no logs)
+                    session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).delete()
 
-                return make_success_response(
-                    data={"flow_id": flow_id},
-                    message="Flow deleted successfully"
-                )
+                    # 3. Delete Flow
+                    session.delete(flow)
+                    
+                    session.commit()
+
+                    return make_success_response(
+                        data={"flow_id": flow_id},
+                        message="Flow deleted (hard) successfully"
+                    )
 
             except Exception as e:
                 session.rollback()
@@ -295,6 +325,47 @@ def delete_flow(
     except Exception as e:
         print(f"Error deleting flow {flow_id}: {e}")
         return error_failure_response(f"Failed to delete flow: {str(e)}", 500)
+
+
+@router.patch("/flow/{flow_id}", tags=['flow'])
+def update_flow(
+    flow_id: int,
+    payload: dict = Body(...),
+    request: Request = None
+):
+    try:
+        user_id = request.state.user_id
+        
+        with db.Session() as session:
+            flow = (
+                session.query(Flow)
+                .join(CustomerFlowMapping, CustomerFlowMapping.flow_id == Flow.id)
+                .filter(CustomerFlowMapping.customer_id == user_id)
+                .filter(Flow.id == flow_id)
+                .first()
+            )
+
+            if not flow:
+                return error_failure_response("Flow not found", 404)
+
+            # Update fields
+            if "name" in payload:
+                flow.name = payload["name"]
+            if "description" in payload:
+                flow.description = payload["description"]
+            if "status" in payload:
+                flow.status = payload["status"]
+
+            session.commit()
+
+            return make_success_response(
+                data={"id": flow.id}, 
+                message="Flow updated successfully"
+            )
+
+    except Exception as e:
+        print(f"Error updating flow {flow_id}: {e}")
+        return error_failure_response(f"Failed to update flow: {str(e)}", 500)
 
 
 
@@ -331,7 +402,7 @@ def activate_flow(
             
             # 3. Create New Active Flow
             expires_at = payload.expires if payload.expires else (now + timedelta(days=1))
-            
+            print(expires_at, "expires_at")
             # Serialize end_customer_details to dict then JSON
             customer_json = payload.end_customer_details.dict()
             

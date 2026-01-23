@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Body
 from typing import Optional
 import logging
 from orm_model.core_models import ApiRequiredField, FeatureApiDependency, FeatureFlow, FeatureMaster, FieldMaster, FlowFeatureMap, JourneyLog
@@ -371,33 +371,47 @@ def delete_feature_flow(
                     400
                 )
 
-            # 3. Validation: Check for Journey Logs? (Active execution history)
-            # JourneyLog has feature_id param (ForeignKey to feature_flow.id)
-            # Check model: feature_id = Column(Integer, ForeignKey("feature_flow.id"), nullable=False)
-            # So we must check this too.
-            log_usage = session.query(JourneyLog).filter(JourneyLog.feature_id == flow.id).count()
-            if log_usage > 0:
-                # If we have logs, we probably shouldn't delete it or we must cascade logs.
-                # Deleting Logs = Deleting Audit History.
-                # Better to BLOCK.
-                return error_failure_response(
-                    f"Cannot delete Feature Flow. It has {log_usage} execution logs associated with it.",
-                    400
-                )
+            # 3. Check for Journey Logs
+            # If logs exist -> Soft Delete
+            # If no logs -> Hard Delete
             
-            # 4. Delete
+            log_usage = session.query(JourneyLog).filter(JourneyLog.feature_id == flow.id).count()
+            
             try:
-                # Delete Dependencies (FeatureApiDependency)
-                session.query(FeatureApiDependency).filter(FeatureApiDependency.feature_id == flow.id).delete()
-                
-                # Delete Feature Flow
-                session.delete(flow)
-                session.commit()
+                if log_usage > 0:
+                    # SOFT DELETE
+                    
+                    # 1. Detach from Flows (FlowFeatureMap)
+                    session.query(FlowFeatureMap).filter(FlowFeatureMap.feature_id == flow.id).delete()
+                    
+                    # 2. Delete Dependencies (Configuration)
+                    session.query(FeatureApiDependency).filter(FeatureApiDependency.feature_id == flow.id).delete()
+                    
+                    # 3. Mark as Deleted
+                    flow.status = 'deleted'
+                    session.commit()
 
-                return make_success_response(
-                    data={"id": flow.id},
-                    message=f"Feature Flow '{flow.name}' deleted successfully"
-                )
+                    return make_success_response(
+                        data={"id": flow.id},
+                        message=f"Feature Flow '{flow.name}' deleted (soft) successfully"
+                    )
+                else:
+                    # HARD DELETE
+                    
+                    # 1. Detach from Flows
+                    session.query(FlowFeatureMap).filter(FlowFeatureMap.feature_id == flow.id).delete()
+                    
+                    # 2. Delete Dependencies
+                    session.query(FeatureApiDependency).filter(FeatureApiDependency.feature_id == flow.id).delete()
+                    
+                    # 3. Delete Feature Flow
+                    session.delete(flow)
+                    session.commit()
+
+                    return make_success_response(
+                        data={"id": flow.id},
+                        message=f"Feature Flow '{flow.name}' deleted (hard) successfully"
+                    )
 
             except Exception as e:
                 session.rollback()
@@ -406,3 +420,37 @@ def delete_feature_flow(
     except Exception as e:
         print(f"Error deleting feature flow {identifier}: {e}")
         return error_failure_response(f"Failed to delete feature flow: {str(e)}", 500)
+
+
+@router.patch("/feature_flow/{identifier}", tags=["flow"])
+def update_feature_flow(
+    identifier: str,
+    payload: dict = Body(...)
+):
+    try:
+        with db.Session() as session:
+            # Resolve ID
+            if identifier.isdigit():
+                flow = session.query(FeatureFlow).filter(FeatureFlow.id == int(identifier)).first()
+            else:
+                flow = session.query(FeatureFlow).filter(FeatureFlow.name == identifier).first()
+
+            if not flow:
+                return error_failure_response("Feature flow not found", 404)
+
+            if "name" in payload:
+                flow.name = payload["name"]
+            if "description" in payload:
+                flow.description = payload["description"]
+            
+            # Commit updates
+            session.commit()
+
+            return make_success_response(
+                data={"id": flow.id},
+                message="Feature Flow updated successfully"
+            )
+
+    except Exception as e:
+        print(f"Error updating feature flow {identifier}: {e}")
+        return error_failure_response(f"Failed to update feature flow: {str(e)}", 500)

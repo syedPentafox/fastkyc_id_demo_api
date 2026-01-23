@@ -16,6 +16,7 @@ def get_logger(name: str):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
+
     if not logger.handlers:
         # Console logs
         console_handler = logging.StreamHandler(sys.stdout)

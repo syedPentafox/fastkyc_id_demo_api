@@ -88,16 +88,29 @@ def get_form_fields_for_feature(session: Session, feature_id: int):
 
 def execute_polling_check(session: Session, active_flow: ActiveFlow, target_api_dep: FeatureApiDependency, customer_id: str):
     """
-    Checks status of a polling API. 
-    If Success -> Advance Flow -> Return None (Caller should re-resolve state)
-    If Pending -> Return PollingUI
+    Checks status of a polling API to determine if the user can proceed to the next step.
+    
+    Logic:
+    1. Fetches the client_id for this session from journey_state.
+    2. Calls the polling feature API (FastKYC) with the client_id.
+    3. Analyzes the API response:
+       - SUCCESS: 
+         - Checks deeply for "is_completed" flag or "inner status" ("client_initiated", "pending").
+         - If truly complete -> Update State -> Advance Flow -> Return None.
+         - If pending -> Return PollingUI (Keep polling).
+       - FAILED: Return Error UI.
+       - PENDING/Other: Return PollingUI.
+       
+    Returns:
+    - PollingUI/MessageUI: If the frontend should show a specific UI.
+    - None: If the state has successfully advanced and the caller should re-resolve the state.
     """
     feature = session.query(FeatureMaster).filter(FeatureMaster.id == target_api_dep.api_id).first()
     journey_state = active_flow.journey_state or {}
     client_id = journey_state.get("client_id")
     
     if not client_id:
-        # Should not happen if flow logic is correct
+        # Should not happen if flow logic is correct, but safe fallback
         return PollingUI(message="Initializing verification...")
 
     connector = FastKYCConnector(session, customer_id)
@@ -109,13 +122,13 @@ def execute_polling_check(session: Session, active_flow: ActiveFlow, target_api_
         
         if status == "SUCCESS" or status == "success":
             # Check for Inner Status (Deep Check)
+            # The API might be successful (200 OK) but the task is still processing.
             result_data = result.get("data", {})
             
             is_completed = result_data.get("is_completed")
             inner_status = result_data.get("status")
 
-            # logic: if is_completed is explicitly False, OR inner_status is "client_initiated"/"pending"
-            # then it is NOT actually complete yet.
+            # Logic: If explicitly incomplete OR status keywords match pending -> Keep Polling
             if (is_completed is False) or (inner_status in ["client_initiated", "pending", "processing"]):
                  return PollingUI(
                     client_id=client_id, 
@@ -124,15 +137,15 @@ def execute_polling_check(session: Session, active_flow: ActiveFlow, target_api_
                 )
 
             # Polling Complete!
-            # Extract updated data
+            # Extract updated data (e.g new client_id or result artifacts)
             new_client_id = result_data.get("client_id") or result.get("client_id")
             if new_client_id:
                 journey_state["client_id"] = new_client_id
                 active_flow.journey_state = journey_state
             
-            # Advance Flow
+            # Advance Flow to Next API or Step
             advance_flow_state(session, active_flow, target_api_dep)
-            return None # Indicate state changed, caller should re-call resolve_journey_state
+            return None # Signal to caller: State Changed, Re-Resolve!
             
         elif status == "FAILED" or status == "failed":
              return MessageUI(status="FAILED", message=result.get("message", "Verification Failed"))
@@ -202,16 +215,22 @@ def resolve_journey_state(session: Session, active_flow: ActiveFlow, customer_id
         base_state['status'] = 'completed' # Update base_state
         return JourneyState(**base_state, ui=MessageUI(status="COMPLETED", message="Journey Completed"))
     print("target_api_dep", target_api_dep)
-    # Check API Type
+    # CASE 1: API Type is POLLING
+    # We must check the status of the external task without user input.
     if target_api_dep.api_type == 'pooling':
-        # Side-effect: Check status!
+        # Execute the check side-effect
         ui_result = execute_polling_check(session, active_flow, target_api_dep, customer_id)
+        
+        # If check returned None, it means it SUCCEEDED and ADVANCED state.
+        # We must recursively call ourselves to see what the *new* state is.
         if ui_result is None:
-             # State advanced, recurse
              return resolve_journey_state(session, active_flow, customer_id, step_response_data)
+        
+        # Otherwise, return the PollingUI (or Error) to the frontend
         return JourneyState(**base_state, ui=ui_result)
 
-    # Default: Form/Action
+    # CASE 2: API Type is FORM or REDIRECT (Initial load)
+    # Return the UI definition so the frontend can render the inputs.
     feature = session.query(FeatureMaster).filter(FeatureMaster.id == target_api_dep.api_id).first()
     form_fields = get_form_fields_for_feature(session, feature.id)
     
@@ -271,7 +290,7 @@ def execute_journey_step(
              final_data["client_id"] = journey_state["client_id"]
         
         # 3. Validation (Optional: Check mandatory fields against get_form_fields_for_feature)
-        # For strictness, we should validate here. skipping for brevity/flexibility.
+      
 
         # 4. Execute Feature
         connector = FastKYCConnector(session, customer_id)
@@ -297,12 +316,7 @@ def execute_journey_step(
              is_completed = result_data.get("is_completed")
              inner_status = result_data.get("status")
              if (is_completed is False) or (inner_status in ["client_initiated", "pending", "processing"]):
-                  # It's technically success API call, but FAILED/PENDING business logic for advancement
                   success = False
-                  # We might want to return a specific error or just stay on same step?
-                  # If we return success=False, it goes to "Step Failed". 
-                  # But maybe we just want to NOT advance? 
-                  # For POST, usually we expect it to complete. If it's pending, maybe return message?
                   if inner_status == "client_initiated":
                        return error_failure_response("Verification pending completion", 400)
 
@@ -322,9 +336,10 @@ def execute_journey_step(
         if not success:
              return error_failure_response(api_result.get("message", "Step Failed"), 400)
              
-        # 5. Handle Success & Transitions
+        # 6. Success Handling & State Transitions
         
-        # Extract client_id if present
+        # 6a. Extract and save Client ID
+        # Many APIs return a client_id that is needed for subsequent steps.
         data = api_result.get("data", {})
         client_id = None
         if isinstance(data, dict):
@@ -334,18 +349,21 @@ def execute_journey_step(
              journey_state["client_id"] = client_id
              flow.journey_state = journey_state
              
-        # Check Redirect
+        # 6b. Handle Redirects (Special Case)
+        # If this API was a REDIRECT type, we:
+        # 1. Advance the flow immediately (Assuming user will go to the redirect).
+        # 2. Return a RedirectUI to the frontend.
+        # 3. The next time frontend calls /state, it will hit the *next* API (usually Polling).
         if target_api_dep.api_type == "redirects":
-             # We advance state immediately to the Next API (Polling), 
-             # but we return RedirectUI for THIS request.
              redirect_url = data.get("url")
              if not redirect_url:
                   return error_failure_response("Redirect URL missing from provider", 500)
              
-             # Store url for recovery
+             # Store url mainly for recovery/logging
              journey_state["redirect_url"] = redirect_url
              flow.journey_state = journey_state
              
+             # Advance State immediately
              advance_flow_state(session, flow, target_api_dep)
              
              base_state = {
@@ -359,9 +377,12 @@ def execute_journey_step(
                  ui=RedirectUI(url=redirect_url)
              )
         
-        # Standard Success -> Advance
+        # 6c. Standard Success -> Advance
+        # For Form APIs, success means we just move to the next thing.
         advance_flow_state(session, flow, target_api_dep)
         
         # Return NEXT state
+        # We recursively call resolve_journey_state to see what happens next 
+        # (e.g. might immediately execute a polling check or return the next form)
         return resolve_journey_state(session, flow, customer_id, step_response_data=api_result.get("data", {}))
 

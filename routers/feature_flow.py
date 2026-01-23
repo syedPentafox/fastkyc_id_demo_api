@@ -17,14 +17,17 @@ router = APIRouter(dependencies=[Depends(verify_access_token)])
 db = DatabaseHandler()
 
 
-'''
-this route is used to get all features with their field mappings
-'''
 @router.get("/feature_flow/feature", tags=["flow"])
 def get_all_features_api_with_flow(
     status: Optional[str] = None,
     category: Optional[str] = None
 ):
+    """
+    Retrieves all available Features (APIs) and their mapped Form Fields.
+    
+    This is used by the frontend Form Builder to show available building blocks.
+    Grouped by Feature ID.
+    """
     with db.Session() as session:
         # Join FeatureMaster, ApiRequiredField, and FieldMaster
         query = (
@@ -128,11 +131,19 @@ def get_feature_by_id_or_name(identifier: str):
         return make_success_response(feature_data)
 
 
-'''
-this route is used to get all feature flows with their API dependencies
-'''
 @router.get("/feature_flow",tags=["flow"])
 def get_all_flow_features():
+    """
+    Retrieves all Feature Flows (Steps) and their constituent Features (APIs).
+    
+    A 'Feature Flow' is essentially a reusable 'Step' that contains one or more Features.
+    Example: "Video KYC Step" (Feature Flow) -> contains "Digilocker", "Face Match" (Features/APIs).
+    
+    Structure:
+    - Feature Flow
+      - Features (Ordered by execution_order)
+         - Form Fields
+    """
     with db.Session() as session:
         # Query all feature flows with their API dependencies
         
@@ -279,11 +290,19 @@ def get_feature_flow_by_id_or_name(
         return make_success_response(flow_data)
 
 
-'''
-this route is used to create a new feature flow but before deleting we will going to authenticate the role of the user.
-'''
 @router.post("/feature_flow", tags=['flow'])
 async def create_feature_flow(payload: FeatureFlowRequest,):
+    """
+    Creates a new Feature Flow (Step) with ordered API dependencies.
+    
+    Payload Structure:
+    - name: Unique name for this flow/step
+    - description: Optional description
+    - apis: List of APIs/Features to execute in this step, with configuration:
+        - order: Execution sequence
+        - api_type: polling, redirect, form, etc.
+        - conditions: logic for when this API should run
+    """
 
      # 1️⃣ Unique name
     existing, _ = db.get_data_from_table(
@@ -345,13 +364,19 @@ async def create_feature_flow(payload: FeatureFlowRequest,):
     )
 
 
-'''
-this route is used to delete a feature flow by ID or Name
-'''
 @router.delete("/feature_flow/{identifier}", tags=["flow"])
 def delete_feature_flow(
     identifier: str
 ):
+    """
+    Deletes a Feature Flow (Step) using a Smart Delete strategy.
+    
+    1. Soft Delete: If the Feature Flow has associated JourneyLogs (history), it is marked as 'deleted'.
+       - Configuration (Dependencies, Mappings) is removed from the active table.
+       - The main record remains for audit purposes.
+       
+    2. Hard Delete: If no JourneyLogs exist (unused), the record and all dependencies are physically deleted.
+    """
     try:
         with db.Session() as session:
             # 1. Resolve ID

@@ -38,6 +38,10 @@ async def authenticate_journey_user(request: Request):
     """
     Dependency to authenticate journey user via Token.
     Supports 'Authorization: Bearer <token>' header or 'token' query parameter.
+    
+    Why both?
+    - Query Param: Used during the initial Redirect from the Customer's site (the link contains ?tkn=...).
+    - Header: Used by the frontend SPA for all subsequent API calls (cleaner and more standard).
     """
     token = None
     

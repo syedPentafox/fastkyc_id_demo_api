@@ -18,7 +18,24 @@ db = DatabaseHandler()
 def get_journey_flow_details(session: Session, flow_id: int):
     """
     Fetches the ordered list of Feature Flows (Steps) for a given Flow ID.
-    Returns list of step objects.
+    
+    Structure of the returned 'steps' list:
+    [
+        {
+            "step_number": 1,
+            "name": "Step Name",
+            "features": [
+                {
+                    "title": "KYC Feature",
+                    "form_fields": [
+                         {"name": "field_name", "type": "text", "is_mandatory": True},
+                         ...
+                    ]
+                }
+            ]
+        },
+        ...
+    ]
     """
     # 1. Get ordered mappings
     mappings = (
@@ -80,6 +97,25 @@ def get_journey_flow_details(session: Session, flow_id: int):
         steps.append(step_data)
         
     return steps
+    """
+    Structure of the returned 'steps' list:
+    [
+        {
+            "step_number": 1,
+            "name": "Step Name",
+            "features": [
+                {
+                    "title": "KYC Feature",
+                    "form_fields": [
+                         {"name": "field_name", "type": "text", "is_mandatory": True},
+                         ...
+                    ]
+                }
+            ]
+        },
+        ...
+    ]
+    """
 
 
 @router.get("/flow/activate", tags=['journey'])

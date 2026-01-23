@@ -29,6 +29,15 @@ def initiate_id_flow(
     payload: FlowGenerationRequest,
     request: Request
 ):
+    """
+    Creates a new Flow configuration.
+    
+    1. Validates uniqueness of Flow Name for the user.
+    2. Validates that all referenced Feature Flows (Steps) exist.
+    3. Creates a new 'Flow' record.
+    4. Maps the Flow to the Customer (CustomerFlowMapping).
+    5. Maps the ordered Feature Flows to the Flow (FlowFeatureMap).
+    """
     user_id = request.state.user_id
 
     # Unique name
@@ -235,7 +244,7 @@ def delete_flow(
                 return error_failure_response("Flow not found or access denied", 404)
 
             # 2. Check for Active Sessions (ActiveFlow)
-            # If any active session exists, prevent deletion to ensure data integrity
+
             active_sessions = (
                 session.query(ActiveFlow)
                 .filter(ActiveFlow.flow_id == flow_id)
@@ -268,9 +277,11 @@ def delete_flow(
             session.flush()
 
             # 4. Check for Journey Logs (via ActiveFlow)
-            # If logs exist, we must SOFT DELETE.
-            # If no logs exist, we can HARD DELETE.
-
+            # This is the "Smart Delete" Logic:
+            # - If actual logs exist (meaning real usage history), we CANNOT delete the flow. 
+            #   We SOFT DELETE it (status='deleted') to preserve audit history.
+            # - If NO logs exist (e.g. only testing or unused), we HARD DELETE it to clean up the DB.
+            
             # Check if any ActiveFlow associated with this Flow has JourneyLogs
             # Join ActiveFlow -> JourneyLog
             log_count = (
@@ -282,7 +293,9 @@ def delete_flow(
 
             try:
                 if log_count > 0:
-                    # SOFT DELETE STRATEGY
+                    # CASE A: SOFT DELETE STRATEGY
+                    # Usage exists, so we keep the Flow record but mark it deleted.
+                    # We remove the configuration mappings (future instances) but keep history.
                     
                     # 1. Delete Configuration Mappings (Cleanup)
                     session.query(FlowFeatureMap).filter(FlowFeatureMap.flow_id == flow_id).delete()
@@ -291,20 +304,21 @@ def delete_flow(
                     # 2. Mark Flow as Deleted
                     flow.status = 'deleted'
                     
-                    # 3. Terminate Active Sessions
+                    # 3. Terminate Active Sessions (Prevent further use)
                     session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).update({"status": "terminated"})
 
                     session.commit()
                     return make_success_response(data={"flow_id": flow_id}, message="Flow deleted successfully")
 
                 else:
-                    # HARD DELETE STRATEGY
+                    # CASE B: HARD DELETE STRATEGY
+                    # No usage history, so it's safe to fully remove from DB.
                     
                     # 1. Delete Configuration
                     session.query(FlowFeatureMap).filter(FlowFeatureMap.flow_id == flow_id).delete()
                     session.query(CustomerFlowMapping).filter(CustomerFlowMapping.flow_id == flow_id).delete()
                     
-                    # 2. Delete ActiveFlow (Safe because no logs)
+                    # 2. Delete ActiveFlow (Safe because no logs exist, and we cleaned expired ones)
                     session.query(ActiveFlow).filter(ActiveFlow.flow_id == flow_id).delete()
 
                     # 3. Delete Flow
@@ -374,6 +388,17 @@ def activate_flow(
     payload: FlowActivationRequest,
     request: Request
 ):
+    """
+    activates a Flow for a specific End User, generating a unique Journey Session.
+    
+    1. Validates the Flow configuration (completeness check).
+    2. Creates an 'ActiveFlow' record:
+       - Stores end-user details (identifier).
+       - Sets expiration time.
+       - Generates a unique Active Flow ID (Session ID).
+    3. Generates a secure JWT Journey Token containing the Session ID.
+    4. Returns the Token and a precise Redirect URL for the frontend to launch the journey.
+    """
     try:
         user_id = request.state.user_id # The CustomerID
         
